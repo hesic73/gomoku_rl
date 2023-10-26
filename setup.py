@@ -1,7 +1,11 @@
-from setuptools import setup
+from setuptools import setup, find_packages
 
 setup(
-    name="concurrent_go",
+    name="gokomu_rl",
     version="0.0.0",
-    install_requires=["torch", " PyQt5"],  # and other dependencies
+    author="Sicheng He",
+    author_email="hesicheng20@gmail.com",
+    keywords=["RL", "pytorch"],
+    packages=find_packages(),
+    install_requires=["torch", "torchrl", " PyQt5"],  # and other dependencies
 )
