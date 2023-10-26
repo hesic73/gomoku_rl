@@ -1,4 +1,4 @@
-from concurrent_go import GoGame
+from gokomu_rl import GoGame
 import torch
 
 
