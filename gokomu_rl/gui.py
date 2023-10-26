@@ -21,11 +21,30 @@ import logging
 
 from enum import Enum
 
+from .core import Gokomu
+import torch
+import random
+
 
 class Piece(Enum):
     EMPTY = 0
     BLACK = 1
     WHITE = 2
+
+
+def board_to_tensor(board: list[list[Piece]]) -> torch.Tensor:
+    t = torch.zeros(len(board), len(board[0]), dtype=torch.long)
+
+    for i in range(len(board)):
+        for j in range(len(board[0])):
+            if board[i][j] == Piece.EMPTY:
+                t[i][j] = 0
+            elif board[i][j] == Piece.BLACK:
+                t[i][j] = 1
+            elif board[i][j] == Piece.WHITE:
+                t[i][j] = -1
+
+    return t.unsqueeze(0)  # (1,B,B)
 
 
 class MainWindow(QMainWindow):
@@ -38,21 +57,46 @@ class MainWindow(QMainWindow):
 
 
 class GoBoard(QWidget):
-    def __init__(self, board_size: int = 19):
+    def __init__(self, board_size: int = 19, human_color: Piece | None = Piece.WHITE):
         super().__init__()
         self.board_size = board_size
         self.grid_size = 28
         self.piece_radius = 12
-        assert 1 < self.board_size < 20
+        assert 5 <= self.board_size < 20
 
         self.board: list[list[Piece]] = [
             [Piece.EMPTY] * board_size for _ in range(board_size)
         ]  # 0 represents an empty intersection
-        self.player = Piece.BLACK
         self.history = []
         self.done = False
 
+        self.player = Piece.BLACK
+        self.human_color = human_color
+
+        self._env = Gokomu(num_envs=1, board_size=board_size, device="cpu")
+        self._env.reset()
+
+        if self.human_color == Piece.WHITE:
+            self._AI_step()
+
         self.show()
+
+    def _AI_step(self):
+        if self.done:
+            logging.warning(f"_AI_step:Game already done!!!")
+            return
+
+        while True:
+            action = random.randint(0, self.board_size * self.board_size - 1)
+            x = action // self.board_size
+            y = action % self.board_size
+            done, invalid = self.step([x, y])
+            if invalid:
+                print(f"AI generated an invalid action.Retry.")
+                continue
+            logging.info(f"AI action:({x},{y})")
+            print(f"AI action:({x},{y})")
+            break
 
     def reset(self):
         for i in range(len(self.board)):
@@ -62,6 +106,11 @@ class GoBoard(QWidget):
         self.player = Piece.BLACK
         self.history.clear()
         self.done = False
+
+        self._env.reset()
+
+        if self.human_color == Piece.WHITE:
+            self._AI_step()
 
         self.update()
 
@@ -129,9 +178,6 @@ class GoBoard(QWidget):
                         self.piece_radius * 2,
                     )
 
-    def _update_done(self):
-        pass
-
     def step(self, action: list[int]) -> tuple[bool, bool]:
         invalid_action: bool = False
         assert 2 <= len(action) <= 3
@@ -152,13 +198,21 @@ class GoBoard(QWidget):
             else:
                 self.player = Piece.BLACK
 
-            self._update_done()
-
+            done, invalid = self._env.step(
+                torch.tensor([x * self.board_size + y]).unsqueeze(0)
+            )
+            self.done = done.item()
             self.update()  # Redraw the board
         else:
-            logging.warning(f"Invalid Action")
+            logging.warning(f"Invalid Action: ({x},{y})")
 
-        return invalid_action, self.done
+        if self.done:
+            print("Done!!!")
+
+        return (
+            self.done,
+            invalid_action,
+        )
 
     def mousePressEvent(self, event: QMouseEvent):
         if event.button() == Qt.LeftButton:
@@ -169,8 +223,13 @@ class GoBoard(QWidget):
             y = int(
                 (event.y() - self.margin_size_y + self.piece_radius) / self.grid_size
             )
-
-            self.step([x, y])
+            human_turn = (
+                self.human_color is not None and self.player == self.human_color
+            )
+            if human_turn and not self.done:
+                self.step([x, y])
+                if not self.done:
+                    self._AI_step()
 
 
 def main():

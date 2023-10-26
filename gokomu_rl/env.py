@@ -57,15 +57,16 @@ class GokomuEnv(EnvBase):
 
     def _reset(self, tensordict: TensorDictBase, **kwargs) -> TensorDictBase:
         if tensordict is not None:
-            env_mask = tensordict.get("_reset").reshape(self.num_envs)
+            env_mask = tensordict.get("_reset").reshape(self.gokomu.num_envs)
         else:
             env_mask = torch.ones(self.gokomu.num_envs, dtype=bool, device=self.device)
-            tensordict = TensorDict({}, batch_size=self.batch_size, device=self.device)
+        tensordict = TensorDict({}, batch_size=self.batch_size, device=self.device)
 
         env_ids = env_mask.cpu().nonzero().squeeze(-1).to(self.device)
 
         self.gokomu.reset(env_ids=env_ids)
-
+        tensordict.empty()
+        self.rand_action(tensordict)
         tensordict.set(("observation", "board"), self.gokomu.get_board_state())
         tensordict.set(("observation", "turn"), self.gokomu.get_turn())
         return tensordict

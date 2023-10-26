@@ -147,7 +147,7 @@ class Gokomu:
         """_summary_
 
         Args:
-            action (torch.Tensor): (E,) x_i*board_size+y_i
+            action (torch.Tensor): (E,1) x_i*board_size+y_i
 
         Returns:
             tuple[torch.Tensor, torch.Tensor]: done (E,), invalid (E,)
