@@ -212,7 +212,7 @@ class Gokomu:
         layer4 = layer4.expand(-1, self.board_size, self.board_size)
 
         output = torch.stack([layer1, layer2, layer3, layer4], dim=1)  # (E,2,B,B)
-        return output.flatten(start_dim=2).float()
+        return output.float()
 
     # def get_turn(self):
     #     return torch.where(self.turn == 0, 1.0, -1.0).unsqueeze(-1)

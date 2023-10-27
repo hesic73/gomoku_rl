@@ -26,7 +26,7 @@ class GokomuEnv(EnvBase):
             {
                 "observation": UnboundedContinuousTensorSpec(
                     device=self.device,
-                    shape=[num_envs, 4, board_size * board_size],
+                    shape=[num_envs, 4, board_size, board_size],
                 ),
             },
             shape=[
@@ -36,7 +36,9 @@ class GokomuEnv(EnvBase):
         )
         self.action_spec = DiscreteTensorSpec(
             board_size * board_size,
-            shape=[num_envs, ],
+            shape=[
+                num_envs,
+            ],
             device=self.device,
         )
         self.reward_spec = UnboundedContinuousTensorSpec(

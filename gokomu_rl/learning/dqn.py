@@ -84,7 +84,8 @@ def get_loss_module(actor: TensorDictModule, gamma: float):
 
 
 def train(env: EnvBase):
-    device = "cuda:0"
+    device = env.device
+
     # the learning rate of the optimizer
     lr = 2e-3
     # weight decay
@@ -115,6 +116,7 @@ def train(env: EnvBase):
         action_space_size=action_spec.space.n,
         device=device,
     )
+    actor(env.fake_tensordict())
     actor_explore = make_actor_explore(
         actor=actor, annealing_num_steps=total_frames, eps_init=1.0, eps_end=0.05
     )
