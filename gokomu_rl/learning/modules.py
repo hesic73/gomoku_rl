@@ -81,19 +81,3 @@ def make_conv_layers(n_channels: list[int]):
     return nn.Sequential(*tmp)
 
 
-class DQN(nn.Module):
-    def __init__(self) -> None:
-        super().__init__()
-        self.feature_layer = make_conv_layers(n_channels=[4, 32, 64, 128])
-
-    def forward(self, x: torch.Tensor):
-        """_summary_
-
-        Args:
-            x (torch.Tensor): (E,C,B,B)
-
-        Returns:
-            _type_: _description_
-        """
-        x = self.feature_layer(x)  # (E,C_out,B,B)
-        return x

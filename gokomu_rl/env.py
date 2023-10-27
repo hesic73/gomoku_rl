@@ -24,14 +24,9 @@ class GokomuEnv(EnvBase):
         self.gokomu = Gokomu(num_envs=num_envs, board_size=board_size, device=device)
         self.observation_spec = CompositeSpec(
             {
-                ("observation", "board"): BinaryDiscreteTensorSpec(
-                    board_size * board_size,
+                "observation": UnboundedContinuousTensorSpec(
                     device=self.device,
                     shape=[num_envs, 4, board_size * board_size],
-                ),
-                ("observation", "turn"): UnboundedContinuousTensorSpec(
-                    device=self.device,
-                    shape=[num_envs, 1],
                 ),
             },
             shape=[
@@ -41,7 +36,7 @@ class GokomuEnv(EnvBase):
         )
         self.action_spec = DiscreteTensorSpec(
             board_size * board_size,
-            shape=[num_envs, 1],
+            shape=[num_envs, ],
             device=self.device,
         )
         self.reward_spec = UnboundedContinuousTensorSpec(
@@ -67,8 +62,7 @@ class GokomuEnv(EnvBase):
 
         self.gokomu.reset(env_ids=env_ids)
         self.rand_action(tensordict)
-        tensordict.set(("observation", "board"), self.gokomu.get_encoded_board())
-        # tensordict.set(("observation", "turn"), self.gokomu.get_turn())
+        tensordict.set("observation", self.gokomu.get_encoded_board())
         return tensordict
 
     def _step(self, tensordict: TensorDictBase) -> TensorDictBase:
@@ -78,10 +72,7 @@ class GokomuEnv(EnvBase):
         tensordict.update(
             {
                 "done": done | illegal,
-                "observation": {
-                    "board": self.gokomu.get_encoded_board(),
-                    # "turn": self.gokomu.get_turn(),
-                },
+                "observation": self.gokomu.get_encoded_board(),
                 "reward": done.float() - illegal.float(),
             }
         )

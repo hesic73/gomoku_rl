@@ -149,13 +149,13 @@ class Gokomu:
         self.done = compute_done(board_one_side)
         self.turn = (self.turn + valid_move.long()) % 2
 
-        self.last_move = torch.where(valid_move, action[:, 0], self.last_move)
+        self.last_move = torch.where(valid_move, action, self.last_move)
 
     def step(self, action: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
         """_summary_
 
         Args:
-            action (torch.Tensor): (E,1) x_i*board_size+y_i
+            action (torch.Tensor): (E,) x_i*board_size+y_i
 
         Returns:
             tuple[torch.Tensor, torch.Tensor]: done (E,), invalid (E,)
@@ -163,8 +163,8 @@ class Gokomu:
         Warnings:
             No check on `action`'s value. If `action` is invalid, `Gokomu` doesn't specify its behavior, and it's the user's duty to ensure it.
         """
-        x = action[:, 0] // self.board_size
-        y = action[:, 0] % self.board_size
+        x = action // self.board_size
+        y = action % self.board_size
 
         values_on_board = self.board[
             torch.arange(self.num_envs, device=self.device), x, y
@@ -212,7 +212,7 @@ class Gokomu:
         layer4 = layer4.expand(-1, self.board_size, self.board_size)
 
         output = torch.stack([layer1, layer2, layer3, layer4], dim=1)  # (E,2,B,B)
-        return output.flatten(start_dim=2)
+        return output.flatten(start_dim=2).float()
 
     # def get_turn(self):
     #     return torch.where(self.turn == 0, 1.0, -1.0).unsqueeze(-1)

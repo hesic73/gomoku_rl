@@ -7,6 +7,7 @@ if __name__ == "__main__":
     board_size = 9
     device = "cuda"
     env = GokomuEnv(num_envs=4, board_size=board_size, device=device)
+    print(env.action_spec)
     check_env_specs(env)
     tensordict = env.rollout(100, break_when_any_done=False)
 
