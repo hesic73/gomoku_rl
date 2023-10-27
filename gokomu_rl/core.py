@@ -106,6 +106,10 @@ class Gokomu:
             num_envs, dtype=torch.long, device=self.device
         )
 
+        self.last_move: torch = -torch.ones(
+            num_envs, dtype=torch.long, device=self.device
+        )
+
     def to(self, device: _device_t):
         self.board.to(device=device)
         self.done.to(device=device)
@@ -123,18 +127,20 @@ class Gokomu:
             self.done.zero_()
             self.turn.zero_()
             self.move_count.zero_()
+            self.last_move.fill_(-1)
         else:
             self.board[env_ids] = 0
             self.done[env_ids] = False
             self.turn[env_ids] = 0
             self.move_count[env_ids] = 0
+            self.last_move[env_ids] = -1
 
-    def _update(self, valid_move: torch.Tensor):
+    def _update(self, valid_move: torch.Tensor, action: torch.Tensor):
         """_summary_
 
         Args:
             valid_move (torch.Tensor): (E,)
-            turn (torch.Tensor): (E,)
+            action (torch.Tensor): (E,1)
         """
         self.move_count = self.move_count + valid_move.long()
         piece = turn_to_piece(self.turn)
@@ -142,6 +148,8 @@ class Gokomu:
         board_one_side = (self.board == piece.unsqueeze(-1).unsqueeze(-1)).float()
         self.done = compute_done(board_one_side)
         self.turn = (self.turn + valid_move.long()) % 2
+
+        self.last_move = torch.where(valid_move, action[:, 0], self.last_move)
 
     def step(self, action: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
         """_summary_
@@ -169,15 +177,45 @@ class Gokomu:
             not_empty, values_on_board, piece
         )
 
-        self._update(torch.logical_not(not_empty))
+        self._update(valid_move=torch.logical_not(not_empty), action=action)
 
         return self.done, not_empty
 
-    def get_board_state(self):
-        return self.board.flatten(start_dim=1)
+    def get_encoded_board(self):
+        piece = turn_to_piece(self.turn).unsqueeze(-1).unsqueeze(-1)
 
-    def get_turn(self):
-        return torch.where(self.turn == 0, 1.0, -1.0).unsqueeze(-1)
+        layer1 = (self.board == piece).long()
+        layer2 = (self.board == (-piece)).long()
+
+        last_x = self.last_move // self.board_size  # (E,)
+        last_y = self.last_move % self.board_size  # (E,)
+
+        # (1,B)==(E,1)-> (E,B)-> (E,B,1)
+        # (1,B)==(E,1)-> (E,B)-> (E,1,B)
+        layer3 = (
+            (
+                torch.arange(self.board_size, device=self.device).unsqueeze(0)
+                == last_x.unsqueeze(-1)
+            )
+            .long()
+            .unsqueeze(-1)
+        ) * (
+            (
+                torch.arange(self.board_size, device=self.device).unsqueeze(0)
+                == last_y.unsqueeze(-1)
+            )
+            .long()
+            .unsqueeze(1)
+        )  # (E,B,B)
+
+        layer4 = (self.turn == 0).long().unsqueeze(-1).unsqueeze(-1)  # (E,1,1)
+        layer4 = layer4.expand(-1, self.board_size, self.board_size)
+
+        output = torch.stack([layer1, layer2, layer3, layer4], dim=1)  # (E,2,B,B)
+        return output.flatten(start_dim=2)
+
+    # def get_turn(self):
+    #     return torch.where(self.turn == 0, 1.0, -1.0).unsqueeze(-1)
 
 
 Wuziqi = Gokomu

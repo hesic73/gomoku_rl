@@ -7,6 +7,7 @@ from torchrl.envs import EnvBase
 from torchrl.data.tensor_specs import (
     CompositeSpec,
     DiscreteTensorSpec,
+    BinaryDiscreteTensorSpec,
     BoundedTensorSpec,
     UnboundedContinuousTensorSpec,
 )
@@ -23,10 +24,10 @@ class GokomuEnv(EnvBase):
         self.gokomu = Gokomu(num_envs=num_envs, board_size=board_size, device=device)
         self.observation_spec = CompositeSpec(
             {
-                ("observation", "board"): DiscreteTensorSpec(
-                    3,
+                ("observation", "board"): BinaryDiscreteTensorSpec(
+                    board_size * board_size,
                     device=self.device,
-                    shape=[num_envs, board_size * board_size],
+                    shape=[num_envs, 4, board_size * board_size],
                 ),
                 ("observation", "turn"): UnboundedContinuousTensorSpec(
                     device=self.device,
@@ -65,10 +66,9 @@ class GokomuEnv(EnvBase):
         env_ids = env_mask.cpu().nonzero().squeeze(-1).to(self.device)
 
         self.gokomu.reset(env_ids=env_ids)
-        tensordict.empty()
         self.rand_action(tensordict)
-        tensordict.set(("observation", "board"), self.gokomu.get_board_state())
-        tensordict.set(("observation", "turn"), self.gokomu.get_turn())
+        tensordict.set(("observation", "board"), self.gokomu.get_encoded_board())
+        # tensordict.set(("observation", "turn"), self.gokomu.get_turn())
         return tensordict
 
     def _step(self, tensordict: TensorDictBase) -> TensorDictBase:
@@ -79,8 +79,8 @@ class GokomuEnv(EnvBase):
             {
                 "done": done | illegal,
                 "observation": {
-                    "board": self.gokomu.get_board_state(),
-                    "turn": self.gokomu.get_turn(),
+                    "board": self.gokomu.get_encoded_board(),
+                    # "turn": self.gokomu.get_turn(),
                 },
                 "reward": done.float() - illegal.float(),
             }
