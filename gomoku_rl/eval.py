@@ -48,9 +48,9 @@ def _evaluate(actor_0: TensorDictModule, actor_1: TensorDictModule, env: GomokuE
             break
 
         if i % 2 == 0:
-            actor_0(tensordict)
+            tensordict = actor_0(tensordict)
         else:
-            actor_1(tensordict)
+            tensordict = actor_1(tensordict)
         tensordict = env.step(tensordict)
 
         done = tensordict[("next", "done")].squeeze(-1).cpu()  # (E,)

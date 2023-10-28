@@ -2,7 +2,7 @@ num_envs: 128
 board_size: 8
 device: cuda
 
-total_frames: 1_000_000
+total_frames: 10_000_000
 frames_per_batch: ${eval:64*${num_envs}}
 
 defaults:

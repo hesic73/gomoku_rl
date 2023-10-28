@@ -64,9 +64,7 @@ def make_actor(
     return actor
 
 
-def load_actor(
-    actor_cfg: DictConfig, action_spec: TensorSpec, ckpt_path: str
-):
+def load_actor(actor_cfg: DictConfig, action_spec: TensorSpec, ckpt_path: str):
     actor = make_actor(
         cfg=actor_cfg,
         action_spec=action_spec,
@@ -130,9 +128,11 @@ def train(
     with torch.no_grad():
         actor(env.fake_tensordict())
 
+    annealing_num_steps = int((total_frames // frames_per_batch) * 0.5)
+    # print(f"annealing_num_steps:{annealing_num_steps}")
     actor_explore = make_actor_explore(
         actor=actor,
-        annealing_num_steps=cfg.annealing_num_steps,
+        annealing_num_steps=annealing_num_steps,
         eps_init=cfg.eps_init,
         eps_end=cfg.eps_end,
     )
@@ -165,7 +165,7 @@ def train(
         if len(replay_buffer) < buffer_size:
             # print(f"Buffer:{len(replay_buffer)}/{buffer_size}")
             continue
-
+        actor_explore.step()
         for gradient_step in range(n_optim):
             transition = replay_buffer.sample().to(env.device)
             loss: torch.Tensor = loss_module(transition)
