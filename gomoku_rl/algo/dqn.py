@@ -43,7 +43,6 @@ def make_actor(
     action_spec: TensorSpec,
     observation_key: NestedKey,
     action_space_size: int,
-    device: _device_t = None,
 ):
     cnn_kwargs = OmegaConf.to_container(cfg.cnn_kwargs)
     cnn_kwargs.update(
@@ -54,14 +53,28 @@ def make_actor(
         {"activation_class": getattr(nn, mlp_kwargs.get("activation_class", "ReLU"))}
     )
 
-    net = DuelingCnnDQNet(action_space_size, 1, cnn_kwargs, mlp_kwargs).to(device)
+    net = DuelingCnnDQNet(action_space_size, 1, cnn_kwargs, mlp_kwargs)
     actor = QValueActor(
         net,
         in_keys=[
             observation_key,
         ],
         spec=action_spec,
-    ).to(device)
+    )
+    return actor
+
+
+def load_actor(
+    actor_cfg: DictConfig, action_spec: TensorSpec, ckpt_path: str
+):
+    actor = make_actor(
+        cfg=actor_cfg,
+        action_spec=action_spec,
+        observation_key="observation",
+        action_space_size=action_spec.space.n,
+    )
+    actor.load_state_dict(torch.load(ckpt_path))
+
     return actor
 
 
@@ -113,8 +126,7 @@ def train(
         env.action_spec,
         "observation",
         action_space_size=action_spec.space.n,
-        device=device,
-    )
+    ).to(device)
     with torch.no_grad():
         actor(env.fake_tensordict())
 

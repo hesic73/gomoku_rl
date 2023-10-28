@@ -1,5 +1,3 @@
-import sys
-from PyQt5 import QtCore
 from PyQt5.QtWidgets import (
     QApplication,
     QMainWindow,
@@ -25,6 +23,9 @@ from .core import Gomoku
 import torch
 import random
 
+from typing import Callable
+from tensordict import TensorDict
+
 
 class Piece(enum.Enum):
     EMPTY = enum.auto()
@@ -32,23 +33,35 @@ class Piece(enum.Enum):
     WHITE = enum.auto()
 
 
-def board_to_tensor(board: list[list[Piece]]) -> torch.Tensor:
-    t = torch.zeros(len(board), len(board[0]), dtype=torch.long)
+def rand_valid_action(
+    board_size: int,
+    is_valid_action: Callable[
+        [
+            int,
+        ],
+        bool,
+    ],
+):
+    while True:
+        action = random.randint(0, board_size * board_size - 1)
+        if not is_valid_action(action):
+            logging.warning(f"Invalid action {action}. Retry.")
+            continue
+        break
 
-    for i in range(len(board)):
-        for j in range(len(board[0])):
-            if board[i][j] == Piece.EMPTY:
-                t[i][j] = 0
-            elif board[i][j] == Piece.BLACK:
-                t[i][j] = 1
-            elif board[i][j] == Piece.WHITE:
-                t[i][j] = -1
+    x = action // board_size
+    y = action % board_size
 
-    return t.unsqueeze(0)  # (1,B,B)
+    return [x, y]
 
 
 class GomokuBoard(QWidget):
-    def __init__(self, board_size: int = 19, human_color: Piece | None = Piece.BLACK):
+    def __init__(
+        self,
+        board_size: int = 19,
+        human_color: Piece | None = Piece.BLACK,
+        model: str | None = None,
+    ):
         super().__init__()
         self.board_size = board_size
         self.grid_size = 28
@@ -63,6 +76,8 @@ class GomokuBoard(QWidget):
 
         self._env = Gomoku(num_envs=1, board_size=board_size, device="cpu")
         self._env.reset()
+
+        self.model = model
 
         if self.human_color == Piece.WHITE:
             self._AI_step()
@@ -101,15 +116,28 @@ class GomokuBoard(QWidget):
             logging.warning(f"_AI_step:Game already done!!!")
             return
 
-        while True:
-            action = random.randint(0, self.board_size * self.board_size - 1)
+        if self.model is None:
+            x, y = rand_valid_action(self.board_size, self._is_action_valid)
+        else:
+            tensordict = TensorDict(
+                {
+                    "observation": self._env.get_encoded_board(),
+                },
+                batch_size=1,
+            ).to(self.model.device)
+            with torch.no_grad():
+                tensordict = self.model(tensordict).cpu()
+            action: int = tensordict["action"].item()
+            x = action // self.board_size
+            y = action % self.board_size
             if not self._is_action_valid(action):
-                logging.warning(f"AI generated an invalid action {action}.")
-                continue
-            break
+                # 设计上有点小缺陷，state全储存在_env（除了board），而GomokuEnv目前的设置是收到非法操作
+                # state不变。所以如果在这结束不太好处理，就随机选一个action吧（好像也比较合理）。
+                logging.warning(
+                    f"AI:{self.current_player} ({x},{y}) Invalid! Use random policy instead."
+                )
+                x, y = rand_valid_action(self.board_size, self._is_action_valid)
 
-        x = action // self.board_size
-        y = action % self.board_size
         logging.info(f"AI:{self.current_player} ({x},{y})")
         self.step([x, y])
 

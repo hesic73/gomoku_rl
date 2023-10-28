@@ -1,3 +1,9 @@
-
-
 board_size: 8
+
+model_ckpt_path: dqn_actor.pt
+device: cuda
+
+human_first: false
+
+defaults:
+  - algo: dqn

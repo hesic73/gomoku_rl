@@ -25,7 +25,6 @@ def main(cfg: DictConfig):
         action_spec=env.action_spec,
         observation_key="observation",
         action_space_size=env.action_spec.space.n,
-        device=env.device,
     )
     actor_0.load_state_dict(torch.load("dqn_actor.pt"))
 
