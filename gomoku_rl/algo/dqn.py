@@ -23,8 +23,9 @@ import tempfile
 from torchrl.record.loggers.csv import CSVLogger
 import warnings
 
-from .common import get_collector, get_replay_buffer
+from .common import get_replay_buffer
 
+from torchrl.collectors import SyncDataCollector
 from omegaconf import DictConfig, OmegaConf
 
 
@@ -116,14 +117,20 @@ def train(
 
     loss_module, target_net_updater = get_loss_module(actor, gamma)
 
-    collector = get_collector(
-        env_func=lambda: env,
+    collector =SyncDataCollector(
+        lambda :env,
         policy=actor_explore,
         frames_per_batch=frames_per_batch,
         total_frames=total_frames,
+        exploration_type=ExplorationType.RANDOM,
         device=device,
     )
 
     optimizer = torch.optim.Adam(
         loss_module.parameters(), lr=lr, weight_decay=wd, betas=betas
     )
+    
+    
+    for i,data in enumerate(collector):
+        print(data)
+        exit()

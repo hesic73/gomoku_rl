@@ -3,7 +3,7 @@ board_size: 8
 device: cuda
 
 total_frames: 1000_000
-frames_per_batch: 128
+frames_per_batch: ${eval:64*${num_envs}}
 
 defaults:
   - algo: dqn

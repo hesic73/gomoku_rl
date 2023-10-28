@@ -26,7 +26,7 @@ class GomokuEnv(EnvBase):
             {
                 "observation": UnboundedContinuousTensorSpec(
                     device=self.device,
-                    shape=[num_envs, 4, board_size, board_size],
+                    shape=[num_envs, 3, board_size, board_size],
                 ),
             },
             shape=[

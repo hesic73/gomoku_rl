@@ -208,10 +208,10 @@ class Gomoku:
             .unsqueeze(1)
         )  # (E,B,B)
 
-        layer4 = (self.turn == 0).long().unsqueeze(-1).unsqueeze(-1)  # (E,1,1)
-        layer4 = layer4.expand(-1, self.board_size, self.board_size)
+        # layer4 = (self.turn == 0).long().unsqueeze(-1).unsqueeze(-1)  # (E,1,1)
+        # layer4 = layer4.expand(-1, self.board_size, self.board_size)
 
-        output = torch.stack([layer1, layer2, layer3, layer4], dim=1)  # (E,2,B,B)
+        output = torch.stack([layer1, layer2, layer3], dim=1)  # (E,*,B,B)
         return output.float()
 
     # def get_turn(self):
