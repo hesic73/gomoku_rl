@@ -1,4 +1,3 @@
-from .gui import main as gui_main
 from .env import GomokuEnv
 
 import os

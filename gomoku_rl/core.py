@@ -146,7 +146,9 @@ class Gomoku:
         piece = turn_to_piece(self.turn)
         # F.conv2d doesn't support LongTensor on CUDA. So we use float.
         board_one_side = (self.board == piece.unsqueeze(-1).unsqueeze(-1)).float()
-        self.done = compute_done(board_one_side) |(self.move_count==self.board_size*self.board_size)
+        self.done = compute_done(board_one_side) | (
+            self.move_count == self.board_size * self.board_size
+        )
         self.turn = (self.turn + valid_move.long()) % 2
 
         self.last_move = torch.where(valid_move, action, self.last_move)
@@ -160,9 +162,9 @@ class Gomoku:
         Returns:
             tuple[torch.Tensor, torch.Tensor]: done (E,), invalid (E,)
 
-        Warnings:
-            No check on `action`'s value. If `action` is invalid, `Gomoku` doesn't specify its behavior, and it's the user's duty to ensure it.
         """
+
+        # if action isn't in [0,{board_size}^2), the indexing will crash
         x = action // self.board_size
         y = action % self.board_size
 
@@ -214,8 +216,29 @@ class Gomoku:
         output = torch.stack([layer1, layer2, layer3], dim=1)  # (E,*,B,B)
         return output.float()
 
-    # def get_turn(self):
-    #     return torch.where(self.turn == 0, 1.0, -1.0).unsqueeze(-1)
+    def is_valid(self, action: torch.Tensor) -> torch.Tensor:
+        """_summary_
+
+        Args:
+            action (torch.Tensor): (E,)
+
+        Returns:
+            torch.Tensor: (E,)
+        """
+        out_of_range = action < 0 | (action >= self.board_size * self.board_size)
+        x = action // self.board_size
+        y = action % self.board_size
+
+        values_on_board = self.board[
+            torch.arange(self.num_envs, device=self.device), x, y
+        ]  # (E,)
+
+        not_empty = values_on_board != 0  # (E,)
+
+        invalid = out_of_range | not_empty
+
+        return ~invalid
+
 
 
 Wuziqi = Gomoku

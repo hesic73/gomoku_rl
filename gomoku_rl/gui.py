@@ -19,17 +19,17 @@ from PyQt5.QtGui import (
 from PyQt5.QtCore import Qt
 import logging
 
-from enum import Enum
+import enum
 
 from .core import Gomoku
 import torch
 import random
 
 
-class Piece(Enum):
-    EMPTY = 0
-    BLACK = 1
-    WHITE = 2
+class Piece(enum.Enum):
+    EMPTY = enum.auto()
+    BLACK = enum.auto()
+    WHITE = enum.auto()
 
 
 def board_to_tensor(board: list[list[Piece]]) -> torch.Tensor:
@@ -47,17 +47,8 @@ def board_to_tensor(board: list[list[Piece]]) -> torch.Tensor:
     return t.unsqueeze(0)  # (1,B,B)
 
 
-class MainWindow(QMainWindow):
-    def __init__(self) -> None:
-        super().__init__()
-        self.setFixedSize(600, 800)
-        board = GoBoard()
-        self.setCentralWidget(board)
-        self.setWindowTitle("GUI")
-
-
-class GoBoard(QWidget):
-    def __init__(self, board_size: int = 19, human_color: Piece | None = Piece.WHITE):
+class GomokuBoard(QWidget):
+    def __init__(self, board_size: int = 19, human_color: Piece | None = Piece.BLACK):
         super().__init__()
         self.board_size = board_size
         self.grid_size = 28
@@ -67,10 +58,7 @@ class GoBoard(QWidget):
         self.board: list[list[Piece]] = [
             [Piece.EMPTY] * board_size for _ in range(board_size)
         ]  # 0 represents an empty intersection
-        self.history = []
-        self.done = False
 
-        self.player = Piece.BLACK
         self.human_color = human_color
 
         self._env = Gomoku(num_envs=1, board_size=board_size, device="cpu")
@@ -81,31 +69,10 @@ class GoBoard(QWidget):
 
         self.show()
 
-    def _AI_step(self):
-        if self.done:
-            logging.warning(f"_AI_step:Game already done!!!")
-            return
-
-        while True:
-            action = random.randint(0, self.board_size * self.board_size - 1)
-            x = action // self.board_size
-            y = action % self.board_size
-            done, invalid = self.step([x, y])
-            if invalid:
-                print(f"AI generated an invalid action.Retry.")
-                continue
-            logging.info(f"AI action:({x},{y})")
-            print(f"AI action:({x},{y})")
-            break
-
     def reset(self):
         for i in range(len(self.board)):
             for j in range(len(self.board[0])):
                 self.board[i][j] = Piece.EMPTY
-
-        self.player = Piece.BLACK
-        self.history.clear()
-        self.done = False
 
         self._env.reset()
 
@@ -113,6 +80,38 @@ class GoBoard(QWidget):
             self._AI_step()
 
         self.update()
+
+    @property
+    def current_player(self):
+        turn = self._env.turn.item()
+        if turn == 0:
+            return Piece.BLACK
+        else:
+            return Piece.WHITE
+
+    @property
+    def done(self):
+        return self._env.done.item()
+
+    def _is_action_valid(self, action: int):
+        return self._env.is_valid(torch.tensor([action])).item()
+
+    def _AI_step(self):
+        if self.done:
+            logging.warning(f"_AI_step:Game already done!!!")
+            return
+
+        while True:
+            action = random.randint(0, self.board_size * self.board_size - 1)
+            if not self._is_action_valid(action):
+                logging.warning(f"AI generated an invalid action {action}.")
+                continue
+            break
+
+        x = action // self.board_size
+        y = action % self.board_size
+        logging.info(f"AI:{self.current_player} ({x},{y})")
+        self.step([x, y])
 
     def paintEvent(self, event: QPaintEvent):
         painter = QPainter()
@@ -178,39 +177,28 @@ class GoBoard(QWidget):
                         self.piece_radius * 2,
                     )
 
-    def step(self, action: list[int]) -> tuple[bool, bool]:
-        invalid_action: bool = False
-        assert 2 <= len(action) <= 3
+    def step(self, action: list[int]):
+        assert 2 == len(action)
         x = action[0]
         y = action[1]
-        invalid_action = not (0 <= x < self.board_size and 0 <= y < self.board_size)
 
-        if len(action) == 3:
-            invalid_action = invalid_action or Piece(action[2]) != self.player
+        valid = self._is_action_valid(x * self.board_size + y)
 
-        invalid_action = invalid_action or self.board[x][y] != Piece.EMPTY
-
-        if not invalid_action:
-            self.board[x][y] = self.player
-
-            if self.player == Piece.BLACK:
-                self.player = Piece.WHITE
-            else:
-                self.player = Piece.BLACK
-
-            done, invalid = self._env.step(torch.tensor([x * self.board_size + y]))
-            self.done = done.item()
-            self.update()  # Redraw the board
-        else:
+        if not valid:
             logging.warning(f"Invalid Action: ({x},{y})")
+            return
+
+        self.board[x][y] = self.current_player
+
+        self._env.step(torch.tensor([x * self.board_size + y]))
+        self.update()  # Redraw the board
 
         if self.done:
-            print("Done!!!")
-
-        return (
-            self.done,
-            invalid_action,
-        )
+            if self.current_player == Piece.BLACK:
+                color = "WHITE"
+            else:
+                color = "BLACK"
+            print("{} wins.".format(color))
 
     def mousePressEvent(self, event: QMouseEvent):
         if event.button() == Qt.LeftButton:
@@ -221,21 +209,19 @@ class GoBoard(QWidget):
             y = int(
                 (event.y() - self.margin_size_y + self.piece_radius) / self.grid_size
             )
+
+            if self.done:
+                return
+
+            if not self._is_action_valid(x * self.board_size + y):
+                return
+
             human_turn = (
-                self.human_color is not None and self.player == self.human_color
+                self.human_color is not None and self.current_player == self.human_color
             )
-            if human_turn and not self.done:
+
+            if human_turn:
+                logging.info(f"Human:{self.current_player} ({x},{y})")
                 self.step([x, y])
                 if not self.done:
                     self._AI_step()
-
-
-def main():
-    app = QApplication(sys.argv)
-    window = MainWindow()
-    window.show()
-    sys.exit(app.exec_())
-
-
-if __name__ == "__main__":
-    main()
