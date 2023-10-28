@@ -1,0 +1,6 @@
+# num_envs: 128
+board_size: 8
+device: cuda
+
+defaults:
+  - algo: dqn

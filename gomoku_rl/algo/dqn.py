@@ -162,3 +162,5 @@ def train(
             optimizer.step()
 
             target_net_updater.step()
+
+    torch.save(actor.state_dict(), "dqn_actor.pt")
