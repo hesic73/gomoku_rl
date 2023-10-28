@@ -1,6 +1,6 @@
 import torch
 from torchrl.data.tensor_specs import TensorSpec, DiscreteTensorSpec
-from gokomu_rl.learning.dqn import make_actor, make_actor_explore
+from gokomu_rl.algo.dqn import make_actor, make_actor_explore
 from tensordict import TensorDict
 
 if __name__ == "__main__":

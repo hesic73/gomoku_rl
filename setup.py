@@ -7,5 +7,11 @@ setup(
     author_email="hesicheng20@gmail.com",
     keywords=["RL", "pytorch"],
     packages=find_packages(),
-    install_requires=["torch", "torchrl", " PyQt5"],  # and other dependencies
+    install_requires=[
+        "torch",
+        "torchrl",
+        "omegaconf",
+        "hydra-core",
+        "PyQt5",
+    ],  # and other dependencies
 )

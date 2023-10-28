@@ -198,9 +198,7 @@ class GoBoard(QWidget):
             else:
                 self.player = Piece.BLACK
 
-            done, invalid = self._env.step(
-                torch.tensor([x * self.board_size + y]).unsqueeze(0)
-            )
+            done, invalid = self._env.step(torch.tensor([x * self.board_size + y]))
             self.done = done.item()
             self.update()  # Redraw the board
         else:

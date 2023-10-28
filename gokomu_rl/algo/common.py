@@ -14,11 +14,13 @@ from torch.cuda import _device_t
 from torchrl.envs.utils import ExplorationType
 
 
-
 def get_replay_buffer(
-    buffer_size: int, batch_size: int, sampler: Sampler | None = None
+    buffer_size: int,
+    batch_size: int,
+    sampler: Sampler | None = None,
+    device: _device_t = None,
 ):
-    storage = LazyMemmapStorage(max_size=buffer_size)
+    storage = LazyTensorStorage(max_size=buffer_size, device=device)
     buffer = TensorDictReplayBuffer(
         storage=storage, batch_size=batch_size, sampler=sampler
     )
@@ -46,6 +48,3 @@ def get_collector(
         split_trajs=False,
     )
     return data_collector
-
-
-

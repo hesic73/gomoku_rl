@@ -1,0 +1,38 @@
+algo:
+  buffer_size: 1000000
+  batch_size: 4096
+  gamma: 0.95
+  actor:
+    cnn_kwargs:
+      num_cells:
+      - 32
+      - 64
+      - 128
+      - 4
+      kernel_sizes:
+      - 3
+      - 3
+      - 3
+      - 1
+      strides:
+      - 1
+      - 1
+      - 1
+      - 1
+      paddings:
+      - 1
+      - 1
+      - 1
+      - 0
+      activation_class: ReLU
+    mlp_kwargs:
+      depth: 2
+      num_cells:
+      - 64
+      - 64
+      activation_class: ReLU
+num_envs: 1
+board_size: 8
+device: cuda
+total_frames: 1000000
+frames_per_batch: 128

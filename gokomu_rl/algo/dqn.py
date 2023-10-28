@@ -1,5 +1,3 @@
-# based on https://pytorch.org/rl/tutorials/coding_dqn.html
-
 from typing import Callable, Dict, List, Any
 from tensordict import TensorDictBase
 from tensordict.utils import NestedKey
@@ -19,7 +17,7 @@ from torchrl.trainers import (
 from torchrl.data import TensorSpec, DiscreteTensorSpec
 from torch.cuda import _device_t
 from torchrl.envs.utils import ExplorationType
-from torchrl.envs import EnvBase
+from torchrl.envs import TransformedEnv
 import datetime
 import tempfile
 from torchrl.record.loggers.csv import CSVLogger
@@ -27,32 +25,25 @@ import warnings
 
 from .common import get_collector, get_replay_buffer
 
+from omegaconf import DictConfig, OmegaConf
+
 
 def make_actor(
+    cfg: DictConfig,
     action_spec: TensorSpec,
     observation_key: NestedKey,
     action_space_size: int,
     device: _device_t = None,
 ):
-    cnn_kwargs = {
-        "num_cells": [32, 64, 128, 4],
-        "kernel_sizes": [3, 3, 3, 1],
-        "strides": [1, 1, 1, 1],
-        "paddings": [1, 1, 1, 0],
-        "activation_class": nn.ReLU,
-        # This can be used to reduce the size of the last layer of the CNN
-        # "squeeze_output": True,
-        # "aggregator_class": nn.AdaptiveAvgPool2d,
-        # "aggregator_kwargs": {"output_size": (1, 1)},
-    }
-    mlp_kwargs = {
-        "depth": 2,
-        "num_cells": [
-            64,
-            64,
-        ],
-        "activation_class": nn.ReLU,
-    }
+    cnn_kwargs = OmegaConf.to_container(cfg.cnn_kwargs)
+    cnn_kwargs.update(
+        {"activation_class": getattr(nn, cnn_kwargs.get("activation_class", "ReLU"))}
+    )
+    mlp_kwargs = OmegaConf.to_container(cfg.mlp_kwargs)
+    mlp_kwargs.update(
+        {"activation_class": getattr(nn, mlp_kwargs.get("activation_class", "ReLU"))}
+    )
+
     net = DuelingCnnDQNet(action_space_size, 1, cnn_kwargs, mlp_kwargs).to(device)
     actor = QValueActor(
         net,
@@ -83,8 +74,13 @@ def get_loss_module(actor: TensorDictModule, gamma: float):
     return loss_module, target_updater
 
 
-def train(env: EnvBase):
+def train(
+    cfg: DictConfig, env: TransformedEnv, total_frames: int, frames_per_batch: int
+):
     device = env.device
+
+    batch_size: int = cfg.batch_size
+    buffer_size: int = min(cfg.buffer_size, 100000)
 
     # the learning rate of the optimizer
     lr = 2e-3
@@ -95,30 +91,27 @@ def train(env: EnvBase):
     # Optimization steps per batch collected (aka UPD or updates per data)
     n_optim = 8
 
-    gamma = 0.99
-
-    tau = 0.02
-
-    total_frames = 5_000  # 500000
-    frames_per_batch = 32  # 128
-    total_frames = total_frames // frames_per_batch * frames_per_batch
-
-    batch_size = 32  # 256
-
-    buffer_size = min(total_frames, 100000)
+    gamma = cfg.gamma
 
     action_spec: DiscreteTensorSpec = env.action_spec
     assert isinstance(action_spec, DiscreteTensorSpec)
 
+    actor_cfg = cfg.actor
     actor = make_actor(
+        actor_cfg,
         env.action_spec,
         "observation",
         action_space_size=action_spec.space.n,
         device=device,
     )
-    actor(env.fake_tensordict())
+    with torch.no_grad():
+        actor(env.fake_tensordict())
+
     actor_explore = make_actor_explore(
-        actor=actor, annealing_num_steps=total_frames, eps_init=1.0, eps_end=0.05
+        actor=actor,
+        annealing_num_steps=cfg.annealing_num_steps,
+        eps_init=cfg.eps_init,
+        eps_end=cfg.eps_end,
     )
 
     loss_module, target_net_updater = get_loss_module(actor, gamma)
@@ -134,47 +127,3 @@ def train(env: EnvBase):
     optimizer = torch.optim.Adam(
         loss_module.parameters(), lr=lr, weight_decay=wd, betas=betas
     )
-
-    exp_name = "dqn/{}".format(datetime.datetime.now().strftime("%m-%d_%H-%M"))
-    tmpdir = tempfile.TemporaryDirectory()
-    logger = CSVLogger(exp_name=exp_name, log_dir=tmpdir.name)
-    warnings.warn(f"log dir: {logger.experiment.log_dir}")
-
-    log_interval = 500
-
-    trainer = Trainer(
-        collector=collector,
-        total_frames=total_frames,
-        frame_skip=1,
-        loss_module=loss_module,
-        optimizer=optimizer,
-        logger=logger,
-        optim_steps_per_batch=n_optim,
-        log_interval=log_interval,
-    )
-
-    buffer_hook = ReplayBufferTrainer(
-        get_replay_buffer(buffer_size, batch_size=batch_size),
-    )
-    buffer_hook.register(trainer)
-    weight_updater = UpdateWeights(collector, update_weights_interval=1)
-    weight_updater.register(trainer)
-    recorder = Recorder(
-        record_interval=100,  # log every 100 optimization steps
-        record_frames=1000,  # maximum number of frames in the record
-        frame_skip=1,
-        policy_exploration=actor_explore,
-        environment=env,
-        exploration_type=ExplorationType.MODE,
-        log_keys=[("next", "reward")],
-        out_keys={("next", "reward"): "rewards"},
-        log_pbar=True,
-    )
-    recorder.register(trainer)
-
-    trainer.register_op("post_optim", target_net_updater.step)
-
-    log_reward = LogReward(log_pbar=True)
-    log_reward.register(trainer)
-
-    trainer.train()
