@@ -146,7 +146,7 @@ class Gomoku:
         piece = turn_to_piece(self.turn)
         # F.conv2d doesn't support LongTensor on CUDA. So we use float.
         board_one_side = (self.board == piece.unsqueeze(-1).unsqueeze(-1)).float()
-        self.done = compute_done(board_one_side)
+        self.done = compute_done(board_one_side) |(self.move_count==self.board_size*self.board_size)
         self.turn = (self.turn + valid_move.long()) % 2
 
         self.last_move = torch.where(valid_move, action, self.last_move)

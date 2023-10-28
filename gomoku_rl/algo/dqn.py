@@ -1,5 +1,5 @@
 from typing import Callable, Dict, List, Any
-from tensordict import TensorDictBase
+from tensordict import TensorDictBase,TensorDict
 from tensordict.utils import NestedKey
 import torch
 import torch.nn as nn
@@ -21,12 +21,13 @@ from torchrl.envs import TransformedEnv
 import datetime
 import tempfile
 from torchrl.record.loggers.csv import CSVLogger
-import warnings
 
-from .common import get_replay_buffer
+from .common import get_replay_buffer,env_next_to_agent_next
 
 from torchrl.collectors import SyncDataCollector
 from omegaconf import DictConfig, OmegaConf
+
+from tqdm import tqdm
 
 
 def make_actor(
@@ -124,13 +125,21 @@ def train(
         total_frames=total_frames,
         exploration_type=ExplorationType.RANDOM,
         device=device,
+        postproc=env_next_to_agent_next
     )
 
     optimizer = torch.optim.Adam(
         loss_module.parameters(), lr=lr, weight_decay=wd, betas=betas
     )
     
-    
-    for i,data in enumerate(collector):
-        print(data)
-        exit()
+    for data in tqdm(collector,total=total_frames//frames_per_batch,disable=False):
+        pass
+        # frame1:TensorDict=data["next"][:,:-1]
+        # frame2:TensorDict=data.select("done","observation","terminated").clone(False)[:,1:]
+        # tmp:torch.Tensor=(frame1['observation']==frame2['observation'])
+        # tmp=tmp.flatten(start_dim=2) # (128,63,192)
+        # tmp=tmp.all(dim=-1) # (128,63)
+
+        # done=frame1['done'].squeeze(-1)
+        # tmp=done|tmp # (128,63)
+        # assert tmp[:,0].all().item()

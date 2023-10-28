@@ -12,7 +12,8 @@ from torchrl.envs import TransformedEnv
 @hydra.main(version_base=None, config_path=CONFIG_PATH, config_name="train")
 def main(cfg: DictConfig):
     OmegaConf.register_new_resolver("eval", eval)
-    pprint(OmegaConf.to_container(cfg))
+    OmegaConf.resolve(cfg)
+    # pprint(OmegaConf.to_container(cfg))
     base_env = GomokuEnv(
         num_envs=cfg.num_envs, board_size=cfg.board_size, device=cfg.device
     )
