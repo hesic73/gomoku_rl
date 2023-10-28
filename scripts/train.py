@@ -1,11 +1,11 @@
 import hydra
 from omegaconf import DictConfig, OmegaConf
 
-from gokomu_rl import CONFIG_PATH
+from gomoku_rl import CONFIG_PATH
 from pprint import pprint
 
-from gokomu_rl.algo.dqn import train
-from gokomu_rl.env import GokomuEnv
+from gomoku_rl.algo.dqn import train
+from gomoku_rl.env import GokomuEnv
 from torchrl.envs import TransformedEnv
 
 

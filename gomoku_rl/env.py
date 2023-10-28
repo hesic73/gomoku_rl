@@ -13,15 +13,15 @@ from torchrl.data.tensor_specs import (
 )
 
 
-from .core import Gokomu
+from .core import Gomoku
 
 
-class GokomuEnv(EnvBase):
+class GomokuEnv(EnvBase):
     def __init__(
         self, num_envs: int, board_size: int = 19, device: DEVICE_TYPING = None
     ):
         super().__init__(device, batch_size=[num_envs])
-        self.gokomu = Gokomu(num_envs=num_envs, board_size=board_size, device=device)
+        self.gomoku = Gomoku(num_envs=num_envs, board_size=board_size, device=device)
         self.observation_spec = CompositeSpec(
             {
                 "observation": UnboundedContinuousTensorSpec(
@@ -47,7 +47,7 @@ class GokomuEnv(EnvBase):
         )
 
     def to(self, device: DEVICE_TYPING) -> EnvBase:
-        self.gokomu.to(device)
+        self.gomoku.to(device)
         return super().to(device)
 
     def _set_seed(self, seed: int | None):
@@ -55,26 +55,26 @@ class GokomuEnv(EnvBase):
 
     def _reset(self, tensordict: TensorDictBase, **kwargs) -> TensorDictBase:
         if tensordict is not None:
-            env_mask = tensordict.get("_reset").reshape(self.gokomu.num_envs)
+            env_mask = tensordict.get("_reset").reshape(self.gomoku.num_envs)
         else:
-            env_mask = torch.ones(self.gokomu.num_envs, dtype=bool, device=self.device)
+            env_mask = torch.ones(self.gomoku.num_envs, dtype=bool, device=self.device)
         tensordict = TensorDict({}, batch_size=self.batch_size, device=self.device)
 
         env_ids = env_mask.cpu().nonzero().squeeze(-1).to(self.device)
 
-        self.gokomu.reset(env_ids=env_ids)
+        self.gomoku.reset(env_ids=env_ids)
         self.rand_action(tensordict)
-        tensordict.set("observation", self.gokomu.get_encoded_board())
+        tensordict.set("observation", self.gomoku.get_encoded_board())
         return tensordict
 
     def _step(self, tensordict: TensorDictBase) -> TensorDictBase:
         action: torch.Tensor = tensordict.get("action")
-        done, illegal = self.gokomu.step(action=action)
+        done, illegal = self.gomoku.step(action=action)
         tensordict = TensorDict({}, self.batch_size)
         tensordict.update(
             {
                 "done": done | illegal,
-                "observation": self.gokomu.get_encoded_board(),
+                "observation": self.gomoku.get_encoded_board(),
                 "reward": done.float() - illegal.float(),
             }
         )

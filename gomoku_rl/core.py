@@ -77,7 +77,7 @@ def turn_to_piece(turn: torch.Tensor) -> torch.Tensor:
     return piece
 
 
-class Gokomu:
+class Gomoku:
     def __init__(
         self, num_envs: int, board_size: int = 19, device: _device_t = None
     ) -> None:
@@ -161,7 +161,7 @@ class Gokomu:
             tuple[torch.Tensor, torch.Tensor]: done (E,), invalid (E,)
 
         Warnings:
-            No check on `action`'s value. If `action` is invalid, `Gokomu` doesn't specify its behavior, and it's the user's duty to ensure it.
+            No check on `action`'s value. If `action` is invalid, `Gomoku` doesn't specify its behavior, and it's the user's duty to ensure it.
         """
         x = action // self.board_size
         y = action % self.board_size
@@ -218,4 +218,4 @@ class Gokomu:
     #     return torch.where(self.turn == 0, 1.0, -1.0).unsqueeze(-1)
 
 
-Wuziqi = Gokomu
+Wuziqi = Gomoku

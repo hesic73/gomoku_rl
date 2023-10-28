@@ -21,7 +21,7 @@ import logging
 
 from enum import Enum
 
-from .core import Gokomu
+from .core import Gomoku
 import torch
 import random
 
@@ -73,7 +73,7 @@ class GoBoard(QWidget):
         self.player = Piece.BLACK
         self.human_color = human_color
 
-        self._env = Gokomu(num_envs=1, board_size=board_size, device="cpu")
+        self._env = Gomoku(num_envs=1, board_size=board_size, device="cpu")
         self._env.reset()
 
         if self.human_color == Piece.WHITE:

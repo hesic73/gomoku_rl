@@ -1,14 +1,16 @@
-# Gokomu(五子棋) Environment for Reinforcement Learning
+# Gomoku(五子棋) Environment for Reinforcement Learning
+
+Many existing repositories are outdated and don't make the most of GPU resources.
 
 ## Features
 
-- **Parallel Environment Execution**: Run n Gokomu environments in parallel on GPU, making it suitable for training RL agents at scale.
+- **Parallel Environment Execution**: Run n Gomoku environments in parallel on GPU, making it suitable for training RL agents at scale.
 
 
 ## Usage
 
 ```python
-from gokomu_rl import Gokomu
+python scripts/train.py
 ```
 
 ## Notes
@@ -16,6 +18,8 @@ from gokomu_rl import Gokomu
 `action` is **unchecked**, and if it's invalid, the environment's response becomes undefined. It's the user's duty to verify input correctness.
 
 
-## To Do
+## References
 
-- symmetry
+- [https://github.com/junxiaosong/AlphaZero_Gomoku/](https://github.com/junxiaosong/AlphaZero_Gomoku/)
+
+- [https://arxiv.org/pdf/1809.10595](https://arxiv.org/pdf/1809.10595,)

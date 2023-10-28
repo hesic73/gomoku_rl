@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 setup(
-    name="gokomu_rl",
+    name="gomoku_rl",
     version="0.0.0",
     author="Sicheng He",
     author_email="hesicheng20@gmail.com",
