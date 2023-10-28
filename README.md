@@ -1,10 +1,21 @@
 # Gomoku(五子棋) Environment for Reinforcement Learning
 
-Many existing repositories are outdated and don't make the most of GPU resources.
+## Introduction
+
+There are repositories out there that utilize reinforcement learning algorithms to teach AI how to play Gomoku. However, these repositories are based on legacy approaches and do not employ modern RL algorithms. Besides, they fail to fully leverage the potential of GPU resources. 
 
 ## Features
 
-- **Parallel Environment Execution**: Run n Gomoku environments in parallel on GPU, making it suitable for training RL agents at scale.
+- **Parallel Environment Execution**: Execute multiple Gomoku environments in parallel on GPU hardware, enabling the efficient training of RL agents at a larger scale.
+
+- **19×19 Board**: Train AI models to play Gomoku on a standard 19x19 board.
+
+
+## installation
+
+```bash
+python setup.py install
+```
 
 
 ## Usage
