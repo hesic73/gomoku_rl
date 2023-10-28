@@ -1,5 +1,5 @@
 from typing import Callable, Dict, List, Any
-from tensordict import TensorDictBase,TensorDict
+from tensordict import TensorDictBase, TensorDict
 from tensordict.utils import NestedKey
 import torch
 import torch.nn as nn
@@ -22,12 +22,20 @@ import datetime
 import tempfile
 from torchrl.record.loggers.csv import CSVLogger
 
-from .common import get_replay_buffer,env_next_to_agent_next
-
+from .common import get_replay_buffer, env_next_to_agent_next
+from torchrl.data.replay_buffers.samplers import RandomSampler
 from torchrl.collectors import SyncDataCollector
 from omegaconf import DictConfig, OmegaConf
 
 from tqdm import tqdm
+
+
+def print_gpu_usage():
+    gpu_memory_allocated = torch.cuda.memory_allocated()
+    gpu_memory_cached = torch.cuda.memory_cached()
+
+    print(f"GPU memory allocated: {gpu_memory_allocated / (1024**3):.2f} GB")
+    print(f"GPU memory cached: {gpu_memory_cached / (1024**3):.2f} GB")
 
 
 def make_actor(
@@ -90,8 +98,9 @@ def train(
     wd = 1e-5
     # the beta parameters of Adam
     betas = (0.9, 0.999)
+
     # Optimization steps per batch collected (aka UPD or updates per data)
-    n_optim = 8
+    n_optim: int = cfg.n_optim
 
     gamma = cfg.gamma
 
@@ -118,28 +127,38 @@ def train(
 
     loss_module, target_net_updater = get_loss_module(actor, gamma)
 
-    collector =SyncDataCollector(
-        lambda :env,
+    collector = SyncDataCollector(
+        lambda: env,
         policy=actor_explore,
         frames_per_batch=frames_per_batch,
         total_frames=total_frames,
         exploration_type=ExplorationType.RANDOM,
         device=device,
-        postproc=env_next_to_agent_next
+        postproc=env_next_to_agent_next,
     )
 
     optimizer = torch.optim.Adam(
         loss_module.parameters(), lr=lr, weight_decay=wd, betas=betas
     )
-    
-    for data in tqdm(collector,total=total_frames//frames_per_batch,disable=False):
-        pass
-        # frame1:TensorDict=data["next"][:,:-1]
-        # frame2:TensorDict=data.select("done","observation","terminated").clone(False)[:,1:]
-        # tmp:torch.Tensor=(frame1['observation']==frame2['observation'])
-        # tmp=tmp.flatten(start_dim=2) # (128,63,192)
-        # tmp=tmp.all(dim=-1) # (128,63)
 
-        # done=frame1['done'].squeeze(-1)
-        # tmp=done|tmp # (128,63)
-        # assert tmp[:,0].all().item()
+    replay_buffer = get_replay_buffer(
+        buffer_size=buffer_size,
+        batch_size=batch_size,
+        sampler=RandomSampler(),
+        device=cfg.buffer_device,
+    )
+
+    for data in tqdm(collector, total=total_frames // frames_per_batch, disable=False):
+        replay_buffer.extend(data.reshape(-1))
+        if len(replay_buffer) < buffer_size:
+            # print(f"Buffer:{len(replay_buffer)}/{buffer_size}")
+            continue
+
+        for gradient_step in range(n_optim):
+            transition = replay_buffer.sample().to(env.device)
+            loss: torch.Tensor = loss_module(transition)
+            optimizer.zero_grad()
+            loss["loss"].backward()
+            optimizer.step()
+
+            target_net_updater.step()

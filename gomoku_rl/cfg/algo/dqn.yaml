@@ -1,10 +1,13 @@
-buffer_size: 1000_000
+buffer_size: 1_000_000
+buffer_device: cpu
 batch_size: 4096
 gamma: 0.95
 
 eps_init: 1.0
 eps_end: 0.05
 annealing_num_steps: 5_000
+
+n_optim: 8
 
 actor:
   cnn_kwargs:
