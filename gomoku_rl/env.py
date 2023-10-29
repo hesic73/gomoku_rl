@@ -168,6 +168,8 @@ class GomokuEnvWithOpponent(EnvBase):
 
         reset_envs = (win | illegal).cpu().nonzero().squeeze(-1).to(self.device)
         self.gomoku.reset(env_ids=reset_envs)
+        
+        episode_len=self.gomoku.move_count+(~(win|illegal)).float() # (E,)
 
         opponent_tensordict = TensorDict(
             {"observation": self.gomoku.get_encoded_board()},
@@ -183,11 +185,12 @@ class GomokuEnvWithOpponent(EnvBase):
         opponent_win, opponent_illegal = self.gomoku.step(action=opponent_action)
 
         done = win | illegal | opponent_win | opponent_illegal
+        # 对手下错是对手太菜了，而不是我厉害
         reward = (
             done.float()
             - illegal.float()
             - opponent_win.float()
-            + opponent_illegal.float()
+        #    + opponent_illegal.float()
         )
 
         tensordict = TensorDict({}, self.batch_size, device=self.device)
@@ -196,6 +199,13 @@ class GomokuEnvWithOpponent(EnvBase):
                 "done": done,
                 "observation": self.gomoku.get_encoded_board(),
                 "reward": reward,
+                "stats":{
+                    "episode_len":episode_len,
+                    "reward":reward,
+                    'illegal_move':illegal,
+                    "win":win,
+                    "lose":opponent_win,
+                }
             }
         )
         return tensordict

@@ -1,3 +1,5 @@
+seed: 0
+
 num_envs: 256
 board_size: 6
 device: cuda
@@ -5,10 +7,10 @@ device: cuda
 total_frames: 50_000_000
 frames_per_batch: ${eval:64*${num_envs}}
 
-initial_opponent_ckpt: player1.pt
+# initial_opponent_ckpt: player1.pt
 
 wandb:
-  group: debug
+  group: board_${board_size}_${board_size}
   project: gomoku_rl
   mode: online # set to 'disabled' when debugging locally
 
