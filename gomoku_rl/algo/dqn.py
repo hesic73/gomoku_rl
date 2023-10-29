@@ -182,6 +182,6 @@ def train(
         avg_grad_norm = torch.stack(grad_norms).mean()
         if run is not None:
             run.log({"loss": avg_loss.item(), "grad_norm": avg_grad_norm.item()})
-        print(f"Loss:{avg_loss.item():.4f}\tGrad Norm:{avg_grad_norm:.4f}")
+        # print(f"Loss:{avg_loss.item():.4f}\tGrad Norm:{avg_grad_norm:.4f}")
 
     torch.save(actor.state_dict(), "dqn_actor.pt")
