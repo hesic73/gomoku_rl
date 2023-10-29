@@ -27,7 +27,7 @@ def main(cfg: DictConfig):
         device="cpu",
     )
 
-    model_ckpt_path = cfg.get("model_ckpt_path", None)
+    model_ckpt_path = cfg.get("initial_opponent_ckpt", None)
     if model_ckpt_path is not None:
         logging.info(f"Loading model from {model_ckpt_path}")
         model = load_actor(

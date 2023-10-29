@@ -5,7 +5,7 @@ device: cuda
 total_frames: 50_000_000
 frames_per_batch: ${eval:64*${num_envs}}
 
-model_ckpt_path: player1.pt
+initial_opponent_ckpt: player1.pt
 
 wandb:
   group: debug
