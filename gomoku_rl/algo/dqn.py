@@ -96,24 +96,19 @@ def get_loss_module(actor: TensorDictModule, gamma: float):
 
 
 def train(
-    cfg: DictConfig, env: TransformedEnv, total_frames: int, frames_per_batch: int
+    cfg: DictConfig,
+    env: TransformedEnv,
+    total_frames: int,
+    frames_per_batch: int,
+    run=None,
 ):
     device = env.device
 
     batch_size: int = cfg.batch_size
     buffer_size: int = min(cfg.buffer_size, 100000)
 
-    # the learning rate of the optimizer
-    lr = 2e-3
-    # weight decay
-    wd = 1e-5
-    # the beta parameters of Adam
-    betas = (0.9, 0.999)
-
     # Optimization steps per batch collected (aka UPD or updates per data)
     n_optim: int = cfg.n_optim
-
-    gamma = cfg.gamma
 
     action_spec: DiscreteTensorSpec = env.action_spec
     assert isinstance(action_spec, DiscreteTensorSpec)
@@ -137,7 +132,7 @@ def train(
         eps_end=cfg.eps_end,
     )
 
-    loss_module, target_net_updater = get_loss_module(actor, gamma)
+    loss_module, target_net_updater = get_loss_module(actor, cfg.gamma)
 
     collector = SyncDataCollector(
         lambda: env,
@@ -146,11 +141,10 @@ def train(
         total_frames=total_frames,
         exploration_type=ExplorationType.RANDOM,
         device=device,
-        postproc=env_next_to_agent_next,
     )
 
     optimizer = torch.optim.Adam(
-        loss_module.parameters(), lr=lr, weight_decay=wd, betas=betas
+        loss_module.parameters(), lr=cfg.lr, weight_decay=cfg.weight_decay
     )
 
     replay_buffer = get_replay_buffer(
@@ -166,13 +160,28 @@ def train(
             # print(f"Buffer:{len(replay_buffer)}/{buffer_size}")
             continue
         actor_explore.step()
-        for gradient_step in range(n_optim):
+
+        losses = []
+        grad_norms = []
+
+        for gradient_step in range(1, n_optim + 1):
             transition = replay_buffer.sample().to(env.device)
-            loss: torch.Tensor = loss_module(transition)
+            loss: torch.Tensor = loss_module(transition)["loss"]
+            losses.append(loss.clone().detach())
             optimizer.zero_grad()
-            loss["loss"].backward()
+            loss.backward()
+            grad_norm = nn.utils.clip_grad_norm_(actor.parameters(), cfg.max_grad_norm)
+            grad_norms.append(grad_norm)
+
             optimizer.step()
 
-            target_net_updater.step()
+            if gradient_step % cfg.target_update_interval:
+                target_net_updater.step()
+
+        avg_loss = torch.stack(losses).mean()
+        avg_grad_norm = torch.stack(grad_norms).mean()
+        if run is not None:
+            run.log({"loss": avg_loss.item(), "grad_norm": avg_grad_norm.item()})
+        print(f"Loss:{avg_loss.item():.4f}\tGrad Norm:{avg_grad_norm:.4f}")
 
     torch.save(actor.state_dict(), "dqn_actor.pt")

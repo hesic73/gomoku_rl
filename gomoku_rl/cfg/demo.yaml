@@ -1,4 +1,4 @@
-board_size: 8
+board_size: 6
 
 model_ckpt_path: dqn_actor.pt
 device: cuda

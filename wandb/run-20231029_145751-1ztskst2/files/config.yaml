@@ -1,0 +1,129 @@
+wandb_version: 1
+
+_wandb:
+  desc: null
+  value:
+    python_version: 3.11.5
+    cli_version: 0.15.12
+    framework: torch
+    is_jupyter_run: false
+    is_kaggle_kernel: false
+    start_time: 1698562671.323893
+    t:
+      1:
+      - 1
+      - 41
+      - 50
+      - 55
+      2:
+      - 1
+      - 41
+      - 50
+      - 55
+      3:
+      - 14
+      - 23
+      4: 3.11.5
+      5: 0.15.12
+      8:
+      - 5
+      13: linux-x86_64
+algo.buffer_size:
+  desc: null
+  value: 100000
+algo.buffer_device:
+  desc: null
+  value: cuda
+algo.batch_size:
+  desc: null
+  value: 8192
+algo.gamma:
+  desc: null
+  value: 0.95
+algo.max_grad_norm:
+  desc: null
+  value: 15.0
+algo.eps_init:
+  desc: null
+  value: 1.0
+algo.eps_end:
+  desc: null
+  value: 0.05
+algo.target_update_interval:
+  desc: null
+  value: 4
+algo.n_optim:
+  desc: null
+  value: 128
+algo.lr:
+  desc: null
+  value: 0.0005
+algo.weight_decay:
+  desc: null
+  value: 1.0e-05
+algo.actor.cnn_kwargs.num_cells:
+  desc: null
+  value:
+  - 32
+  - 64
+  - 128
+  - 4
+algo.actor.cnn_kwargs.kernel_sizes:
+  desc: null
+  value:
+  - 3
+  - 3
+  - 3
+  - 1
+algo.actor.cnn_kwargs.strides:
+  desc: null
+  value:
+  - 1
+  - 1
+  - 1
+  - 1
+algo.actor.cnn_kwargs.paddings:
+  desc: null
+  value:
+  - 1
+  - 1
+  - 1
+  - 0
+algo.actor.cnn_kwargs.activation_class:
+  desc: null
+  value: ReLU
+algo.actor.mlp_kwargs.depth:
+  desc: null
+  value: 2
+algo.actor.mlp_kwargs.num_cells:
+  desc: null
+  value:
+  - 64
+  - 64
+algo.actor.mlp_kwargs.activation_class:
+  desc: null
+  value: ReLU
+num_envs:
+  desc: null
+  value: 256
+board_size:
+  desc: null
+  value: 6
+device:
+  desc: null
+  value: cuda
+total_frames:
+  desc: null
+  value: 50000000
+frames_per_batch:
+  desc: null
+  value: 16384
+wandb.group:
+  desc: null
+  value: debug
+wandb.project:
+  desc: null
+  value: gomoku_rl
+wandb.mode:
+  desc: null
+  value: online

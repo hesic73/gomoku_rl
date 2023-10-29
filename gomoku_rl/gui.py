@@ -82,7 +82,7 @@ class GomokuBoard(QWidget):
         if self.human_color == Piece.WHITE:
             self._AI_step()
 
-        self.show()
+        self.setStyleSheet("background-color: rgba(255,212,101,255);")
 
     def reset(self):
         for i in range(len(self.board)):

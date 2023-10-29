@@ -1,12 +1,17 @@
-buffer_size: 10_000
-buffer_device: cpu
-batch_size: 4096
+buffer_size: 100_000
+buffer_device: cuda
+batch_size: 8192
 gamma: 0.95
+
+max_grad_norm: 15.0
 
 eps_init: 1.0
 eps_end: 0.05
+target_update_interval: 4
 
-n_optim: 8
+n_optim: 128
+lr: 5e-4
+weight_decay: 1e-5
 
 actor:
   cnn_kwargs:

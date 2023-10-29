@@ -1,5 +1,5 @@
 # num_envs: 128
-board_size: 8
+board_size: 6
 device: cuda
 
 defaults:
