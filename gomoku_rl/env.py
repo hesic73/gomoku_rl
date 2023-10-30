@@ -69,17 +69,29 @@ class GomokuEnv(EnvBase):
 
     def _step(self, tensordict: TensorDictBase) -> TensorDictBase:
         action: torch.Tensor = tensordict.get("action")
-        done, illegal = self.gomoku.step(action=action)
+        win, illegal = self.gomoku.step(action=action)
         tensordict = TensorDict({}, self.batch_size)
+        
+        
+        done=win|illegal
+        reward=done.float() - illegal.float()
+        
+        episode_len=self.gomoku.move_count
+        
         tensordict.update(
             {
                 "done": done | illegal,
                 "observation": self.gomoku.get_encoded_board(),
-                "reward": done.float() - illegal.float(),
-                "stats": {"episode_len": self.gomoku.move_count},
+                "reward": reward,
+                "stats": {
+                    "episode_len":episode_len,
+                    "reward":reward,
+                    'illegal_move':illegal,
+                    "win":win,
+                },
             }
         )
-
+        
         return tensordict
 
 

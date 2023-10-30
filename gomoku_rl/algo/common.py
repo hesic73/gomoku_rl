@@ -29,9 +29,13 @@ def env_next_to_agent_next(tensordict:TensorDictBase)->TensorDictBase:
     # 这里有点tricky
     # 目前没有考虑terminated，因为它是torchrl自己加的，而我肯定自己没有用到它
     # 而且似乎它和done总是一样
+    
+    # 也没仔细考虑is_init
+    
+    raise NotImplementedError()
     next_td=tensordict['next'][:,1:]
     for key in next_td.keys():
-        assert key in ("done","observation","reward","terminated")
+        assert key in ("done","observation","reward","terminated","is_init")
         
     assert (tensordict['done']==tensordict['terminated']).all()
     
@@ -41,5 +45,7 @@ def env_next_to_agent_next(tensordict:TensorDictBase)->TensorDictBase:
     td['next']["terminated"]=next_td["terminated"]|td['next']["terminated"]
     td['next']['observation']=next_td['observation']
     td['next']['reward']=td['next']['reward']-next_td['reward']*(~done).float()
+    
+    td['next']['is_init']=next_td['is_init']
     return td
     

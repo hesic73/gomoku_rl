@@ -5,7 +5,7 @@ from gomoku_rl import CONFIG_PATH
 from pprint import pprint
 
 from gomoku_rl.algo.dqn import train
-from gomoku_rl.env import GomokuEnvWithOpponent
+from gomoku_rl.env import GomokuEnvWithOpponent,GomokuEnv
 from gomoku_rl.utils.transforms import LogOnEpisode
 from torchrl.envs.transforms import (
     TransformedEnv,
@@ -26,7 +26,6 @@ def main(cfg: DictConfig):
         num_envs=cfg.num_envs,
         board_size=cfg.board_size, 
         device=cfg.device,
-        initial_policy=None
     )
     
     stats_keys=["episode_len","reward",'illegal_move',"win",'lose']
