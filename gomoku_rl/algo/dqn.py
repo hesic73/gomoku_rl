@@ -29,6 +29,10 @@ from omegaconf import DictConfig, OmegaConf
 
 from tqdm import tqdm
 
+from gomoku_rl.utils.misc import get_checkpoint_dir
+import os
+from math import isqrt
+import logging
 
 def print_gpu_usage():
     gpu_memory_allocated = torch.cuda.memory_allocated()
@@ -187,4 +191,6 @@ def train(
             run.log({"loss": avg_loss.item(), "grad_norm": avg_grad_norm.item()})
         # print(f"Loss:{avg_loss.item():.4f}\tGrad Norm:{avg_grad_norm:.4f}")
 
-    torch.save(actor.state_dict(), "dqn_actor.pt")
+    ckpt_path=os.path.join(get_checkpoint_dir("checkpoints",isqrt(action_spec.space.n)),"dqn_actor.pt")
+    logging.info(f"Save checkpoint to {str(ckpt_path)}")
+    torch.save(actor.state_dict(), ckpt_path)

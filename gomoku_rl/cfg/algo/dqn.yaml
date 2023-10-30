@@ -12,7 +12,7 @@ annealing_num_steps: 2000
 
 target_update_interval: 4
 
-n_optim: 128
+n_optim: 32
 lr: 5e-4
 weight_decay: 1e-5
 

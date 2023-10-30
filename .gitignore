@@ -165,3 +165,4 @@ outputs
 .vscode
 wandb
 *.pt
+checkpoints

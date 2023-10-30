@@ -14,18 +14,33 @@ from torchrl.envs.transforms import (
 )
 from gomoku_rl.utils.wandb import init_wandb
 import logging
-
+from gomoku_rl.algo.dqn import load_actor
+from torchrl.data.tensor_specs import DiscreteTensorSpec
 
 @hydra.main(version_base=None, config_path=CONFIG_PATH, config_name="train")
 def main(cfg: DictConfig):
     OmegaConf.register_new_resolver("eval", eval)
     OmegaConf.resolve(cfg)  
     run = init_wandb(cfg=cfg)
+    
+    
+    if cfg.get("initial_opponent_ckpt",None):
+        action_spec = DiscreteTensorSpec(
+            cfg.board_size * cfg.board_size,
+            shape=[
+                cfg.num_envs,
+            ],
+            device=cfg.device,
+        )
+        initial_policy=load_actor(cfg.algo.actor,action_spec=action_spec,ckpt_path=cfg.initial_opponent_ckpt).to(cfg.device)
+    else:
+        initial_policy=None
         
     base_env = GomokuEnvWithOpponent(
         num_envs=cfg.num_envs,
         board_size=cfg.board_size, 
         device=cfg.device,
+        initial_policy=initial_policy
     )
     
     stats_keys=["episode_len","reward",'illegal_move',"win",'lose']
