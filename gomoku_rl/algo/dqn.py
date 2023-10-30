@@ -123,20 +123,24 @@ def train(
     with torch.no_grad():
         actor(env.fake_tensordict())
 
-    annealing_num_steps = int((total_frames // frames_per_batch) * 0.5)
-    # print(f"annealing_num_steps:{annealing_num_steps}")
+    annealing_num_steps = cfg.annealing_num_steps
     actor_explore = make_actor_explore(
         actor=actor,
         annealing_num_steps=annealing_num_steps,
         eps_init=cfg.eps_init,
         eps_end=cfg.eps_end,
     )
+    
+    def policy(tensordict:TensorDictModule)->TensorDictBase:
+        tensordict=actor_explore(tensordict)
+        actor_explore.step()
+        return tensordict
 
     loss_module, target_net_updater = get_loss_module(actor, cfg.gamma)
 
     collector = SyncDataCollector(
         lambda: env,
-        policy=actor_explore,
+        policy=policy,
         frames_per_batch=frames_per_batch,
         total_frames=total_frames,
         exploration_type=ExplorationType.RANDOM,
@@ -159,7 +163,6 @@ def train(
         if len(replay_buffer) < buffer_size:
             # print(f"Buffer:{len(replay_buffer)}/{buffer_size}")
             continue
-        actor_explore.step()
 
         losses = []
         grad_norms = []

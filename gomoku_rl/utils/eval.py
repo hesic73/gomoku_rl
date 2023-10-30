@@ -1,6 +1,6 @@
 import torch
 import random
-from .env import GomokuEnv
+from ..env import GomokuEnv
 from tensordict.nn import TensorDictModule
 
 

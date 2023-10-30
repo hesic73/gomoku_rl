@@ -5,7 +5,7 @@ from gomoku_rl import CONFIG_PATH
 from pprint import pprint
 
 from gomoku_rl.algo.dqn import make_actor
-from gomoku_rl.eval import evaluate
+from gomoku_rl.utils.eval import evaluate
 from gomoku_rl.env import GomokuEnv
 from torchrl.envs import TransformedEnv
 import torch
