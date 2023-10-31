@@ -3,7 +3,6 @@ from omegaconf import DictConfig, OmegaConf
 from gomoku_rl import CONFIG_PATH
 from gomoku_rl.gui import GomokuBoard
 from gomoku_rl.gui import Piece
-from gomoku_rl.algo.dqn import load_actor
 import sys
 from PyQt5.QtWidgets import QApplication, QMainWindow
 import logging
@@ -34,12 +33,7 @@ def main(cfg: DictConfig):
 
     model_ckpt_path = cfg.get("model_ckpt_path", None)
     if model_ckpt_path is not None:
-        logging.info(f"Loading model from {model_ckpt_path}")
-        model = load_actor(
-            actor_cfg=cfg.algo.actor,
-            action_spec=action_spec,
-            ckpt_path=model_ckpt_path,
-        ).to(cfg.get("device", "cpu"))
+        raise NotImplementedError()
     else:
         model = None
 

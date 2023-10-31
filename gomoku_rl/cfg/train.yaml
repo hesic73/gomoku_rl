@@ -7,7 +7,7 @@ device: cuda
 total_frames: 50_000_000
 frames_per_batch: ${eval:64*${num_envs}}
 
-# initial_opponent_ckpt: player0.pt
+initial_opponent_ckpt: player0.pt
 
 wandb:
   group: board_${board_size}_${board_size}
@@ -15,4 +15,4 @@ wandb:
   mode: online # set to 'disabled' when debugging locally
 
 defaults:
-  - algo: dqn
+  - algo: ppo
