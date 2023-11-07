@@ -2,7 +2,7 @@ import os
 import logging
 import torch
 from typing import Optional,Dict
-
+import random
 
 
 class ActorBank:
@@ -43,3 +43,11 @@ class ActorBank:
     def get_latest(self):
         assert self._cnt > 0
         return self.get_actor_by_index(self._cnt - 1)
+
+    def get_actor_paths(self):
+        return [os.path.join(self.dir,v) for v in self._index2name.values()]
+    
+    def get_random(self):
+        path=random.choice(self.get_actor_paths())
+        ckpt = torch.load(path)
+        return ckpt

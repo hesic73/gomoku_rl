@@ -157,10 +157,7 @@ class PPOPolicy(Policy):
         return tensordict
 
 
-    def train_op(self, tensordict: TensorDict):
-        with torch.no_grad():
-            self.advantage_module(tensordict)
-            
+    def train_op(self, tensordict: TensorDict):      
         losses=[]
         for _ in range(self.ppo_epoch):
             dataset = make_dataset_naive(
@@ -168,6 +165,9 @@ class PPOPolicy(Policy):
                 int(self.cfg.num_minibatches))
             
             for minibatch in dataset:
+                minibatch=minibatch.to(self.device)
+                with torch.no_grad():
+                    self.advantage_module(minibatch)
                 loss_vals = self.loss_module(minibatch)
                 loss_value = (
                 loss_vals["loss_objective"]
@@ -191,6 +191,24 @@ class PPOPolicy(Policy):
     def get_actor(self):
         return self.actor
 
+    
+    @staticmethod
+    def from_checkpoint(checkpoint:Dict,cfg:DictConfig,action_spec:DiscreteTensorSpec ,device:_device_t,deterministic:bool=False)->TensorDictModule:
+        actor=make_actor(cfg,action_spec,device)
+        actor.load_state_dict(checkpoint)
+        if deterministic:
+            def _policy(tensordict:TensorDict):
+                tensordict=actor(tensordict)
+                logits:torch.Tensor=tensordict.get("logits")
+                action=logits.argmax(dim=-1)
+                tensordict.update({"action":action})
+                return tensordict
+            
+            _policy.device=actor.device
+            return _policy
+        else:
+            return actor
+    
 def make_dataset_naive(
     tensordict: TensorDict, num_minibatches: int = 4
 ):

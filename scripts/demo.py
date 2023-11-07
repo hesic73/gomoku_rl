@@ -6,7 +6,7 @@ from gomoku_rl.gui import Piece
 import sys
 from PyQt5.QtWidgets import QApplication, QMainWindow
 import logging
-from gomoku_rl.algo import get_policy
+from gomoku_rl.algo import PPOPolicy
 from torchrl.data.tensor_specs import DiscreteTensorSpec,CompositeSpec,UnboundedContinuousTensorSpec
 import torch
 
@@ -25,18 +25,6 @@ def main(cfg: DictConfig):
         ],
         device=cfg.device,
     )
-    observation_spec = CompositeSpec(
-            {
-                "observation": UnboundedContinuousTensorSpec(
-                    device=cfg.device,
-                    shape=[1, 3, cfg.board_size, cfg.board_size],
-                ),
-            },
-            shape=[
-                1,
-            ],
-            device=cfg.device,
-        )
 
     if cfg.get("human_first", True):
         human_color = Piece.BLACK
@@ -45,9 +33,7 @@ def main(cfg: DictConfig):
 
     model_ckpt_path = cfg.get("model_ckpt_path", None)
     if model_ckpt_path is not None:
-        policy=get_policy(name=cfg.algo.name,cfg=cfg.algo,action_spec=action_spec,observation_spec=observation_spec,device=cfg.device)
-        model=policy.get_actor()
-        model.load_state_dict(torch.load(model_ckpt_path))
+        model=PPOPolicy.from_checkpoint(torch.load(model_ckpt_path),cfg=cfg.algo.actor,action_spec=action_spec,device=cfg.device,deterministic=True)
     else:
         model = None
 

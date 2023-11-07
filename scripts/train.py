@@ -20,15 +20,15 @@ from gomoku_rl.algo import get_policy
 import logging
 from tqdm import tqdm
 
-from copy import deepcopy
 
 @torch.no_grad()
 def eval_win_rate(env: TransformedEnv, policy,max_episode_length:int=180):
     rates=[]
-    for i in range(100):
+    for i in range(10):
         rates.append(_eval_win_rate(env,policy,max_episode_length))
     return sum(rates)/len(rates)
 
+@torch.no_grad()
 def _eval_win_rate(env: TransformedEnv, policy,max_episode_length:int=180):
     env.reset()
     env.eval()
@@ -112,6 +112,8 @@ def main(cfg: DictConfig):
     total_frames = cfg.get("total_frames", -1) // frames_per_batch * frames_per_batch
     update_interval = int(cfg.get("update_interval", 10))
     assert update_interval > 0
+    update_threshold=cfg.get("update_threshold")
+    assert 0.7<update_threshold<1.0
 
     collector = SyncDataCollector(
         env,
@@ -129,18 +131,31 @@ def main(cfg: DictConfig):
     for i, data in enumerate(pbar):
         # data (E,train_every)
         info = {"env_frames": collector._frames}
-        info.update(policy.train_op(data.to_tensordict().to(cfg.device)))
+        info.update(policy.train_op(data.to_tensordict()))
         
         if i != 0 and i % update_interval == 0:
-            ckpt_path=actorBank.save(policy.get_actor().state_dict())
-            logging.info(f"Save checkpoint to {ckpt_path}")
-            wr = eval_win_rate(env=env, policy=policy,max_episode_length=int((cfg.board_size**2)//2))
-            
-            if wr > 0.8:
-                logging.info(f"Win Rate: {wr*100:.2f}%. Updating opponent's policy.")
-                base_env.set_opponent_policy(deepcopy(policy.get_actor()))
+            actor_paths=actorBank.get_actor_paths()
+            if len(actor_paths)==0:
+                wr=eval_win_rate(env=env, policy=policy,max_episode_length=int((cfg.board_size**2)//2))
             else:
-                logging.info(f"Win Rate: {wr*100:.2f}%")
+                _wrs=[]
+                for actor_path in actorBank.get_actor_paths():
+                    opponent=policy.from_checkpoint(torch.load(actor_path),cfg=cfg.algo.actor,action_spec=env.action_spec,device=cfg.device,deterministic=True)
+                    base_env.set_opponent_policy(opponent)
+                    _wr=eval_win_rate(env=env, policy=policy,max_episode_length=int((cfg.board_size**2)//2))
+                    _wrs.append(_wr)
+                    print(actor_path,_wr)
+                    
+                wr=sum(_wrs)/len(_wrs)
+                
+                
+                
+            logging.info(f"Win Rate: {wr*100:.2f}%")               
+            
+            if wr > update_threshold:
+                ckpt_path=actorBank.save(policy.get_actor().state_dict())
+                logging.info(f"Save checkpoint to {ckpt_path}")
+
 
         run.log(info)
         pbar.set_postfix(
@@ -148,6 +163,10 @@ def main(cfg: DictConfig):
                 "frames": collector._frames,
             }
         )
+        
+        if len(actorBank)>0:
+            opponent=policy.from_checkpoint(actorBank.get_random(),cfg=cfg.algo.actor,action_spec=env.action_spec,device=cfg.device,deterministic=True)
+            base_env.set_opponent_policy(opponent)
 
 
     

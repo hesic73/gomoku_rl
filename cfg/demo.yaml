@@ -1,9 +1,9 @@
 board_size: 10
 
-model_ckpt_path: actor_10_10.pt
+model_ckpt_path: 10_10.pt
 device: cuda
 
-human_first: true
+human_first: false
 
 defaults:
   - algo: ppo

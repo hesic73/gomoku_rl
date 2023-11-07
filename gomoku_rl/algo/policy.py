@@ -20,3 +20,8 @@ class Policy(ABC):
     @abstractmethod
     def get_actor(self)->TensorDictModule:
         ...
+        
+    @staticmethod
+    @abstractmethod
+    def from_checkpoint(checkpoint:Dict,*args, **kwargs)->TensorDictModule:
+        ...

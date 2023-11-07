@@ -60,7 +60,7 @@ class GomokuBoard(QWidget):
         self,
         board_size: int = 19,
         human_color: Piece | None = Piece.BLACK,
-        model: str | None = None,
+        model: Callable[[TensorDict,],TensorDict] | None = None,
     ):
         super().__init__()
         self.board_size = board_size
