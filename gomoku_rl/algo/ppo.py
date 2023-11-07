@@ -1,4 +1,4 @@
-from typing import Callable, Dict, List, Any
+from typing import Callable, Dict, List, Any,Union,Iterable
 from tensordict import TensorDictBase, TensorDict
 from tensordict.utils import NestedKey
 import torch
@@ -15,14 +15,11 @@ from torchrl.envs import TransformedEnv
 import datetime
 import tempfile
 
-from torchrl.collectors import SyncDataCollector
+
 from omegaconf import DictConfig, OmegaConf
 
 from tqdm import tqdm
 
-from gomoku_rl.utils.misc import get_checkpoint_dir
-import os
-from math import isqrt
 import logging
 
 from torchrl.modules import ProbabilisticActor
@@ -31,6 +28,11 @@ from torch.distributions.categorical import Categorical
 
 from torchrl.modules.models import ConvNet,MLP
 from torchrl.modules import ValueOperator
+
+from torchrl.objectives import ClipPPOLoss
+from torchrl.objectives.value import GAE
+
+from .policy import Policy
 
 
 class Obs2Logits(nn.Module):
@@ -77,8 +79,6 @@ def make_actor(
     return policy_module
 
 
-
-
 def make_critic(
     cfg: DictConfig,
     device:_device_t,
@@ -102,6 +102,103 @@ def make_critic(
     return value_module
 
 
+class PPOPolicy(Policy):
+    def __init__(self, cfg:DictConfig,action_spec:DiscreteTensorSpec,observation_spec:TensorSpec, device:_device_t="cuda") -> None:
+        super().__init__(cfg,action_spec,observation_spec,device)
+        self.cfg:DictConfig=cfg
+        self.device:_device_t = device
+          
+        self.clip_param:float = cfg.clip_param
+        self.ppo_epoch:int = int(cfg.ppo_epochs)
 
-
+        self.entropy_coef:float = cfg.entropy_coef
+        self.gae_gamma :float= cfg.gamma
+        self.gae_lambda :float= cfg.gae_lambda
         
+        self.max_grad_norm:float=cfg.max_grad_norm
+        
+        self.actor=make_actor(cfg=cfg.actor,action_spec=action_spec,device=self.device)
+        self.critic=make_critic(cfg=cfg.critic,device=self.device)
+        
+        fake_input = observation_spec.zero()
+        self.actor(fake_input)
+        self.critic(fake_input)
+        
+        
+        self.advantage_module = GAE(
+        gamma=self.gae_gamma, lmbda=self.gae_lambda, value_network=self.critic, average_gae=True
+)
+
+        self.loss_module = ClipPPOLoss(
+    actor=self.actor,
+    critic=self.critic,
+    clip_epsilon=self.clip_param,
+    entropy_bonus=bool(self.entropy_coef),
+    entropy_coef=self.entropy_coef,
+    # these keys match by default but we set this for completeness
+    value_target_key=self.advantage_module.value_target_key,
+    loss_critic_type="smooth_l1",
+)
+
+        self.optim = torch.optim.Adam(self.loss_module.parameters(),cfg.lr)
+        
+            
+    def __call__(self, tensordict: TensorDict):
+        actor_input=tensordict.select("observation","action",strict=False)
+        actor_output:TensorDict = self.actor(actor_input)
+        actor_output=actor_output.exclude("logits")
+        tensordict.update(actor_output)
+        
+        
+        critic_input=tensordict.select("observation")
+        critic_output = self.critic(critic_input)
+        tensordict.update(critic_output)
+        
+        return tensordict
+
+
+    def train_op(self, tensordict: TensorDict):
+        with torch.no_grad():
+            self.advantage_module(tensordict)
+            
+        losses=[]
+        for _ in range(self.ppo_epoch):
+            dataset = make_dataset_naive(
+                tensordict,
+                int(self.cfg.num_minibatches))
+            
+            for minibatch in dataset:
+                loss_vals = self.loss_module(minibatch)
+                loss_value = (
+                loss_vals["loss_objective"]
+                + loss_vals["loss_critic"]
+                + loss_vals["loss_entropy"]
+            )
+                losses.append(loss_value.clone().detach())
+                # Optimization: backward, grad clipping and optim step
+                loss_value.backward()
+                # this is not strictly mandatory but it's good practice to keep
+                # your gradient norm bounded
+                torch.nn.utils.clip_grad_norm_(self.loss_module.parameters(), self.max_grad_norm)
+                self.optim.step()
+                self.optim.zero_grad()
+
+        return {
+            "loss":torch.stack(losses).mean().item(),
+        }
+
+    
+    def get_actor(self):
+        return self.actor
+
+def make_dataset_naive(
+    tensordict: TensorDict, num_minibatches: int = 4
+):
+
+    tensordict = tensordict.reshape(-1)
+    perm = torch.randperm(
+            (tensordict.shape[0] // num_minibatches) * num_minibatches,
+            device=tensordict.device,
+        ).reshape(num_minibatches, -1)
+    for indices in perm:
+        yield tensordict[indices]

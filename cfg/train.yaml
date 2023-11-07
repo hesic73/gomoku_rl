@@ -1,20 +1,20 @@
 seed: 0
 
 num_envs: 256
-board_size: 6
+board_size: 8
 device: cuda
 
 total_frames: 50_000_000
-frames_per_batch: ${eval:64*${num_envs}}
+update_interval: 10
 
 initial_policy: 
 
-root_dir: 
+root_dir: sp_root
 
 wandb:
   group: board_${board_size}_${board_size}
   project: gomoku_rl
-#  mode: online # set to 'disabled' when debugging locally
+  mode: online # set to 'disabled' when debugging locally
 
 defaults:
   - algo: ppo

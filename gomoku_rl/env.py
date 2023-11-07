@@ -72,6 +72,7 @@ class GomokuEnvWithOpponent(EnvBase):
             "win",
             "opponent_win",
             "opponent_illegal",
+            "game_win",
         ]
         self.stats_keys=[("stats",k) for k in self.stats_keys]
 
@@ -131,7 +132,7 @@ class GomokuEnvWithOpponent(EnvBase):
         episode_len=torch.where(self.gomoku.move_count==0,episode_len,self.gomoku.move_count) # (E,)
         
         
-        
+        game_win=win|opponent_illegal
         done = win | illegal | opponent_win | opponent_illegal
         
         # 对手下错是对手太菜了，而不是我厉害
@@ -154,6 +155,7 @@ class GomokuEnvWithOpponent(EnvBase):
                     "win":win,
                     "opponent_win":opponent_win,
                     "opponent_illegal":opponent_illegal,
+                    "game_win":game_win,
                 }
             }
         )

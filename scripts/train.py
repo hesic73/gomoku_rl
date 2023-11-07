@@ -13,9 +13,50 @@ from torchrl.envs.transforms import (
     InitTracker,
     Compose,
 )
+from torchrl.collectors import SyncDataCollector
 from gomoku_rl.utils.wandb import init_wandb
 from gomoku_rl.utils.misc import ActorBank
+from gomoku_rl.algo import get_policy
 import logging
+from tqdm import tqdm
+
+from copy import deepcopy
+
+@torch.no_grad()
+def eval_win_rate(env: TransformedEnv, policy,max_episode_length:int=361):
+    env.reset()
+    env.eval()
+    td = env.rollout(
+        max_steps=max_episode_length,
+        policy=policy,
+        auto_reset=True,
+        break_when_any_done=False,
+        return_contiguous=False,
+    )
+    env.reset()
+    env.train()
+    done: torch.Tensor = td["next", "done"].squeeze(-1)  # (E,max_episode_len,)
+    wins: torch.Tensor = td["next", "stats","game_win"].squeeze(
+        -1
+    )  # (E,max_episode_len,)
+    
+    episode_done = torch.zeros_like(done[:, 0])  # (E,)
+
+    rates = []
+
+    for i in range(max_episode_length):
+        _reset = done[:, i]  # (E,)
+        index = _reset & ~episode_done
+        episode_done = episode_done | _reset
+        rates.extend(wins[index, i].cpu().unbind(0))
+
+        if episode_done.all().item():
+            break
+    
+    rate = torch.stack(rates).float()
+    return rate.mean().item()
+
+
 
 
 @hydra.main(version_base=None, config_path=CONFIG_PATH, config_name="train")
@@ -26,8 +67,8 @@ def main(cfg: DictConfig):
     
     root_dir: str = cfg.get("root_dir", "sp_root")
     if not os.path.isdir(root_dir):
-        logging.info(f"Create directory {root_dir}.")
         os.makedirs(root_dir)
+        logging.info(f"Create directory {root_dir}.")
 
     actorBank = ActorBank(
         dir=os.path.join(root_dir, datetime.datetime.now().strftime("%m-%d_%H-%M")),
@@ -57,9 +98,11 @@ def main(cfg: DictConfig):
     transforms = [InitTracker(), logger]
     env = TransformedEnv(base_env, Compose(*transforms)).train()
     env.set_seed(cfg.seed)
+    
+    policy=get_policy(name=cfg.algo.name,cfg=cfg.algo,action_spec=env.action_spec,observation_spec=env.observation_spec,device=env.device)
 
     
-    frames_per_batch = env.num_envs * int(cfg.algo.train_every)
+    frames_per_batch = cfg.num_envs * int(cfg.algo.train_every)
     total_frames = cfg.get("total_frames", -1) // frames_per_batch * frames_per_batch
     update_interval = int(cfg.get("update_interval", 10))
     assert update_interval > 0
@@ -69,10 +112,35 @@ def main(cfg: DictConfig):
         policy=policy,
         frames_per_batch=frames_per_batch,
         total_frames=total_frames,
-        device=cfg.sim.device,
+        device=cfg.device,
         return_same_td=True,
     )
+    
+    
+    pbar = tqdm(collector, total=total_frames // frames_per_batch)
+    env.train()
+    for i, data in enumerate(pbar):
+        # data (E,train_every)
+        info = {"env_frames": collector._frames}
+        info.update(policy.train_op(data.to_tensordict()))
+        
+        if i != 0 and i % update_interval == 0:
+            ckpt_path=actorBank.save(policy.get_actor().state_dict())
+            logging.info(f"Save checkpoint to {ckpt_path}")
+            wr = eval_win_rate(env=env, policy=policy,max_episode_length=int(cfg.board_size**2))
+            
+            if wr > 0.8:
+                logging.info(f"Win Rate: {wr*100:.2f}%. Updating opponent's policy.")
+                base_env.set_opponent_policy(deepcopy(policy.get_actor()))
+            else:
+                logging.info(f"Win Rate: {wr*100:.2f}%")
 
+        run.log(info)
+        pbar.set_postfix(
+            {
+                "frames": collector._frames,
+            }
+        )
 
 
     

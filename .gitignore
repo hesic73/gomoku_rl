@@ -166,3 +166,5 @@ outputs
 wandb
 *.pt
 checkpoints
+
+sp_root
