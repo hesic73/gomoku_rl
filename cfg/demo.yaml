@@ -1,9 +1,9 @@
-board_size: 6
+board_size: 10
 
-# model_ckpt_path: player0.pt
+model_ckpt_path: actor_10_10.pt
 device: cuda
 
-human_first: false
+human_first: true
 
 defaults:
-  - algo: dqn
+  - algo: ppo

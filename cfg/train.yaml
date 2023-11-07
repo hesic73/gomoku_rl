@@ -1,11 +1,12 @@
 seed: 0
 
 num_envs: 256
-board_size: 8
+board_size: 10
 device: cuda
+storing_device: cpu
 
-total_frames: 50_000_000
-update_interval: 10
+total_frames: 5_000_000
+update_interval: 20
 
 initial_policy: 
 
@@ -14,7 +15,7 @@ root_dir: sp_root
 wandb:
   group: board_${board_size}_${board_size}
   project: gomoku_rl
-  mode: online # set to 'disabled' when debugging locally
+#  mode: online # set to 'disabled' when debugging locally
 
 defaults:
   - algo: ppo

@@ -137,16 +137,20 @@ class Gomoku:
             self.move_count[env_ids] = 0
             self.last_move[env_ids] = -1
 
-    def step(self, action: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
+    def step(self, action: torch.Tensor,env_ids:Optional[torch.Tensor]=None) -> tuple[torch.Tensor, torch.Tensor]:
         """_summary_
 
         Args:
             action (torch.Tensor): (E,) x_i*board_size+y_i
+            env_ids (Optional[torch.Tensor]): (E,)
 
         Returns:
             tuple[torch.Tensor, torch.Tensor]: done (E,), invalid (E,)
 
         """
+        
+        if env_ids is None:
+            env_ids=torch.ones_like(action,dtype=torch.bool)
 
         # if action isn't in [0,{board_size}^2), the indexing will crash
         x = action // self.board_size
@@ -156,7 +160,8 @@ class Gomoku:
             torch.arange(self.num_envs, device=self.device), x, y
         ]  # (E,)
 
-        not_empty = values_on_board != 0  # (E,)
+        # when env_ids is not None, this variable should be called 'skipped_env_ids'
+        not_empty = (values_on_board != 0)|(~env_ids)  # (E,)
 
         piece = turn_to_piece(self.turn)
         self.board[torch.arange(self.num_envs, device=self.device), x, y] = torch.where(
@@ -173,7 +178,7 @@ class Gomoku:
         self.turn = (self.turn + torch.logical_not(not_empty).long()) % 2
         self.last_move = torch.where(not_empty, self.last_move, action)
 
-        return self.done, not_empty
+        return self.done.clone(), not_empty.clone()
 
     def get_encoded_board(self):
         piece = turn_to_piece(self.turn).unsqueeze(-1).unsqueeze(-1)

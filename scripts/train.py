@@ -23,7 +23,13 @@ from tqdm import tqdm
 from copy import deepcopy
 
 @torch.no_grad()
-def eval_win_rate(env: TransformedEnv, policy,max_episode_length:int=361):
+def eval_win_rate(env: TransformedEnv, policy,max_episode_length:int=180):
+    rates=[]
+    for i in range(100):
+        rates.append(_eval_win_rate(env,policy,max_episode_length))
+    return sum(rates)/len(rates)
+
+def _eval_win_rate(env: TransformedEnv, policy,max_episode_length:int=180):
     env.reset()
     env.eval()
     td = env.rollout(
@@ -113,6 +119,7 @@ def main(cfg: DictConfig):
         frames_per_batch=frames_per_batch,
         total_frames=total_frames,
         device=cfg.device,
+        storing_device=cfg.get("storing_device","cpu"),
         return_same_td=True,
     )
     
@@ -122,12 +129,12 @@ def main(cfg: DictConfig):
     for i, data in enumerate(pbar):
         # data (E,train_every)
         info = {"env_frames": collector._frames}
-        info.update(policy.train_op(data.to_tensordict()))
+        info.update(policy.train_op(data.to_tensordict().to(cfg.device)))
         
         if i != 0 and i % update_interval == 0:
             ckpt_path=actorBank.save(policy.get_actor().state_dict())
             logging.info(f"Save checkpoint to {ckpt_path}")
-            wr = eval_win_rate(env=env, policy=policy,max_episode_length=int(cfg.board_size**2))
+            wr = eval_win_rate(env=env, policy=policy,max_episode_length=int((cfg.board_size**2)//2))
             
             if wr > 0.8:
                 logging.info(f"Win Rate: {wr*100:.2f}%. Updating opponent's policy.")

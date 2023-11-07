@@ -73,8 +73,11 @@ class GomokuEnvWithOpponent(EnvBase):
             "opponent_win",
             "opponent_illegal",
             "game_win",
+            "black",
         ]
         self.stats_keys=[("stats",k) for k in self.stats_keys]
+        
+        self.black=torch.zeros(num_envs,dtype=torch.bool,device=device) # (E,)
 
     def set_opponent_policy(
         self,
@@ -101,13 +104,29 @@ class GomokuEnvWithOpponent(EnvBase):
         env_ids = env_mask.cpu().nonzero().squeeze(-1).to(self.device)
 
         self.gomoku.reset(env_ids=env_ids)
+        
+        
+        
+        opponent_tensordict = TensorDict(
+            {"observation": self.gomoku.get_encoded_board()},
+            self.batch_size,
+            device=self.device,
+        )
+        with torch.no_grad():
+            opponent_tensordict = self.opponent_policy(opponent_tensordict)
+        opponent_action = opponent_tensordict.get("action")
+        env_mask=(torch.randn_like(env_mask,dtype=torch.float)>0)&env_mask
+        self.gomoku.step(action=opponent_action,env_ids=env_mask)
+        self.black[env_ids]=env_mask[env_ids]
+        
+        
         # TO DO: opponent play a move here
         tensordict.set("observation", self.gomoku.get_encoded_board())
         return tensordict
 
     def _step(self, tensordict: TensorDictBase) -> TensorDictBase:
         action: torch.Tensor = tensordict.get("action")
-        episode_len=self.gomoku.move_count # (E,)
+        episode_len=self.gomoku.move_count.clone() # (E,)
         
         win, illegal = self.gomoku.step(action=action)
         reset_envs = (win | illegal).cpu().nonzero().squeeze(-1).to(self.device)
@@ -156,6 +175,7 @@ class GomokuEnvWithOpponent(EnvBase):
                     "opponent_win":opponent_win,
                     "opponent_illegal":opponent_illegal,
                     "game_win":game_win,
+                    "black":self.black,
                 }
             }
         )
