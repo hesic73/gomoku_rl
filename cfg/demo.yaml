@@ -1,6 +1,6 @@
 board_size: 6
 
-model_ckpt_path: player0.pt
+# model_ckpt_path: player0.pt
 device: cuda
 
 human_first: false

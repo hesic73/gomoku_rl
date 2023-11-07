@@ -2,11 +2,11 @@
 
 ## Introduction
 
-There are repositories out there that utilize reinforcement learning algorithms to teach AI how to play Gomoku. However, these repositories are based on legacy approaches and do not employ modern RL algorithms. Besides, they fail to fully leverage the potential of GPU resources.
+*gomoku_rl* is an open-sourced project focused on training Gomoku AI through reinforcement learning. While there are repositories using RL algorithms to teach AI to play Gomoku, they are based on legacy approaches and do not harness the full potential of GPU resources. *gomoku_rl* features GPU-parallelized simulation and pure PPO self-play training.
 
 ## Features
 
-- **Parallel Environment Execution**: Execute multiple Gomoku environments in parallel on GPU hardware, enabling the efficient training of RL agents at a larger scale.
+- **GPU-parallelized Environment**
 
 - **19×19 Board**: Train AI models to play Gomoku on a standard 19x19 board.
 
@@ -33,9 +33,6 @@ python setup.py install
 python scripts/train.py
 ```
 
-## Notes
-
-- Gomoku is a game for two players, but `GomokuEnv` is designed as a single-agent environment. As a result, the next state for a single agent corresponds to the second following state in the environment. This might seem a bit unconventional and challenge the assumptions of the `torchrl` framework (to my knowledge).
 
 - `action` is **unchecked**, and if it's invalid, the environment's response becomes undefined. It's the user's duty to verify input correctness.
 

@@ -7,12 +7,14 @@ device: cuda
 total_frames: 50_000_000
 frames_per_batch: ${eval:64*${num_envs}}
 
-initial_opponent_ckpt: player0.pt
+initial_policy: 
+
+root_dir: 
 
 wandb:
   group: board_${board_size}_${board_size}
   project: gomoku_rl
-  mode: online # set to 'disabled' when debugging locally
+#  mode: online # set to 'disabled' when debugging locally
 
 defaults:
   - algo: ppo

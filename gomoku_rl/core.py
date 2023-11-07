@@ -113,7 +113,9 @@ class Gomoku:
     def to(self, device: _device_t):
         self.board.to(device=device)
         self.done.to(device=device)
+        self.turn.to(device=device)
         self.move_count.to(device=device)
+        self.last_move.to(device=device)
         return self
 
     def reset(self, env_ids: Optional[torch.Tensor] = None):
@@ -134,24 +136,6 @@ class Gomoku:
             self.turn[env_ids] = 0
             self.move_count[env_ids] = 0
             self.last_move[env_ids] = -1
-
-    def _update(self, valid_move: torch.Tensor, action: torch.Tensor):
-        """_summary_
-
-        Args:
-            valid_move (torch.Tensor): (E,)
-            action (torch.Tensor): (E,1)
-        """
-        self.move_count = self.move_count + valid_move.long()
-        piece = turn_to_piece(self.turn)
-        # F.conv2d doesn't support LongTensor on CUDA. So we use float.
-        board_one_side = (self.board == piece.unsqueeze(-1).unsqueeze(-1)).float()
-        self.done = compute_done(board_one_side) | (
-            self.move_count == self.board_size * self.board_size
-        )
-        self.turn = (self.turn + valid_move.long()) % 2
-
-        self.last_move = torch.where(valid_move, action, self.last_move)
 
     def step(self, action: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
         """_summary_
@@ -178,8 +162,16 @@ class Gomoku:
         self.board[torch.arange(self.num_envs, device=self.device), x, y] = torch.where(
             not_empty, values_on_board, piece
         )
-
-        self._update(valid_move=torch.logical_not(not_empty), action=action)
+        self.move_count = self.move_count + torch.logical_not(not_empty).long()
+        
+        # F.conv2d doesn't support LongTensor on CUDA. So we use float.
+        board_one_side = (self.board == piece.unsqueeze(-1).unsqueeze(-1)).float()
+        self.done = compute_done(board_one_side) | (
+            self.move_count == self.board_size * self.board_size
+        )
+        
+        self.turn = (self.turn + torch.logical_not(not_empty).long()) % 2
+        self.last_move = torch.where(not_empty, self.last_move, action)
 
         return self.done, not_empty
 
@@ -240,5 +232,3 @@ class Gomoku:
         return ~invalid
 
 
-
-Wuziqi = Gomoku

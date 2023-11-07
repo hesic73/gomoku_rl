@@ -1,4 +1,16 @@
-max_grad_norm: 15.0
+
+
+
+# ppo
+train_every: 64
+num_minibatches: 16
+ppo_epochs: 4
+clip_param: 0.1 # 0.2 可能需要搜索
+entropy_coef: 0.001 # 0.01
+gae_lambda: 0.95
+gamma: 0.995 # 0.99
+max_grad_norm: 10.0
+normalize_advantages: True
 
 
 lr: 5e-4
