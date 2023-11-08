@@ -19,6 +19,9 @@ from gomoku_rl.utils.misc import ActorBank
 from gomoku_rl.algo import get_policy
 import logging
 from tqdm import tqdm
+import numpy as np
+from tensordict.nn import TensorDictModule
+from typing import Callable,Any
 
 
 @torch.no_grad()
@@ -62,7 +65,17 @@ def _eval_win_rate(env: TransformedEnv, policy,max_episode_length:int=180):
     rate = torch.stack(rates).float()
     return rate.mean().item()
 
-
+def calculate_win_rate_matrix(env:TransformedEnv,actor_paths:list[str],create_actor_func:Callable[[str,],TensorDictModule],max_episode_length:int=180):
+    n=len(actor_paths)
+    m=np.zeros(n,n)
+    for i in range(n):
+        for j in range(n):
+            actor_0=create_actor_func(actor_paths[i])
+            actor_1=create_actor_func(actor_paths[j])
+            env.base_env.set_opponent_policy(actor_1)
+            m[i,j]= _eval_win_rate(env,actor_0,max_episode_length=max_episode_length)
+            
+    return m
 
 
 @hydra.main(version_base=None, config_path=CONFIG_PATH, config_name="train")
