@@ -33,6 +33,9 @@ class Piece(enum.Enum):
     WHITE = enum.auto()
 
 
+def _is_action_valid(x:int,y:int,board_size:int):
+    return  0<=x<board_size and 0<=y<board_size
+
 def rand_valid_action(
     board_size: int,
     is_valid_action: Callable[
@@ -249,7 +252,7 @@ class GomokuBoard(QWidget):
                 self.human_color is not None and self.current_player == self.human_color
             )
 
-            if human_turn:
+            if human_turn and _is_action_valid(x,y,self.board_size):
                 logging.info(f"Human:{self.current_player} ({x},{y})")
                 self.step([x, y])
                 if not self.done:

@@ -1,11 +1,11 @@
 seed: 0
 
-num_envs: 1024
-board_size: 10
+num_envs: 2048
+board_size: 9
 device: cuda
 storing_device: cpu
 
-total_frames: 10_000_000
+total_frames: 100_000_000
 update_interval: 50
 update_threshold: 0.9
 

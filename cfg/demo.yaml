@@ -1,6 +1,6 @@
-board_size: 10
+board_size: 9
 
-model_ckpt_path: 10_10.pt
+model_ckpt_path: sp_root/11-09_23-46/actor_3.pt
 device: cuda
 
 human_first: false

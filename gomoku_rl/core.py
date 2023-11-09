@@ -137,20 +137,20 @@ class Gomoku:
             self.move_count[env_ids] = 0
             self.last_move[env_ids] = -1
 
-    def step(self, action: torch.Tensor,env_ids:Optional[torch.Tensor]=None) -> tuple[torch.Tensor, torch.Tensor]:
+    def step(self, action: torch.Tensor,env_indices:Optional[torch.Tensor]=None) -> tuple[torch.Tensor, torch.Tensor]:
         """_summary_
 
         Args:
             action (torch.Tensor): (E,) x_i*board_size+y_i
-            env_ids (Optional[torch.Tensor]): (E,)
+            env_indices (Optional[torch.Tensor]): (E,)
 
         Returns:
             tuple[torch.Tensor, torch.Tensor]: done (E,), invalid (E,)
 
         """
         
-        if env_ids is None:
-            env_ids=torch.ones_like(action,dtype=torch.bool)
+        if env_indices is None:
+            env_indices=torch.ones_like(action,dtype=torch.bool)
 
         # if action isn't in [0,{board_size}^2), the indexing will crash
         x = action // self.board_size
@@ -160,8 +160,8 @@ class Gomoku:
             torch.arange(self.num_envs, device=self.device), x, y
         ]  # (E,)
 
-        # when env_ids is not None, this variable should be called 'skipped_env_ids'
-        not_empty = (values_on_board != 0)|(~env_ids)  # (E,)
+        # when env_indices is not None, this variable should be called 'skipped_env_ids'
+        not_empty = (values_on_board != 0)|(~env_indices)  # (E,)
 
         piece = turn_to_piece(self.turn)
         self.board[torch.arange(self.num_envs, device=self.device), x, y] = torch.where(

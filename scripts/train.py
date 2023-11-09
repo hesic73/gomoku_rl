@@ -22,48 +22,51 @@ from tqdm import tqdm
 import numpy as np
 from tensordict.nn import TensorDictModule
 from typing import Callable,Any
-
+from tensordict import TensorDict
 
 @torch.no_grad()
 def eval_win_rate(env: TransformedEnv, policy,max_episode_length:int=180):
     rates=[]
-    for i in range(10):
+    for _ in range(100):
         rates.append(_eval_win_rate(env,policy,max_episode_length))
     return sum(rates)/len(rates)
 
 @torch.no_grad()
-def _eval_win_rate(env: TransformedEnv, policy,max_episode_length:int=180):
-    env.reset()
+def _eval_win_rate(env: TransformedEnv, policy,max_step:int):
     env.eval()
-    td = env.rollout(
-        max_steps=max_episode_length,
-        policy=policy,
-        auto_reset=True,
-        break_when_any_done=False,
-        return_contiguous=False,
-    )
-    env.reset()
-    env.train()
-    done: torch.Tensor = td["next", "done"].squeeze(-1)  # (E,max_episode_len,)
-    wins: torch.Tensor = td["next", "stats","game_win"].squeeze(
-        -1
-    )  # (E,max_episode_len,)
+    tensordict = env.reset()
+    n=tensordict.batch_size[0]
     
-    episode_done = torch.zeros_like(done[:, 0])  # (E,)
-
-    rates = []
-
-    for i in range(max_episode_length):
-        _reset = done[:, i]  # (E,)
-        index = _reset & ~episode_done
-        episode_done = episode_done | _reset
-        rates.extend(wins[index, i].cpu().unbind(0))
+    episode_done = torch.zeros(n,device=tensordict.device,dtype=torch.bool)  # (E,)
+    
+    interested_tensordict=[]
+    
+    tensordict_ = tensordict
+    for _ in range(max_step):
+        tensordict_ = policy(tensordict_)
+        tensordict, tensordict_ = env.step_and_maybe_reset(tensordict_)
+        done = tensordict.get(("next", "done"))
+        truncated = tensordict.get(
+                ("next", "truncated"),
+                default=torch.zeros((), device=done.device, dtype=torch.bool),
+            )
+        done = done | truncated
+        
+        
+        _reset:torch.Tensor = done.squeeze(-1)  # (E,)
+        index :torch.Tensor= _reset & ~episode_done
+        episode_done :torch.Tensor= episode_done | _reset
+        
+        interested_tensordict.extend(tensordict["next","stats"][index].unbind(0))
 
         if episode_done.all().item():
             break
+        
+    env.reset()
+    env.train()
     
-    rate = torch.stack(rates).float()
-    return rate.mean().item()
+    interested_tensordict = torch.stack(interested_tensordict,dim=0)
+    return interested_tensordict["game_win"].float().mean().item()
 
 def calculate_win_rate_matrix(env:TransformedEnv,actor_paths:list[str],create_actor_func:Callable[[str,],TensorDictModule],max_episode_length:int=180):
     n=len(actor_paths)

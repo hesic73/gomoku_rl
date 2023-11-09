@@ -98,6 +98,7 @@ class GomokuEnvWithOpponent(EnvBase):
         policy: _policy_t,
     ):
         self.opponent_policy = policy
+        self.reset()
 
     def to(self, device: DEVICE_TYPING) -> EnvBase:
         self.gomoku.to(device)
@@ -128,7 +129,7 @@ class GomokuEnvWithOpponent(EnvBase):
             opponent_tensordict = self.opponent_policy(opponent_tensordict)
         opponent_action = opponent_tensordict.get("action")
         env_mask=(torch.rand_like(env_mask,dtype=torch.float)>0.5)&env_mask
-        self.gomoku.step(action=opponent_action,env_ids=env_mask)
+        self.gomoku.step(action=opponent_action,env_indices=env_mask)
         self.black[env_ids]=env_mask[env_ids]
         
         
@@ -145,8 +146,9 @@ class GomokuEnvWithOpponent(EnvBase):
         episode_len=self.gomoku.move_count.clone() # (E,)
         
         win, illegal = self.gomoku.step(action=action)
-        reset_envs = (win | illegal).cpu().nonzero().squeeze(-1).to(self.device)
-        self.gomoku.reset(env_ids=reset_envs)
+        reset_envs_ids = (win | illegal).cpu().nonzero().squeeze(-1).to(self.device)
+        env_indices=~(win|illegal)
+        self.gomoku.reset(env_ids=reset_envs_ids)
         episode_len=torch.where(self.gomoku.move_count==0,episode_len,self.gomoku.move_count) # (E,)
 
 
@@ -162,9 +164,13 @@ class GomokuEnvWithOpponent(EnvBase):
         
         # if the environment has been reset, the opponent can never win or make an illegal move at the first step
         # so opponent_win/illegal is nonzero only if win/illegal is nonzero
-        opponent_win, opponent_illegal = self.gomoku.step(action=opponent_action)
-        reset_envs = (opponent_win | opponent_illegal).cpu().nonzero().squeeze(-1).to(self.device)
-        self.gomoku.reset(env_ids=reset_envs)
+        
+        # UPDATE: if the game is over, the opponent will not make a move
+        opponent_win, opponent_illegal = self.gomoku.step(action=opponent_action,env_indices=env_indices)
+        opponent_win=opponent_win&env_indices
+        opponent_illegal=opponent_illegal&env_indices
+        reset_envs_ids = (opponent_win | opponent_illegal).cpu().nonzero().squeeze(-1).to(self.device)
+        self.gomoku.reset(env_ids=reset_envs_ids)
         episode_len=torch.where(self.gomoku.move_count==0,episode_len,self.gomoku.move_count) # (E,)
         
         
@@ -193,7 +199,7 @@ class GomokuEnvWithOpponent(EnvBase):
                     "opponent_win":opponent_win,
                     "opponent_illegal":opponent_illegal,
                     "game_win":game_win,
-                    "black":self.black,
+                    "black":self.black.clone(),
                 }
             }
         )
