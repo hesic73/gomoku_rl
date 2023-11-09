@@ -40,12 +40,12 @@ class _Actor(nn.Module):
         super().__init__()
         self.features=ConvNet(device=device,**cnn_kwargs)
         self.advantage=MLP(out_features=n_action, device=device, **mlp_kwargs)
-        
+  
     def forward(self,x:torch.Tensor,mask:torch.Tensor|None=None)->torch.Tensor:
         x = self.features(x)
         advantage:torch.Tensor = self.advantage(x)
         if mask is not None:
-            advantage=torch.where(mask==0,advantage,-999999)
+            advantage=torch.where(mask==0,advantage,-1e10)
         probs=torch.special.softmax(advantage,dim=-1) # (E, board_size^2)
         return probs
 

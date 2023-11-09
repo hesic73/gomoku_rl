@@ -113,13 +113,10 @@ class GomokuEnvWithOpponent(EnvBase):
             env_mask = tensordict.get("_reset").reshape(self.gomoku.num_envs)
         else:
             env_mask = torch.ones(self.gomoku.num_envs, dtype=bool, device=self.device)
-        tensordict = TensorDict({}, batch_size=self.batch_size, device=self.device)
 
         env_ids = env_mask.cpu().nonzero().squeeze(-1).to(self.device)
 
         self.gomoku.reset(env_ids=env_ids)
-        
-        
         
         opponent_tensordict = TensorDict(
             {"observation": self.gomoku.get_encoded_board(),
@@ -130,13 +127,17 @@ class GomokuEnvWithOpponent(EnvBase):
         with torch.no_grad():
             opponent_tensordict = self.opponent_policy(opponent_tensordict)
         opponent_action = opponent_tensordict.get("action")
-        env_mask=(torch.randn_like(env_mask,dtype=torch.float)>0)&env_mask
+        env_mask=(torch.rand_like(env_mask,dtype=torch.float)>0.5)&env_mask
         self.gomoku.step(action=opponent_action,env_ids=env_mask)
         self.black[env_ids]=env_mask[env_ids]
         
         
-        # TO DO: opponent play a move here
-        tensordict.set("observation", self.gomoku.get_encoded_board())
+        tensordict = TensorDict(
+            {"observation": self.gomoku.get_encoded_board(),
+             "action_mask":self.gomoku.get_action_mask(),},
+            self.batch_size,
+            device=self.device,
+        )
         return tensordict
 
     def _step(self, tensordict: TensorDictBase) -> TensorDictBase:

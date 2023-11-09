@@ -113,6 +113,7 @@ def main(cfg: DictConfig):
         in_keys=stats_keys,
         log_keys=stats_keys,
         logger_func=lambda x:run.log(x),
+        process_func=None
     )
     transforms = [InitTracker(), logger]
     env = TransformedEnv(base_env, Compose(*transforms)).train()
