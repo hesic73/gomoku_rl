@@ -122,6 +122,7 @@ class GomokuBoard(QWidget):
             tensordict = TensorDict(
                 {
                     "observation": self._env.get_encoded_board(),
+                    "action_mask": self._env.get_action_mask(),
                 },
                 batch_size=1,
             ).to(self.model.device)
