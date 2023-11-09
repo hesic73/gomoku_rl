@@ -35,17 +35,19 @@ from torchrl.objectives.value import GAE
 from .policy import Policy
 
 
-class Obs2Logits(nn.Module):
+class _Actor(nn.Module):
     def __init__(self,device:_device_t,n_action,cnn_kwargs:dict,mlp_kwargs:dict) -> None:
         super().__init__()
         self.features=ConvNet(device=device,**cnn_kwargs)
         self.advantage=MLP(out_features=n_action, device=device, **mlp_kwargs)
         
-    def forward(self,x:torch.Tensor)->torch.Tensor:
+    def forward(self,x:torch.Tensor,mask:torch.Tensor|None=None)->torch.Tensor:
         x = self.features(x)
-        advantage = self.advantage(x)
-        logits=torch.special.logit(advantage,eps=1e-6)
-        return logits
+        advantage:torch.Tensor = self.advantage(x)
+        if mask is not None:
+            advantage=torch.where(mask==0,advantage,-999999)
+        probs=torch.special.softmax(advantage,dim=-1) # (E, board_size^2)
+        return probs
 
 
 def make_actor(
@@ -62,16 +64,16 @@ def make_actor(
         {"activation_class": getattr(nn, mlp_kwargs.get("activation_class", "ReLU"))}
     )
 
-    actor_net=Obs2Logits(device=device,n_action=action_spec.space.n,cnn_kwargs=cnn_kwargs,mlp_kwargs=mlp_kwargs)
+    actor_net=_Actor(device=device,n_action=action_spec.space.n,cnn_kwargs=cnn_kwargs,mlp_kwargs=mlp_kwargs)
     
-    policy_module=TensorDictModule(module=actor_net,in_keys=['observation'],out_keys=[
-        'logits'
+    policy_module=TensorDictModule(module=actor_net,in_keys=['observation',"action_mask"],out_keys=[
+        'probs'
     ])
     
     policy_module = ProbabilisticActor(
     module=policy_module,
     spec=action_spec,
-    in_keys=["logits"],
+    in_keys=["probs"],
     distribution_class=Categorical,
     return_log_prob=True,
 )
@@ -144,9 +146,9 @@ class PPOPolicy(Policy):
         
             
     def __call__(self, tensordict: TensorDict):
-        actor_input=tensordict.select("observation","action",strict=False)
+        actor_input=tensordict.select("observation","action_mask",strict=False)
         actor_output:TensorDict = self.actor(actor_input)
-        actor_output=actor_output.exclude("logits")
+        actor_output=actor_output.exclude("probs")
         tensordict.update(actor_output)
         
         
@@ -199,8 +201,11 @@ class PPOPolicy(Policy):
         if deterministic:
             def _policy(tensordict:TensorDict):
                 tensordict=actor(tensordict)
-                logits:torch.Tensor=tensordict.get("logits")
-                action=logits.argmax(dim=-1)
+                probs:torch.Tensor=tensordict.get("probs")
+                action_mask:torch.Tensor=tensordict.get("action_mask",None)
+                if action_mask is not None:
+                    probs=probs*(action_mask==0).float()
+                action=probs.argmax(dim=-1)
                 tensordict.update({"action":action})
                 return tensordict
             

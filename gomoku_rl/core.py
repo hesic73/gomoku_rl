@@ -212,6 +212,9 @@ class Gomoku:
 
         output = torch.stack([layer1, layer2, layer3], dim=1)  # (E,*,B,B)
         return output.float()
+    
+    def get_action_mask(self):
+        return (self.board!=0).flatten(start_dim=1)
 
     def is_valid(self, action: torch.Tensor) -> torch.Tensor:
         """_summary_

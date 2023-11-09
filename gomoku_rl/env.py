@@ -12,7 +12,7 @@ from torchrl.data.tensor_specs import (
     BoundedTensorSpec,
     UnboundedContinuousTensorSpec,
 )
-
+from torch.distributions import Categorical
 
 from .core import Gomoku
 
@@ -23,6 +23,13 @@ _policy_t=TensorDictModule| Callable[
             TensorDictBase,
         ]
 
+
+def random_policy_with_mask(action_mask:torch.Tensor):
+    probs=torch.zeros_like(action_mask,dtype=torch.float)
+    probs=torch.where(action_mask==0,probs,-999)
+    probs=torch.special.softmax(probs,dim=-1)
+    dist=Categorical(probs=probs)
+    return dist.sample()
 
 class GomokuEnvWithOpponent(EnvBase):
     def __init__(
@@ -38,7 +45,14 @@ class GomokuEnvWithOpponent(EnvBase):
         
         
         if initial_policy is None:
-            initial_policy = lambda tensordict: self.rand_action(tensordict)
+            def initial_policy(tensordict:TensorDict):
+                action_mask=tensordict.get("action_mask",None)
+                if action_mask is None:
+                    return self.rand_action(tensordict)
+                action=random_policy_with_mask(action_mask=action_mask)
+                tensordict.update({"action":action})
+                return tensordict
+                
         self.opponent_policy = initial_policy
         
         
@@ -108,7 +122,8 @@ class GomokuEnvWithOpponent(EnvBase):
         
         
         opponent_tensordict = TensorDict(
-            {"observation": self.gomoku.get_encoded_board()},
+            {"observation": self.gomoku.get_encoded_board(),
+             "action_mask":self.gomoku.get_action_mask(),},
             self.batch_size,
             device=self.device,
         )
@@ -135,7 +150,8 @@ class GomokuEnvWithOpponent(EnvBase):
 
 
         opponent_tensordict = TensorDict(
-            {"observation": self.gomoku.get_encoded_board()},
+            {"observation": self.gomoku.get_encoded_board(),
+             "action_mask":self.gomoku.get_action_mask(),},
             self.batch_size,
             device=self.device,
         )
@@ -167,6 +183,7 @@ class GomokuEnvWithOpponent(EnvBase):
             {
                 "done": done,
                 "observation": self.gomoku.get_encoded_board(),
+                "action_mask":self.gomoku.get_action_mask(),
                 "reward": reward,         
                 "stats":{  
                     "episode_len":episode_len, 
