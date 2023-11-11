@@ -1,0 +1,35 @@
+name: nfsp
+
+
+buffer_size: 100_000
+buffer_device: cpu
+batch_size: 8192
+gamma: 0.95
+
+max_grad_norm: 15.0
+
+eps_init: 1.0
+eps_end: 0.05
+annealing_num_steps: 2000
+
+
+target_update_interval: 4
+
+n_optim: 32
+lr: 5e-4
+weight_decay: 1e-5
+
+# dqn 
+actor:
+  cnn_kwargs:
+    num_cells: [32, 64, 128, 4]
+    kernel_sizes: [3, 3, 3, 1]
+    strides: [1, 1, 1, 1]
+    paddings: [1, 1, 1, 0]
+    activation_class: ReLU
+
+  mlp_kwargs:
+    depth: 2
+    num_cells: [64, 64]
+    activation_class: ReLU
+

@@ -137,7 +137,9 @@ class Gomoku:
             self.move_count[env_ids] = 0
             self.last_move[env_ids] = -1
 
-    def step(self, action: torch.Tensor,env_indices:Optional[torch.Tensor]=None) -> tuple[torch.Tensor, torch.Tensor]:
+    def step(
+        self, action: torch.Tensor, env_indices: Optional[torch.Tensor] = None
+    ) -> tuple[torch.Tensor, torch.Tensor]:
         """_summary_
 
         Args:
@@ -148,9 +150,9 @@ class Gomoku:
             tuple[torch.Tensor, torch.Tensor]: done (E,), invalid (E,)
 
         """
-        
+
         if env_indices is None:
-            env_indices=torch.ones_like(action,dtype=torch.bool)
+            env_indices = torch.ones_like(action, dtype=torch.bool)
 
         # if action isn't in [0,{board_size}^2), the indexing will crash
         x = action // self.board_size
@@ -161,20 +163,20 @@ class Gomoku:
         ]  # (E,)
 
         # when env_indices is not None, this variable should be called 'skipped_env_ids'
-        not_empty = (values_on_board != 0)|(~env_indices)  # (E,)
+        not_empty = (values_on_board != 0) | (~env_indices)  # (E,)
 
         piece = turn_to_piece(self.turn)
         self.board[torch.arange(self.num_envs, device=self.device), x, y] = torch.where(
             not_empty, values_on_board, piece
         )
         self.move_count = self.move_count + torch.logical_not(not_empty).long()
-        
+
         # F.conv2d doesn't support LongTensor on CUDA. So we use float.
         board_one_side = (self.board == piece.unsqueeze(-1).unsqueeze(-1)).float()
         self.done = compute_done(board_one_side) | (
             self.move_count == self.board_size * self.board_size
         )
-        
+
         self.turn = (self.turn + torch.logical_not(not_empty).long()) % 2
         self.last_move = torch.where(not_empty, self.last_move, action)
 
@@ -212,9 +214,9 @@ class Gomoku:
 
         output = torch.stack([layer1, layer2, layer3], dim=1)  # (E,*,B,B)
         return output.float()
-    
+
     def get_action_mask(self):
-        return (self.board!=0).flatten(start_dim=1)
+        return (self.board != 0).flatten(start_dim=1)
 
     def is_valid(self, action: torch.Tensor) -> torch.Tensor:
         """_summary_
@@ -238,5 +240,3 @@ class Gomoku:
         invalid = out_of_range | not_empty
 
         return ~invalid
-
-

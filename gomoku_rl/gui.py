@@ -33,8 +33,9 @@ class Piece(enum.Enum):
     WHITE = enum.auto()
 
 
-def _is_action_valid(x:int,y:int,board_size:int):
-    return  0<=x<board_size and 0<=y<board_size
+def _is_action_valid(x: int, y: int, board_size: int):
+    return 0 <= x < board_size and 0 <= y < board_size
+
 
 def rand_valid_action(
     board_size: int,
@@ -63,7 +64,13 @@ class GomokuBoard(QWidget):
         self,
         board_size: int = 19,
         human_color: Piece | None = Piece.BLACK,
-        model: Callable[[TensorDict,],TensorDict] | None = None,
+        model: Callable[
+            [
+                TensorDict,
+            ],
+            TensorDict,
+        ]
+        | None = None,
     ):
         super().__init__()
         self.board_size = board_size
@@ -252,7 +259,7 @@ class GomokuBoard(QWidget):
                 self.human_color is not None and self.current_player == self.human_color
             )
 
-            if human_turn and _is_action_valid(x,y,self.board_size):
+            if human_turn and _is_action_valid(x, y, self.board_size):
                 logging.info(f"Human:{self.current_player} ({x},{y})")
                 self.step([x, y])
                 if not self.done:
