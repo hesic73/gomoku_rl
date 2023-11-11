@@ -12,27 +12,9 @@ from torchrl.data.tensor_specs import (
     BoundedTensorSpec,
     UnboundedContinuousTensorSpec,
 )
-from torch.distributions import Categorical
+from gomoku_rl.utils.policy import _policy_t, uniform_policy
 
 from .core import Gomoku
-
-_policy_t = (
-    TensorDictModule
-    | Callable[
-        [
-            TensorDictBase,
-        ],
-        TensorDictBase,
-    ]
-)
-
-
-def random_policy_with_mask(action_mask: torch.Tensor):
-    probs = torch.zeros_like(action_mask, dtype=torch.float)
-    probs = torch.where(action_mask == 0, probs, -999)
-    probs = torch.special.softmax(probs, dim=-1)
-    dist = Categorical(probs=probs)
-    return dist.sample()
 
 
 class GomokuEnvWithOpponent(EnvBase):
@@ -46,17 +28,7 @@ class GomokuEnvWithOpponent(EnvBase):
         super().__init__(device, batch_size=[num_envs])
         self.gomoku = Gomoku(num_envs=num_envs, board_size=board_size, device=device)
 
-        if initial_policy is None:
-
-            def initial_policy(tensordict: TensorDict):
-                action_mask = tensordict.get("action_mask", None)
-                if action_mask is None:
-                    return self.rand_action(tensordict)
-                action = random_policy_with_mask(action_mask=action_mask)
-                tensordict.update({"action": action})
-                return tensordict
-
-        self.opponent_policy = initial_policy
+        self.opponent_policy = initial_policy or uniform_policy
 
         self.observation_spec = CompositeSpec(
             {
@@ -151,9 +123,8 @@ class GomokuEnvWithOpponent(EnvBase):
         episode_len = self.gomoku.move_count.clone()  # (E,)
 
         win, illegal = self.gomoku.step(action=action)
-        reset_envs_ids = (win | illegal).cpu().nonzero().squeeze(-1).to(self.device)
         env_indices = ~(win | illegal)
-        self.gomoku.reset(env_ids=reset_envs_ids)
+        self.gomoku.reset(env_ids=(win | illegal))
         episode_len = torch.where(
             self.gomoku.move_count == 0, episode_len, self.gomoku.move_count
         )  # (E,)
@@ -177,16 +148,7 @@ class GomokuEnvWithOpponent(EnvBase):
         opponent_win, opponent_illegal = self.gomoku.step(
             action=opponent_action, env_indices=env_indices
         )
-        opponent_win = opponent_win & env_indices
-        opponent_illegal = opponent_illegal & env_indices
-        reset_envs_ids = (
-            (opponent_win | opponent_illegal)
-            .cpu()
-            .nonzero()
-            .squeeze(-1)
-            .to(self.device)
-        )
-        self.gomoku.reset(env_ids=reset_envs_ids)
+        self.gomoku.reset(env_ids=(opponent_win | opponent_illegal))
         episode_len = torch.where(
             self.gomoku.move_count == 0, episode_len, self.gomoku.move_count
         )  # (E,)
@@ -194,12 +156,11 @@ class GomokuEnvWithOpponent(EnvBase):
         game_win = win | opponent_illegal
         done = win | illegal | opponent_win | opponent_illegal
 
-        # 对手下错是对手太菜了，而不是我厉害
         reward = (
             win.float()
             - illegal.float()
             - opponent_win.float()
-            #    + opponent_illegal.float()
+            + opponent_illegal.float()
         )
 
         tensordict = TensorDict({}, self.batch_size, device=self.device)
@@ -221,3 +182,188 @@ class GomokuEnvWithOpponent(EnvBase):
             }
         )
         return tensordict
+
+
+class GomokuEnv:
+    """This environment is incompatible with `torchrl.envs.EnvBase`
+    I refered to the implementation in `rlcard.envs.Env`
+    """
+
+    def __init__(
+        self,
+        num_envs: int,
+        board_size: int = 19,
+        device: DEVICE_TYPING = None,
+    ):
+        self.batch_size = torch.Size((num_envs,))
+        self.device = device
+        self.gomoku = Gomoku(num_envs=num_envs, board_size=board_size, device=device)
+
+        self.board_size = board_size
+
+        self.observation_spec = CompositeSpec(
+            {
+                "observation": UnboundedContinuousTensorSpec(
+                    device=self.device,
+                    shape=[num_envs, 3, board_size, board_size],
+                ),
+            },
+            shape=[
+                num_envs,
+            ],
+            device=self.device,
+        )
+        self.action_spec = DiscreteTensorSpec(
+            board_size * board_size,
+            shape=[
+                num_envs,
+            ],
+            device=self.device,
+        )
+        self.reward_spec = UnboundedContinuousTensorSpec(
+            shape=[num_envs, 1],
+            device=self.device,
+        )
+
+    def reset(self, env_ids: torch.Tensor | None = None) -> TensorDict:
+        self.gomoku.reset(env_ids=env_ids)
+        episode_len = self.gomoku.move_count + 1  # (E,)
+        tensordict = TensorDict(
+            {
+                "observation": self.gomoku.get_encoded_board(),
+                "action_mask": self.gomoku.get_action_mask(),
+                "stats": {
+                    "episode_len": episode_len,
+                    "win": torch.zeros(
+                        self.batch_size, device=self.device, dtype=torch.bool
+                    ),
+                    "illegal": torch.zeros(
+                        self.batch_size, device=self.device, dtype=torch.bool
+                    ),
+                },
+            },
+            self.batch_size,
+            device=self.device,
+        )
+        return tensordict
+
+    def step(self, tensordict: TensorDict) -> TensorDict:
+        action: torch.Tensor = tensordict.get("action")
+        env_indices: torch.Tensor = tensordict.get("env_indices", None)
+        episode_len = self.gomoku.move_count + 1  # (E,)
+        win, illegal = self.gomoku.step(action=action, env_indices=env_indices)
+        done = win | illegal
+        tensordict = TensorDict({}, self.batch_size, device=self.device)
+        tensordict.update(
+            {
+                "observation": self.gomoku.get_encoded_board(),
+                "action_mask": self.gomoku.get_action_mask(),
+                "done": done,
+                # reward is calculated later
+                "stats": {
+                    "episode_len": episode_len,
+                    "win": win,
+                    "illegal": illegal,  # with action masking, it should be zero
+                },
+            }
+        )
+        return tensordict
+
+    def _round(
+        self,
+        tensordict_t_minus_1: TensorDict | None,
+        tensordict_t: TensorDict,
+        player_0: _policy_t,
+        player_1: _policy_t,
+    ):
+        # player_0 下黑棋 player_1 下白旗
+
+        with torch.no_grad():
+            tensordict_t = player_0(tensordict_t)
+        tensordict_t_plus_1 = self.step(tensordict=tensordict_t)
+
+        done_t_plus_1: torch.Tensor = tensordict_t_plus_1.get("done")  # (E,)
+        reset_td = self.reset(done_t_plus_1)
+        tensordict_t_plus_1.update(reset_td)  # done的時候DQN實際沒用到observation，所以沒有影響
+
+        # 如果在t时刻是win/illegal会被reset，t+1时刻不可能win/illegal
+        reward_t_plus_1: torch.Tensor = (
+            tensordict_t.get(("stats", "win")).float()
+            - tensordict_t.get(("stats", "illegal")).float()
+            - tensordict_t_plus_1.get(("stats", "win")).float()
+            + tensordict_t_plus_1.get(("stats", "illegal")).float()
+        )
+
+        if tensordict_t_minus_1 is not None:
+            transition_player_1: TensorDict = tensordict_t_minus_1.select(
+                "observation", "action_mask", "action"
+            )
+            transition_player_1.set(
+                "next", tensordict_t_plus_1.select("observation", "action_mask")
+            )
+            transition_player_1.set(("next", "reward"), reward_t_plus_1)
+        else:
+            transition_player_1 = None
+
+        with torch.no_grad():
+            tensordict_t_plus_1 = player_1(tensordict_t_plus_1)
+        # 如果黑棋下完游戏就结束了，白棋也不下。
+        # 但這裡不走對transition是沒有影響的
+        tensordict_t_plus_1.set("env_indices", ~done_t_plus_1)
+        tensordict_t_plus_2 = self.step(tensordict=tensordict_t_plus_1)
+        tensordict_t_plus_1.exclude("env_indices", inplace=True)
+
+        done_t_plus_2 = tensordict_t_plus_2.get("done")
+        reset_td = self.reset(done_t_plus_2)
+        tensordict_t_plus_2.update(reset_td)
+
+        reward_t_plus_2: torch.Tensor = (
+            tensordict_t_plus_1.get(("stats", "win")).float()
+            - tensordict_t_plus_1.get(("stats", "illegal")).float()
+            - tensordict_t_plus_2.get(("stats", "win")).float()
+            + tensordict_t_plus_2.get(("stats", "illegal")).float()
+        )
+
+        transition_player_0: TensorDict = tensordict_t.select(
+            "observation", "action_mask", "action"
+        )
+        transition_player_0.set(
+            "next", tensordict_t_plus_2.select("observation", "action_mask")
+        )
+        transition_player_0.set(("next", "reward"), reward_t_plus_2)
+
+        return (
+            transition_player_0,
+            transition_player_1,
+            tensordict_t_plus_1,
+            tensordict_t_plus_2,
+        )
+
+    def rollout(
+        self,
+        max_steps: int,
+        player_0: _policy_t,
+        player_1: _policy_t,
+    ):
+        tensordict_t_minus_1 = None
+        tensordict_t = self.reset()
+
+        transitions_player_0 = []
+        transitions_player_1 = []
+
+        for i in range(max_steps):
+            (
+                transition_player_0,
+                transition_player_1,
+                tensordict_t_minus_1,
+                tensordict_t,
+            ) = self._round(tensordict_t_minus_1, tensordict_t, player_0, player_1)
+            
+            transitions_player_0.append(transition_player_0.cpu())
+            if transition_player_1 is not None:
+                transitions_player_1.append(transition_player_1.cpu())
+
+        transitions_player_0 = torch.stack(transitions_player_0, dim=1)
+        transitions_player_1 = torch.stack(transitions_player_1, dim=1)
+
+        return transitions_player_0, transitions_player_1

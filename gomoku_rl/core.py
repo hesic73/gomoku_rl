@@ -147,7 +147,9 @@ class Gomoku:
             env_indices (Optional[torch.Tensor]): (E,)
 
         Returns:
-            tuple[torch.Tensor, torch.Tensor]: done (E,), invalid (E,)
+            tuple[torch.Tensor, torch.Tensor]: done (E,), illegal (E,)
+            
+            If `env_indices` is not None, the elements of `done` and `illegal` are 0 where `env_indices`==0
 
         """
 
@@ -162,14 +164,13 @@ class Gomoku:
             torch.arange(self.num_envs, device=self.device), x, y
         ]  # (E,)
 
-        # when env_indices is not None, this variable should be called 'skipped_env_ids'
-        not_empty = (values_on_board != 0) | (~env_indices)  # (E,)
+        nop = (values_on_board != 0) | (~env_indices)  # (E,)
 
         piece = turn_to_piece(self.turn)
         self.board[torch.arange(self.num_envs, device=self.device), x, y] = torch.where(
-            not_empty, values_on_board, piece
+            nop, values_on_board, piece
         )
-        self.move_count = self.move_count + torch.logical_not(not_empty).long()
+        self.move_count = self.move_count + torch.logical_not(nop).long()
 
         # F.conv2d doesn't support LongTensor on CUDA. So we use float.
         board_one_side = (self.board == piece.unsqueeze(-1).unsqueeze(-1)).float()
@@ -177,10 +178,10 @@ class Gomoku:
             self.move_count == self.board_size * self.board_size
         )
 
-        self.turn = (self.turn + torch.logical_not(not_empty).long()) % 2
-        self.last_move = torch.where(not_empty, self.last_move, action)
+        self.turn = (self.turn + torch.logical_not(nop).long()) % 2
+        self.last_move = torch.where(nop, self.last_move, action)
 
-        return self.done.clone(), not_empty.clone()
+        return self.done&env_indices, nop&env_indices
 
     def get_encoded_board(self):
         piece = turn_to_piece(self.turn).unsqueeze(-1).unsqueeze(-1)

@@ -7,6 +7,7 @@
 ## Installation
 
 To get started, install gomoku_rl with the following command:
+
 ```bash
 pip install -e .
 ```
@@ -21,6 +22,7 @@ pip install -e .
 - `hydra-core==1.3.2`
 
 ## Usage
+
 *gomoku_rl* uses `hydra` to configure training hyperparameters. You can modify the settings in `cfg/train.yaml` or override them via the command line:
 
 ```bash
@@ -33,9 +35,8 @@ Once you've trained an AI, you can play Gomoku with it using the `scripts/demo.p
 python scripts/demo.py human_first=True board_size=10 model_ckpt_path=/path/to/your/model
 ```
 
-
 ## References
 
-- [https://github.com/junxiaosong/AlphaZero_Gomoku/](https://github.com/junxiaosong/AlphaZero_Gomoku/)
-
 - [https://arxiv.org/pdf/1809.10595](https://arxiv.org/pdf/1809.10595)
+
+- [https://arxiv.org/abs/1910.04376](https://arxiv.org/abs/1910.04376)
