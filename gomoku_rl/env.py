@@ -72,7 +72,6 @@ class GomokuEnvWithOpponent(EnvBase):
         policy: _policy_t,
     ):
         self.opponent_policy = policy
-        self.reset()
 
     def to(self, device: DEVICE_TYPING) -> EnvBase:
         self.gomoku.to(device)
@@ -102,8 +101,7 @@ class GomokuEnvWithOpponent(EnvBase):
         with torch.no_grad():
             opponent_tensordict = self.opponent_policy(opponent_tensordict)
         opponent_action = opponent_tensordict.get("action")
-        # 这里会出现bug
-        _opponent_first_mask = torch.zeros_like(env_mask) # torch.rand_like(env_mask, dtype=torch.float) > 0.5
+        _opponent_first_mask = torch.rand_like(env_mask, dtype=torch.float) > 0.5
         self.gomoku.step(
             action=opponent_action, env_indices=env_mask & _opponent_first_mask
         )
@@ -123,9 +121,18 @@ class GomokuEnvWithOpponent(EnvBase):
         action: torch.Tensor = tensordict.get("action")
         episode_len = self.gomoku.move_count.clone()  # (E,)
 
+        # obs1: torch.Tensor = tensordict.get("observation").bool()
+        # obs2 = self.gomoku.get_encoded_board().bool()
+        # eq = (obs1 == obs2).flatten(start_dim=1).all(dim=-1)
+        # try:
+        #     assert eq.all()
+        # except AssertionError:
+        #     print("GG")
+        #     exit()
+
         win, illegal = self.gomoku.step(action=action)
 
-        # 有一个bug
+        # 有一个bug（现在似乎没了）
         if illegal.any():
             print(tensordict)
             illegal_indexes = illegal.nonzero().squeeze()
@@ -138,7 +145,6 @@ class GomokuEnvWithOpponent(EnvBase):
             assert self.gomoku.move_count[idx] == 1
             exit()
 
-        env_indices = ~(win | illegal)
         self.gomoku.reset(env_ids=(win | illegal))
         episode_len = torch.where(
             self.gomoku.move_count == 0, episode_len, self.gomoku.move_count
@@ -160,6 +166,8 @@ class GomokuEnvWithOpponent(EnvBase):
         # so opponent_win/illegal is nonzero only if win/illegal is nonzero
 
         # UPDATE: if the game is over, the opponent will not make a move
+        
+        env_indices = ~(win | illegal)
         opponent_win, opponent_illegal = self.gomoku.step(
             action=opponent_action, env_indices=env_indices
         )

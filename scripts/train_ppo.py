@@ -157,7 +157,7 @@ def main(cfg: DictConfig):
             else:
                 _wrs=[]
                 for actor_path in actorBank.get_actor_paths():
-                    opponent=policy.from_checkpoint(torch.load(actor_path),cfg=cfg.algo.actor,action_spec=env.action_spec,device=cfg.device,deterministic=True)
+                    opponent=policy.from_checkpoint(torch.load(actor_path),cfg=cfg.algo.actor,action_spec=env.action_spec,device=cfg.device)
                     base_env.set_opponent_policy(opponent)
                     _wr=eval_win_rate(env=env, policy=policy,max_episode_length=int((cfg.board_size**2)//2))
                     _wrs.append(_wr)
@@ -182,8 +182,9 @@ def main(cfg: DictConfig):
         )
         
         if len(actorBank)>0:
-            opponent=policy.from_checkpoint(actorBank.get_random(),cfg=cfg.algo.actor,action_spec=env.action_spec,device=cfg.device,deterministic=True)
+            opponent=policy.from_checkpoint(actorBank.get_random(),cfg=cfg.algo.actor,action_spec=env.action_spec,device=cfg.device)
             base_env.set_opponent_policy(opponent)
+            collector.reset()
 
 
     

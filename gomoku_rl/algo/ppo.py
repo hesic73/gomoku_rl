@@ -132,18 +132,10 @@ class PPOPolicy(Policy):
         cfg: DictConfig,
         action_spec: DiscreteTensorSpec,
         device: _device_t,
-        deterministic: bool = False,
     ) -> TensorDictModule:
         actor = make_ppo_actor(cfg, action_spec, device)
         actor.load_state_dict(checkpoint)
-        if deterministic:
-
-            _policy=uniform_policy
-
-            _policy.device = actor.device
-            return _policy
-        else:
-            return actor
+        return actor
 
 
 def make_dataset_naive(tensordict: TensorDict, num_minibatches: int = 4):

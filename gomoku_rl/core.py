@@ -131,7 +131,7 @@ class Gomoku:
             self.move_count.zero_()
             self.last_move.fill_(-1)
         else:
-            self.board[env_ids] = 0
+            self.board = (~env_ids).long().unsqueeze(-1).unsqueeze(-1) * self.board
             self.done[env_ids] = False
             self.turn[env_ids] = 0
             self.move_count[env_ids] = 0
@@ -148,7 +148,7 @@ class Gomoku:
 
         Returns:
             tuple[torch.Tensor, torch.Tensor]: done (E,), illegal (E,)
-            
+
             If `env_indices` is not None, the elements of `done` and `illegal` are 0 where `env_indices`==0
 
         """
@@ -181,7 +181,7 @@ class Gomoku:
         self.turn = (self.turn + torch.logical_not(nop).long()) % 2
         self.last_move = torch.where(nop, self.last_move, action)
 
-        return self.done&env_indices, nop&env_indices
+        return self.done & env_indices, nop & env_indices
 
     def get_encoded_board(self):
         piece = turn_to_piece(self.turn).unsqueeze(-1).unsqueeze(-1)
