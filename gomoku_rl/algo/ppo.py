@@ -28,6 +28,7 @@ from torchrl.objectives.value import GAE
 
 from .policy import Policy
 from .common import make_ppo_actor, make_critic
+from gomoku_rl.utils.policy import uniform_policy
 
 
 class PPOPolicy(Policy):
@@ -137,15 +138,7 @@ class PPOPolicy(Policy):
         actor.load_state_dict(checkpoint)
         if deterministic:
 
-            def _policy(tensordict: TensorDict):
-                tensordict = actor(tensordict)
-                probs: torch.Tensor = tensordict.get("probs")
-                action_mask: torch.Tensor = tensordict.get("action_mask", None)
-                if action_mask is not None:
-                    probs = probs * (action_mask == 0).float()
-                action = probs.argmax(dim=-1)
-                tensordict.update({"action": action})
-                return tensordict
+            _policy=uniform_policy
 
             _policy.device = actor.device
             return _policy

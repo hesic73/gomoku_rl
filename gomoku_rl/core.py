@@ -106,7 +106,7 @@ class Gomoku:
             num_envs, dtype=torch.long, device=self.device
         )
 
-        self.last_move: torch = -torch.ones(
+        self.last_move: torch.Tensor = -torch.ones(
             num_envs, dtype=torch.long, device=self.device
         )
 
@@ -217,7 +217,7 @@ class Gomoku:
         return output.float()
 
     def get_action_mask(self):
-        return (self.board != 0).flatten(start_dim=1)
+        return (self.board == 0).flatten(start_dim=1)
 
     def is_valid(self, action: torch.Tensor) -> torch.Tensor:
         """_summary_

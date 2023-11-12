@@ -30,7 +30,7 @@ class _Actor(nn.Module):
         x = self.features(x)
         advantage: torch.Tensor = self.advantage(x)
         if mask is not None:
-            advantage = torch.where(mask == 0, advantage, -1e10)
+            advantage = torch.where(mask.bool(), advantage, -1e10)
         probs = torch.special.softmax(advantage, dim=-1)  # (E, board_size^2)
         return probs
 
@@ -38,7 +38,6 @@ class _Actor(nn.Module):
 def make_dqn_actor(
     cfg: DictConfig,
     action_spec: TensorSpec,
-    action_space_size: int,
 ):
     cnn_kwargs = OmegaConf.to_container(cfg.cnn_kwargs)
     cnn_kwargs.update(
@@ -49,13 +48,31 @@ def make_dqn_actor(
         {"activation_class": getattr(nn, mlp_kwargs.get("activation_class", "ReLU"))}
     )
 
-    net = DuelingCnnDQNet(action_space_size, 1, cnn_kwargs, mlp_kwargs)
+    net = DuelingCnnDQNet(action_spec.space.n, 1, cnn_kwargs, mlp_kwargs)
     actor = QValueActor(
         net,
         spec=action_spec,
         action_mask_key="action_mask",
     )
     return actor
+
+
+def make_egreedy_actor(
+    cfg: DictConfig,
+    action_spec: TensorSpec,
+    eps_init: float = 1.0,
+    eps_end: float = 0.05,
+    annealing_num_steps: int = 1000,
+):
+    actor = make_dqn_actor(cfg=cfg, action_spec=action_spec)
+    actor_explore = EGreedyWrapper(
+        actor,
+        action_mask_key="action_mask",
+        eps_init=eps_init,
+        eps_end=eps_end,
+        annealing_num_steps=annealing_num_steps,
+    )
+    return actor_explore
 
 
 def make_ppo_actor(

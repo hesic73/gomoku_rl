@@ -6,7 +6,7 @@ device: cuda
 storing_device: cpu
 
 total_frames: 100_000_000
-update_interval: 50
+update_interval: 30
 update_threshold: 0.9
 
 initial_policy: 

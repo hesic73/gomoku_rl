@@ -89,9 +89,7 @@ class GomokuEnvWithOpponent(EnvBase):
         else:
             env_mask = torch.ones(self.gomoku.num_envs, dtype=bool, device=self.device)
 
-        env_ids = env_mask.cpu().nonzero().squeeze(-1).to(self.device)
-
-        self.gomoku.reset(env_ids=env_ids)
+        self.gomoku.reset(env_ids=env_mask)
 
         opponent_tensordict = TensorDict(
             {
@@ -104,9 +102,12 @@ class GomokuEnvWithOpponent(EnvBase):
         with torch.no_grad():
             opponent_tensordict = self.opponent_policy(opponent_tensordict)
         opponent_action = opponent_tensordict.get("action")
-        env_mask = (torch.rand_like(env_mask, dtype=torch.float) > 0.5) & env_mask
-        self.gomoku.step(action=opponent_action, env_indices=env_mask)
-        self.black[env_ids] = env_mask[env_ids]
+        # 这里会出现bug
+        _opponent_first_mask = torch.zeros_like(env_mask) # torch.rand_like(env_mask, dtype=torch.float) > 0.5
+        self.gomoku.step(
+            action=opponent_action, env_indices=env_mask & _opponent_first_mask
+        )
+        self.black = torch.where(env_mask, _opponent_first_mask, self.black)
 
         tensordict = TensorDict(
             {
@@ -123,6 +124,20 @@ class GomokuEnvWithOpponent(EnvBase):
         episode_len = self.gomoku.move_count.clone()  # (E,)
 
         win, illegal = self.gomoku.step(action=action)
+
+        # 有一个bug
+        if illegal.any():
+            print(tensordict)
+            illegal_indexes = illegal.nonzero().squeeze()
+            idx = illegal_indexes[0]
+            x = action[idx].item() // self.gomoku.board_size
+            y = action[idx].item() % self.gomoku.board_size
+            print(x, y, self.gomoku.board[idx][x][y].item())
+            print(tensordict[idx]["observation"])
+            assert self.gomoku.turn[idx] == 1
+            assert self.gomoku.move_count[idx] == 1
+            exit()
+
         env_indices = ~(win | illegal)
         self.gomoku.reset(env_ids=(win | illegal))
         episode_len = torch.where(
@@ -358,7 +373,7 @@ class GomokuEnv:
                 tensordict_t_minus_1,
                 tensordict_t,
             ) = self._round(tensordict_t_minus_1, tensordict_t, player_0, player_1)
-            
+
             transitions_player_0.append(transition_player_0.cpu())
             if transition_player_1 is not None:
                 transitions_player_1.append(transition_player_1.cpu())

@@ -16,7 +16,7 @@ _policy_t = (
 
 def _uniform_policy_with_mask(action_mask: torch.Tensor):
     probs = torch.zeros_like(action_mask, dtype=torch.float)
-    probs = torch.where(action_mask == 0, probs, -999)
+    probs = torch.where(action_mask == 1, probs, -999)
     probs = torch.special.softmax(probs, dim=-1)
     dist = Categorical(probs=probs)
     return dist.sample()

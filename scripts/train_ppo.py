@@ -27,7 +27,7 @@ from tensordict import TensorDict
 @torch.no_grad()
 def eval_win_rate(env: TransformedEnv, policy,max_episode_length:int=180):
     rates=[]
-    for _ in range(100):
+    for _ in range(10):
         rates.append(_eval_win_rate(env,policy,max_episode_length))
     return sum(rates)/len(rates)
 
