@@ -27,7 +27,7 @@ from torchrl.objectives import ClipPPOLoss
 from torchrl.objectives.value import GAE
 
 from .policy import Policy
-from .common import make_ppo_actor, make_critic
+from .common import make_ppo_actor, make_critic, make_dataset_naive
 from gomoku_rl.utils.policy import uniform_policy
 
 
@@ -140,13 +140,3 @@ class PPOPolicy(Policy):
         actor = make_ppo_actor(cfg, action_spec, device)
         actor.load_state_dict(checkpoint)
         return actor
-
-
-def make_dataset_naive(tensordict: TensorDict, num_minibatches: int = 4):
-    tensordict = tensordict.reshape(-1)
-    perm = torch.randperm(
-        (tensordict.shape[0] // num_minibatches) * num_minibatches,
-        device=tensordict.device,
-    ).reshape(num_minibatches, -1)
-    for indices in perm:
-        yield tensordict[indices]

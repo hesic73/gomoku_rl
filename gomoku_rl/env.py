@@ -170,15 +170,14 @@ class GomokuEnvWithOpponent(EnvBase):
         black_win_rate = torch.zeros(
             self.gomoku.num_envs, 2, device=self.device, dtype=torch.bool
         )
-        black_win_rate[:,0]=win
-        black_win_rate[:,1]=self.black
+        black_win_rate[:, 0] = win
+        black_win_rate[:, 1] = self.black
         white_win_rate = torch.zeros(
             self.gomoku.num_envs, 2, device=self.device, dtype=torch.bool
         )
-        white_win_rate[:,0]=win
-        white_win_rate[:,1]=(~self.black)
-        
-        
+        white_win_rate[:, 0] = win
+        white_win_rate[:, 1] = ~self.black
+
         reward = win.float() - opponent_win.float()
 
         tensordict = TensorDict({}, self.batch_size, device=self.device)
@@ -222,6 +221,12 @@ class GomokuEnv:
                     device=self.device,
                     shape=[num_envs, 3, board_size, board_size],
                 ),
+                "action_mask": BinaryDiscreteTensorSpec(
+                    n=board_size * board_size,
+                    device=self.device,
+                    shape=[num_envs, board_size * board_size],
+                    dtype=torch.bool,
+                ),
             },
             shape=[
                 num_envs,
@@ -247,6 +252,9 @@ class GomokuEnv:
             {
                 "observation": self.gomoku.get_encoded_board(),
                 "action_mask": self.gomoku.get_action_mask(),
+                "done": torch.zeros(
+                    self.gomoku.num_envs, 1, device=self.device, dtype=torch.bool
+                ),
                 "stats": {
                     "episode_len": episode_len,
                     "win": torch.zeros(
@@ -267,7 +275,8 @@ class GomokuEnv:
         env_indices: torch.Tensor = tensordict.get("env_indices", None)
         episode_len = self.gomoku.move_count + 1  # (E,)
         win, illegal = self.gomoku.step(action=action, env_indices=env_indices)
-        done = win | illegal
+        assert not illegal.any()
+        done = win.unsqueeze(-1)
         tensordict = TensorDict({}, self.batch_size, device=self.device)
         tensordict.update(
             {
@@ -278,7 +287,6 @@ class GomokuEnv:
                 "stats": {
                     "episode_len": episode_len,
                     "win": win,
-                    "illegal": illegal,  # with action masking, it should be zero
                 },
             }
         )
@@ -288,6 +296,7 @@ class GomokuEnv:
         self,
         tensordict_t_minus_1: TensorDict | None,
         tensordict_t: TensorDict,
+        done_t: TensorDict,
         player_0: _policy_t,
         player_1: _policy_t,
     ):
@@ -296,60 +305,64 @@ class GomokuEnv:
         with torch.no_grad():
             tensordict_t = player_0(tensordict_t)
         tensordict_t_plus_1 = self.step(tensordict=tensordict_t)
-
         done_t_plus_1: torch.Tensor = tensordict_t_plus_1.get("done")  # (E,)
-        reset_td = self.reset(done_t_plus_1)
+        reset_td = self.reset(done_t_plus_1.squeeze(-1))
         tensordict_t_plus_1.update(reset_td)  # done的時候DQN實際沒用到observation，所以沒有影響
 
         # 如果在t时刻是win/illegal会被reset，t+1时刻不可能win/illegal
         reward_t_plus_1: torch.Tensor = (
             tensordict_t.get(("stats", "win")).float()
-            - tensordict_t.get(("stats", "illegal")).float()
             - tensordict_t_plus_1.get(("stats", "win")).float()
-            + tensordict_t_plus_1.get(("stats", "illegal")).float()
-        )
+        ).unsqueeze(-1)
 
         if tensordict_t_minus_1 is not None:
             transition_player_1: TensorDict = tensordict_t_minus_1.select(
-                "observation", "action_mask", "action"
+                "observation",
+                "action_mask",
+                "action",
             )
             transition_player_1.set(
                 "next", tensordict_t_plus_1.select("observation", "action_mask")
             )
             transition_player_1.set(("next", "reward"), reward_t_plus_1)
+            transition_player_1.set(("next", "done"), done_t | done_t_plus_1)
+
         else:
             transition_player_1 = None
 
         with torch.no_grad():
             tensordict_t_plus_1 = player_1(tensordict_t_plus_1)
+
         # 如果黑棋下完游戏就结束了，白棋也不下。
         # 但這裡不走對transition是沒有影響的
-        tensordict_t_plus_1.set("env_indices", ~done_t_plus_1)
+        tensordict_t_plus_1.set("env_indices", ~done_t_plus_1.squeeze(-1))
         tensordict_t_plus_2 = self.step(tensordict=tensordict_t_plus_1)
         tensordict_t_plus_1.exclude("env_indices", inplace=True)
 
         done_t_plus_2 = tensordict_t_plus_2.get("done")
-        reset_td = self.reset(done_t_plus_2)
+        reset_td = self.reset(done_t_plus_2.squeeze(-1))
         tensordict_t_plus_2.update(reset_td)
 
         reward_t_plus_2: torch.Tensor = (
             tensordict_t_plus_1.get(("stats", "win")).float()
-            - tensordict_t_plus_1.get(("stats", "illegal")).float()
             - tensordict_t_plus_2.get(("stats", "win")).float()
-            + tensordict_t_plus_2.get(("stats", "illegal")).float()
-        )
+        ).unsqueeze(-1)
 
         transition_player_0: TensorDict = tensordict_t.select(
-            "observation", "action_mask", "action"
+            "observation",
+            "action_mask",
+            "action",
         )
         transition_player_0.set(
             "next", tensordict_t_plus_2.select("observation", "action_mask")
         )
         transition_player_0.set(("next", "reward"), reward_t_plus_2)
+        transition_player_0.set(("next", "done"), done_t_plus_1 | done_t_plus_2)
 
         return (
             transition_player_0,
             transition_player_1,
+            done_t_plus_2,
             tensordict_t_plus_1,
             tensordict_t_plus_2,
         )
@@ -363,6 +376,7 @@ class GomokuEnv:
     ):
         tensordict_t_minus_1 = None
         tensordict_t = self.reset()
+        done_t = tensordict_t["done"]
 
         transitions_player_0 = []
         transitions_player_1 = []
@@ -371,9 +385,12 @@ class GomokuEnv:
             (
                 transition_player_0,
                 transition_player_1,
+                done_t,
                 tensordict_t_minus_1,
                 tensordict_t,
-            ) = self._round(tensordict_t_minus_1, tensordict_t, player_0, player_1)
+            ) = self._round(
+                tensordict_t_minus_1, tensordict_t, done_t, player_0, player_1
+            )
 
             transitions_player_0.append(transition_player_0.cpu())
             if transition_player_1 is not None:

@@ -20,17 +20,30 @@ import torch
 import enum
 from torch.optim import Adam
 import contextlib
+from torchrl.objectives import DQNLoss, SoftUpdate
 
 from .policy import Policy
 
-from .common import make_egreedy_actor, make_ppo_actor
+from .common import (
+    make_egreedy_actor,
+    make_dqn_actor,
+    make_ppo_actor,
+    make_dataset_naive,
+)
 
 
-def make_nfsp_agent(cfg: DictConfig, action_spec: TensorSpec, device):
+def make_nfsp_agent(
+    cfg: DictConfig, action_spec: TensorSpec, observation_spec: TensorSpec, device
+):
     actor_explore = make_egreedy_actor(cfg=cfg, action_spec=action_spec).to(device)
     average_policy_network = make_ppo_actor(
         cfg=cfg, action_spec=action_spec, device=device
     )
+    fake_tensordict: TensorDict = observation_spec.zero()
+    fake_tensordict.set("action_mask", torch.ones_like(fake_tensordict["action_mask"]))
+    with torch.no_grad():
+        actor_explore(fake_tensordict)
+        average_policy_network(fake_tensordict)
     player = NFSPAgent(
         behavioural_strategy=actor_explore,
         average_policy_network=average_policy_network,
@@ -50,11 +63,14 @@ class NFSPAgent(object):
         behavioural_strategy: TensorDictModule,
         average_policy_network: TensorDictModule,
         anticipatory_param: float = 0.1,
-        buffer_capacity: int = 200_000, 
+        buffer_capacity: int = 200_000,
         batch_size: int = 2048,
-        sl_rl: float = 5e-4,
+        sl_lr: float = 5e-4,
+        rl_lr: float = 5e-4,
+        gamma: float = 0.95,
         device: _device_t = "cuda",
     ) -> None:
+        self.device = device
         self.behavioural_strategy = behavioural_strategy.to(device)
         self.average_policy_network = average_policy_network.to(device)
 
@@ -69,16 +85,21 @@ class NFSPAgent(object):
             batch_size=batch_size,
         )
 
-        self.opt_sl = Adam(params=self.average_policy_network.parameters(), lr=sl_rl)
+        self.loss_module = DQNLoss(self.behavioural_strategy, delay_value=True)
+        self.loss_module.make_value_estimator(gamma=gamma)
+        self.target_updater = SoftUpdate(self.loss_module, eps=0.995)
 
-        self._step_counter = 0
+        self.opt_sl = Adam(params=self.average_policy_network.parameters(), lr=sl_lr)
+        self.opt_rl = Adam(params=self.loss_module.parameters(), lr=rl_lr)
 
         self._sample_episode_policy()
 
     def __call__(self, tensordict: TensorDict) -> TensorDict:
         if self._mode == MODE.best_response:
             tensordict = self.behavioural_strategy(tensordict)
-            self.reservoir_buffer.extend(tensordict.select("observation", "action_mask", "action"))
+            self.reservoir_buffer.extend(
+                tensordict.select("observation", "action_mask", "action")
+            )
             return tensordict
         else:
             return self.average_policy_network(tensordict)
@@ -108,14 +129,52 @@ class NFSPAgent(object):
         self._mode = previous_mode
 
     def train_sl(self):
-        if len(self.reservoir_buffer)<self.reservoir_buffer._storage.max_size:
+        if len(self.reservoir_buffer) < self.reservoir_buffer._storage.max_size:
             return None
-        
-        transitions=self.reservoir_buffer.sample()
-        
+
+        transitions = self.reservoir_buffer.sample().to(self.device)
+
         self.opt_sl.zero_grad()
-        print(self.average_policy_network)
         self.average_policy_network.train()
+
+        action = transitions.get("action")
+        eval_probs = torch.nn.functional.one_hot(
+            action, num_classes=transitions.get("action_mask").shape[-1]
+        )
+
+        input = transitions.select("observation", "action_mask")
+        output = self.average_policy_network(input)
+        forcast_probs: torch.Tensor = output["probs"]
+        log_forcast_probs = torch.log(forcast_probs)
+
+        loss = -(eval_probs * log_forcast_probs).sum(dim=-1).mean()
+        loss.backward()
+        self.opt_sl.step()
+
+        self.average_policy_network.eval()
+
+        return loss.item()
+
+    def train_rl(self, data: TensorDict):
+        self.behavioural_strategy.train()
+
+        data: TensorDict = data.reshape(-1)
+        dataset = make_dataset_naive(data, 4)
+
+        losses = []
+
+        for minibatch in dataset:
+            minibatch: TensorDict = minibatch.to(self.device)
+            self.opt_rl.zero_grad()
+            loss: torch.Tensor = self.loss_module(minibatch)["loss"]
+            loss.backward()
+            self.opt_rl.step()
+
+            losses.append(loss.item())
+
+        self.behavioural_strategy.eval()
+
+        return sum(losses) / len(losses)
 
 
 class ReservoirWriter(Writer):

@@ -48,22 +48,35 @@ class _Actor(nn.Module):
 def make_dqn_actor(
     cfg: DictConfig,
     action_spec: TensorSpec,
+    device: _device_t,
 ):
     cnn_kwargs = OmegaConf.to_container(cfg.cnn_kwargs)
     cnn_kwargs.update(
         {"activation_class": getattr(nn, cnn_kwargs.get("activation_class", "ReLU"))}
     )
+    cnn_kwargs.update(
+        {
+            "norm_class": nn.LazyBatchNorm2d,
+            "norm_kwargs": {"track_running_stats": False},
+        }
+    )
     mlp_kwargs = OmegaConf.to_container(cfg.mlp_kwargs)
     mlp_kwargs.update(
         {"activation_class": getattr(nn, mlp_kwargs.get("activation_class", "ReLU"))}
     )
+    mlp_kwargs.update(
+        {
+            "norm_class": nn.LazyBatchNorm1d,
+            "norm_kwargs": {"track_running_stats": False},
+        }
+    )
 
-    net = DuelingCnnDQNet(action_spec.space.n, 1, cnn_kwargs, mlp_kwargs)
+    net = DuelingCnnDQNet(action_spec.space.n, 1, cnn_kwargs, mlp_kwargs, device=device)
     actor = QValueActor(
         net,
         spec=action_spec,
         action_mask_key="action_mask",
-    )
+    ).to(device)
     return actor
 
 
@@ -73,8 +86,9 @@ def make_egreedy_actor(
     eps_init: float = 1.0,
     eps_end: float = 0.05,
     annealing_num_steps: int = 1000,
+    device: _device_t = "cuda",
 ):
-    actor = make_dqn_actor(cfg=cfg, action_spec=action_spec)
+    actor = make_dqn_actor(cfg=cfg, action_spec=action_spec, device=device)
     actor_explore = EGreedyWrapper(
         actor,
         action_mask_key="action_mask",
@@ -156,3 +170,13 @@ def make_critic(
     )
 
     return value_module
+
+
+def make_dataset_naive(tensordict: TensorDict, num_minibatches: int = 4):
+    tensordict = tensordict.reshape(-1)
+    perm = torch.randperm(
+        (tensordict.shape[0] // num_minibatches) * num_minibatches,
+        device=tensordict.device,
+    ).reshape(num_minibatches, -1)
+    for indices in perm:
+        yield tensordict[indices]
