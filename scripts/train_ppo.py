@@ -125,7 +125,7 @@ def main(cfg: DictConfig):
 
     stats_keys = base_env.stats_keys
 
-    def _stone_wins_process_func(x: torch.Tensor):
+    def _stone_win_rate_process_func(x: torch.Tensor):
         x = x.view(-1, 2)
         mask = x[:, 1]
         x = x[mask]
@@ -140,8 +140,8 @@ def main(cfg: DictConfig):
         log_keys=stats_keys,
         logger_func=lambda x: run.log(x),
         process_func={
-            ("stats", "black_wins"): _stone_wins_process_func,
-            ("stats", "white_wins"): _stone_wins_process_func,
+            ("stats", "black_win_rate"): _stone_win_rate_process_func,
+            ("stats", "white_win_rate"): _stone_win_rate_process_func,
         },
     )
     transforms = [InitTracker(), logger]

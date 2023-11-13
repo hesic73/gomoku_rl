@@ -57,8 +57,8 @@ class GomokuEnvWithOpponent(EnvBase):
         self.stats_keys = [
             "episode_len",
             "win",
-            "black_wins",
-            "white_wins",
+            "black_win_rate",
+            "white_win_rate",
         ]
         self.stats_keys = [("stats", k) for k in self.stats_keys]
 
@@ -167,16 +167,16 @@ class GomokuEnvWithOpponent(EnvBase):
 
         done = win | opponent_win
 
-        black_wins = torch.zeros(
+        black_win_rate = torch.zeros(
             self.gomoku.num_envs, 2, device=self.device, dtype=torch.bool
         )
-        black_wins[:,0]=win
-        black_wins[:,1]=self.black
-        white_wins = torch.zeros(
+        black_win_rate[:,0]=win
+        black_win_rate[:,1]=self.black
+        white_win_rate = torch.zeros(
             self.gomoku.num_envs, 2, device=self.device, dtype=torch.bool
         )
-        white_wins[:,0]=win
-        white_wins[:,1]=(~self.black)
+        white_win_rate[:,0]=win
+        white_win_rate[:,1]=(~self.black)
         
         
         reward = win.float() - opponent_win.float()
@@ -191,8 +191,8 @@ class GomokuEnvWithOpponent(EnvBase):
                 "stats": {
                     "episode_len": episode_len,
                     "win": win,
-                    "black_wins": black_wins,
-                    "white_wins": white_wins,
+                    "black_win_rate": black_win_rate,
+                    "white_win_rate": white_win_rate,
                 },
             }
         )
