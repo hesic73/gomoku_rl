@@ -57,7 +57,8 @@ class GomokuEnvWithOpponent(EnvBase):
         self.stats_keys = [
             "episode_len",
             "win",
-            "opponent_win",
+            "black_wins",
+            "white_wins",
         ]
         self.stats_keys = [("stats", k) for k in self.stats_keys]
 
@@ -101,7 +102,7 @@ class GomokuEnvWithOpponent(EnvBase):
         self.gomoku.step(
             action=opponent_action, env_indices=env_mask & _opponent_first_mask
         )
-        self.black = torch.where(env_mask, _opponent_first_mask, self.black)
+        self.black = torch.where(env_mask, ~_opponent_first_mask, self.black)
 
         tensordict = TensorDict(
             {
@@ -166,6 +167,18 @@ class GomokuEnvWithOpponent(EnvBase):
 
         done = win | opponent_win
 
+        black_wins = torch.zeros(
+            self.gomoku.num_envs, 2, device=self.device, dtype=torch.bool
+        )
+        black_wins[:,0]=win
+        black_wins[:,1]=self.black
+        white_wins = torch.zeros(
+            self.gomoku.num_envs, 2, device=self.device, dtype=torch.bool
+        )
+        white_wins[:,0]=win
+        white_wins[:,1]=(~self.black)
+        
+        
         reward = win.float() - opponent_win.float()
 
         tensordict = TensorDict({}, self.batch_size, device=self.device)
@@ -178,7 +191,8 @@ class GomokuEnvWithOpponent(EnvBase):
                 "stats": {
                     "episode_len": episode_len,
                     "win": win,
-                    "opponent_win": opponent_win,
+                    "black_wins": black_wins,
+                    "white_wins": white_wins,
                 },
             }
         )
