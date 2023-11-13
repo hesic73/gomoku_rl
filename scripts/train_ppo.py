@@ -94,7 +94,7 @@ def main(cfg: DictConfig):
 
     actorBank = ActorBank(
         dir=os.path.join(root_dir, datetime.datetime.now().strftime("%m-%d_%H-%M")),
-        latest_n=5,
+        latest_n=1,
     )
     
 

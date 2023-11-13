@@ -33,7 +33,7 @@ def main(cfg: DictConfig):
 
     model_ckpt_path = cfg.get("model_ckpt_path", None)
     if model_ckpt_path is not None:
-        model=PPOPolicy.from_checkpoint(torch.load(model_ckpt_path),cfg=cfg.algo.actor,action_spec=action_spec,device=cfg.device,deterministic=True)
+        model=PPOPolicy.from_checkpoint(torch.load(model_ckpt_path),cfg=cfg.algo.actor,action_spec=action_spec,device=cfg.device)
     else:
         model = None
 

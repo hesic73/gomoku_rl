@@ -94,6 +94,8 @@ class PPOPolicy(Policy):
         return tensordict
 
     def train_op(self, tensordict: TensorDict):
+        self.actor.train()
+        self.critic.train()
         losses = []
         for _ in range(self.ppo_epoch):
             dataset = make_dataset_naive(tensordict, int(self.cfg.num_minibatches))
@@ -119,6 +121,8 @@ class PPOPolicy(Policy):
                 self.optim.step()
                 self.optim.zero_grad()
 
+        self.critic.eval()
+        self.actor.eval()
         return {
             "loss": torch.stack(losses).mean().item(),
         }

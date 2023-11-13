@@ -21,8 +21,18 @@ class _Actor(nn.Module):
         self, device: _device_t, n_action, cnn_kwargs: dict, mlp_kwargs: dict
     ) -> None:
         super().__init__()
-        self.features = ConvNet(device=device, **cnn_kwargs)
-        self.advantage = MLP(out_features=n_action, device=device, **mlp_kwargs)
+        self.features = ConvNet(
+            device=device,
+            **cnn_kwargs,
+            norm_class=nn.LazyBatchNorm2d,
+            norm_kwargs={"track_running_stats": False},
+        )
+        self.advantage = MLP(
+            out_features=n_action,
+            device=device,
+            **mlp_kwargs,
+            norm_kwargs={"track_running_stats": False},
+        )
 
     def forward(
         self, x: torch.Tensor, mask: torch.Tensor | None = None
@@ -125,8 +135,19 @@ def make_critic(
     )
 
     value_net = nn.Sequential(
-        ConvNet(device=device, **cnn_kwargs),
-        MLP(out_features=1, device=device, **mlp_kwargs),
+        ConvNet(
+            device=device,
+            **cnn_kwargs,
+            norm_class=nn.LazyBatchNorm2d,
+            norm_kwargs={"track_running_stats": False},
+        ),
+        MLP(
+            out_features=1,
+            device=device,
+            **mlp_kwargs,
+            norm_class=nn.LazyBatchNorm1d,
+            norm_kwargs={"track_running_stats": False},
+        ),
     )
 
     value_module = ValueOperator(
@@ -135,5 +156,3 @@ def make_critic(
     )
 
     return value_module
-
-

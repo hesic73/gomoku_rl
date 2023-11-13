@@ -56,12 +56,8 @@ class GomokuEnvWithOpponent(EnvBase):
 
         self.stats_keys = [
             "episode_len",
-            "illegal",
             "win",
             "opponent_win",
-            "opponent_illegal",
-            "game_win",
-            "black",
         ]
         self.stats_keys = [("stats", k) for k in self.stats_keys]
 
@@ -132,20 +128,9 @@ class GomokuEnvWithOpponent(EnvBase):
 
         win, illegal = self.gomoku.step(action=action)
 
-        # 有一个bug（现在似乎没了）
-        if illegal.any():
-            print(tensordict)
-            illegal_indexes = illegal.nonzero().squeeze()
-            idx = illegal_indexes[0]
-            x = action[idx].item() // self.gomoku.board_size
-            y = action[idx].item() % self.gomoku.board_size
-            print(x, y, self.gomoku.board[idx][x][y].item())
-            print(tensordict[idx]["observation"])
-            assert self.gomoku.turn[idx] == 1
-            assert self.gomoku.move_count[idx] == 1
-            exit()
+        assert not illegal.any()
 
-        self.gomoku.reset(env_ids=(win | illegal))
+        self.gomoku.reset(env_ids=win)
         episode_len = torch.where(
             self.gomoku.move_count == 0, episode_len, self.gomoku.move_count
         )  # (E,)
@@ -166,25 +151,22 @@ class GomokuEnvWithOpponent(EnvBase):
         # so opponent_win/illegal is nonzero only if win/illegal is nonzero
 
         # UPDATE: if the game is over, the opponent will not make a move
-        
-        env_indices = ~(win | illegal)
+
+        env_indices = ~win
         opponent_win, opponent_illegal = self.gomoku.step(
             action=opponent_action, env_indices=env_indices
         )
-        self.gomoku.reset(env_ids=(opponent_win | opponent_illegal))
+
+        assert not opponent_illegal.any()
+
+        self.gomoku.reset(env_ids=opponent_win)
         episode_len = torch.where(
             self.gomoku.move_count == 0, episode_len, self.gomoku.move_count
         )  # (E,)
 
-        game_win = win | opponent_illegal
-        done = win | illegal | opponent_win | opponent_illegal
+        done = win | opponent_win
 
-        reward = (
-            win.float()
-            - illegal.float()
-            - opponent_win.float()
-            + opponent_illegal.float()
-        )
+        reward = win.float() - opponent_win.float()
 
         tensordict = TensorDict({}, self.batch_size, device=self.device)
         tensordict.update(
@@ -195,12 +177,8 @@ class GomokuEnvWithOpponent(EnvBase):
                 "reward": reward,
                 "stats": {
                     "episode_len": episode_len,
-                    "illegal": illegal,
                     "win": win,
                     "opponent_win": opponent_win,
-                    "opponent_illegal": opponent_illegal,
-                    "game_win": game_win,
-                    "black": self.black.clone(),
                 },
             }
         )
@@ -362,6 +340,7 @@ class GomokuEnv:
             tensordict_t_plus_2,
         )
 
+    @torch.no_grad
     def rollout(
         self,
         max_steps: int,

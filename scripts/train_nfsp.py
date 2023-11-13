@@ -13,9 +13,7 @@ from gomoku_rl.utils.wandb import init_wandb
 from gomoku_rl.algo.nfsp import make_nfsp_agent
 
 
-
-
-@hydra.main(version_base=None, config_path=CONFIG_PATH, config_name="train")
+@hydra.main(version_base=None, config_path=CONFIG_PATH, config_name="train_nfsp")
 def main(cfg: DictConfig):
     OmegaConf.register_new_resolver("eval", eval)
     OmegaConf.resolve(cfg)
@@ -37,8 +35,12 @@ def main(cfg: DictConfig):
         device=device,
     )
 
+    from gomoku_rl.algo.nfsp import MODE as NFSPAgentMODE
+
+    player_0.mode = NFSPAgentMODE.best_response
+    player_1.mode = NFSPAgentMODE.best_response
     env.rollout(max_steps=1000, player_0=player_0, player_1=player_1)
-    print(len(player_0.reservoir_buffer))
+    player_0.train_sl()
 
 
 if __name__ == "__main__":

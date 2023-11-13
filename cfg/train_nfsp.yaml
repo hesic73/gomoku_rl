@@ -5,18 +5,14 @@ board_size: 8
 device: cuda
 storing_device: cpu
 
-total_frames: 100_000_000
-update_interval: 50
-update_threshold: 0.9
-
-initial_policy: 
+total_frames: 200_000_000
 
 root_dir: sp_root
 
 wandb:
   group: board_${board_size}_${board_size}
   project: gomoku_rl
-  mode: online # set to 'disabled' when debugging locally
+#  mode: online # set to 'disabled' when debugging locally
 
 defaults:
-  - algo: ppo
+  - algo: nfsp
