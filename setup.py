@@ -13,5 +13,7 @@ setup(
         "omegaconf",
         "hydra-core",
         "PyQt5",
+        "tqdm",
+        "wandb",
     ],  # and other dependencies
 )

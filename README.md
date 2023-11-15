@@ -12,14 +12,11 @@ To get started, install gomoku_rl with the following command:
 pip install -e .
 ```
 
-## Dependency
+I use the following versions of Python packages:
 
 - `torchrl==0.2.1`
 - `python==3.11.5`
 - `torch==2.1.0`
-- `PyQt5==5.15.10`
-- `omegaconf==2.3.0`
-- `hydra-core==1.3.2`
 
 ## Usage
 

@@ -14,7 +14,7 @@ from torchrl.data.tensor_specs import DiscreteTensorSpec, TensorSpec
 from tensordict.nn import TensorDictModule
 from typing import Any, List, Sequence
 
-from torchrl.data import TensorDictReplayBuffer, Writer, LazyMemmapStorage
+from torchrl.data import TensorDictReplayBuffer, Writer, LazyMemmapStorage, ReplayBuffer
 import numpy as np
 import torch
 import enum
@@ -79,6 +79,7 @@ class NFSPAgent(object):
 
         self._anticipatory_param = anticipatory_param
 
+        self.batch_size = batch_size
         # reservoir buffer的并行性很差
         self.reservoir_buffer = TensorDictReplayBuffer(
             storage=LazyMemmapStorage(max_size=buffer_capacity),
@@ -155,16 +156,15 @@ class NFSPAgent(object):
 
         return loss.item()
 
-    def train_rl(self, data: TensorDict):
+    def train_rl(self, data: ReplayBuffer):
         self.behavioural_strategy.train()
 
-        data: TensorDict = data.reshape(-1)
-        dataset = make_dataset_naive(data, 4)
-
         losses = []
+        data._batch_size = self.batch_size
 
-        for minibatch in dataset:
+        for minibatch in data:
             minibatch: TensorDict = minibatch.to(self.device)
+            minibatch["next", "done"] = minibatch["next", "done"].unsqueeze(-1)
             self.opt_rl.zero_grad()
             loss: torch.Tensor = self.loss_module(minibatch)["loss"]
             loss.backward()

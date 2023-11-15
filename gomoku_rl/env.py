@@ -4,6 +4,8 @@ from tensordict.nn import TensorDictModule
 from tensordict.tensordict import TensorDictBase
 import torch
 from torchrl.data.utils import DEVICE_TYPING
+from torchrl.data import LazyTensorStorage, TensorDictReplayBuffer
+from torchrl.data.replay_buffers import SamplerWithoutReplacement
 from torchrl.envs import EnvBase
 from torchrl.data.tensor_specs import (
     CompositeSpec,
@@ -12,6 +14,7 @@ from torchrl.data.tensor_specs import (
     BoundedTensorSpec,
     UnboundedContinuousTensorSpec,
 )
+import time
 from gomoku_rl.utils.policy import _policy_t, uniform_policy
 
 from .core import Gomoku
@@ -22,7 +25,7 @@ class GomokuEnvWithOpponent(EnvBase):
         self,
         num_envs: int,
         board_size: int = 19,
-        initial_policy: _policy_t | None = None,
+        initial_policy: Optional[_policy_t] = None,
         device: DEVICE_TYPING = None,
     ):
         super().__init__(device, batch_size=[num_envs])
@@ -76,7 +79,7 @@ class GomokuEnvWithOpponent(EnvBase):
             self.opponent_policy.to(device)
         return super().to(device)
 
-    def _set_seed(self, seed: int | None):
+    def _set_seed(self, seed: Optional[int]):
         torch.manual_seed(seed)
 
     def _reset(self, tensordict: TensorDictBase, **kwargs) -> TensorDictBase:
@@ -199,21 +202,13 @@ class GomokuEnvWithOpponent(EnvBase):
 
 
 class GomokuEnv:
-    """This environment is incompatible with `torchrl.envs.EnvBase`
-    I refered to the implementation in `rlcard.envs.Env`
-    """
-
     def __init__(
         self,
         num_envs: int,
         board_size: int = 19,
         device: DEVICE_TYPING = None,
     ):
-        self.batch_size = torch.Size((num_envs,))
-        self.device = device
         self.gomoku = Gomoku(num_envs=num_envs, board_size=board_size, device=device)
-
-        self.board_size = board_size
 
         self.observation_spec = CompositeSpec(
             {
@@ -245,38 +240,49 @@ class GomokuEnv:
             device=self.device,
         )
 
-    def reset(self, env_ids: torch.Tensor | None = None) -> TensorDict:
+    @property
+    def batch_size(self):
+        return torch.Size((self.num_envs,))
+
+    @property
+    def board_size(self):
+        return self.gomoku.board_size
+
+    @property
+    def device(self):
+        return self.gomoku.device
+
+    @property
+    def num_envs(self):
+        return self.gomoku.num_envs
+
+    def reset(self, env_ids: Optional[torch.Tensor] = None) -> TensorDict:
         self.gomoku.reset(env_ids=env_ids)
-        episode_len = self.gomoku.move_count + 1  # (E,)
         tensordict = TensorDict(
             {
                 "observation": self.gomoku.get_encoded_board(),
                 "action_mask": self.gomoku.get_action_mask(),
-                "done": torch.zeros(
-                    self.gomoku.num_envs, 1, device=self.device, dtype=torch.bool
-                ),
-                "stats": {
-                    "episode_len": episode_len,
-                    "win": torch.zeros(
-                        self.batch_size, device=self.device, dtype=torch.bool
-                    ),
-                    "illegal": torch.zeros(
-                        self.batch_size, device=self.device, dtype=torch.bool
-                    ),
-                },
             },
             self.batch_size,
             device=self.device,
         )
         return tensordict
 
-    def step(self, tensordict: TensorDict) -> TensorDict:
+    def _step(self, tensordict: TensorDict) -> TensorDict:
+        """_summary_
+
+        Args:
+            tensordict (TensorDict): (action,env_indices|None)
+
+        Returns:
+            TensorDict: (observation,action_mask,done,stats)
+        """
         action: torch.Tensor = tensordict.get("action")
         env_indices: torch.Tensor = tensordict.get("env_indices", None)
         episode_len = self.gomoku.move_count + 1  # (E,)
         win, illegal = self.gomoku.step(action=action, env_indices=env_indices)
         assert not illegal.any()
-        done = win.unsqueeze(-1)
+        done = win
         tensordict = TensorDict({}, self.batch_size, device=self.device)
         tensordict.update(
             {
@@ -292,111 +298,146 @@ class GomokuEnv:
         )
         return tensordict
 
+    def _step_and_maybe_reset(
+        self, tensordict: TensorDict, env_indices: Optional[torch.Tensor] = None
+    ) -> TensorDict:
+        """_summary_
+
+        Args:
+            tensordict (TensorDict): (observation,action_mask,action)
+            env_indices (Optional[torch.Tensor], optional): indices of the envs that will take a step. Defaults to None.
+
+        Returns:
+            TensorDict: (observation,action_mask,done,stats) the finished envs are reset, but their done flags are kept.
+        """
+        if env_indices is not None:
+            tensordict.set("env_indices", env_indices)
+        next_tensordict = self._step(tensordict=tensordict)
+        tensordict.exclude("env_indices", inplace=True)
+
+        done: torch.Tensor = next_tensordict.get("done")  # (E,)
+        reset_td = self.reset(done)
+        next_tensordict.update(reset_td)  # no impact on training
+        return next_tensordict
+
     def _round(
         self,
-        tensordict_t_minus_1: TensorDict | None,
+        tensordict_t_minus_1: TensorDict,
         tensordict_t: TensorDict,
-        done_t: TensorDict,
-        player_0: _policy_t,
-        player_1: _policy_t,
-    ):
-        # player_0 下黑棋 player_1 下白旗
-
+        player_black: _policy_t,
+        player_white: _policy_t,
+    ) -> tuple[TensorDict, TensorDict]:
         with torch.no_grad():
-            tensordict_t = player_0(tensordict_t)
-        tensordict_t_plus_1 = self.step(tensordict=tensordict_t)
-        done_t_plus_1: torch.Tensor = tensordict_t_plus_1.get("done")  # (E,)
-        reset_td = self.reset(done_t_plus_1.squeeze(-1))
-        tensordict_t_plus_1.update(reset_td)  # done的時候DQN實際沒用到observation，所以沒有影響
+            tensordict_t = player_black(tensordict_t)
+        tensordict_t_plus_1 = self._step_and_maybe_reset(tensordict=tensordict_t)
 
-        # 如果在t时刻是win/illegal会被reset，t+1时刻不可能win/illegal
-        reward_t_plus_1: torch.Tensor = (
-            tensordict_t.get(("stats", "win")).float()
-            - tensordict_t_plus_1.get(("stats", "win")).float()
+        # if a player wins at time t, its opponent cannot win immediately after reset
+        reward_white: torch.Tensor = (
+            tensordict_t.get("done").float() - tensordict_t_plus_1.get("done").float()
         ).unsqueeze(-1)
 
-        if tensordict_t_minus_1 is not None:
-            transition_player_1: TensorDict = tensordict_t_minus_1.select(
-                "observation",
-                "action_mask",
-                "action",
-            )
-            transition_player_1.set(
-                "next", tensordict_t_plus_1.select("observation", "action_mask")
-            )
-            transition_player_1.set(("next", "reward"), reward_t_plus_1)
-            transition_player_1.set(("next", "done"), done_t | done_t_plus_1)
-
-        else:
-            transition_player_1 = None
-
-        with torch.no_grad():
-            tensordict_t_plus_1 = player_1(tensordict_t_plus_1)
-
-        # 如果黑棋下完游戏就结束了，白棋也不下。
-        # 但這裡不走對transition是沒有影響的
-        tensordict_t_plus_1.set("env_indices", ~done_t_plus_1.squeeze(-1))
-        tensordict_t_plus_2 = self.step(tensordict=tensordict_t_plus_1)
-        tensordict_t_plus_1.exclude("env_indices", inplace=True)
-
-        done_t_plus_2 = tensordict_t_plus_2.get("done")
-        reset_td = self.reset(done_t_plus_2.squeeze(-1))
-        tensordict_t_plus_2.update(reset_td)
-
-        reward_t_plus_2: torch.Tensor = (
-            tensordict_t_plus_1.get(("stats", "win")).float()
-            - tensordict_t_plus_2.get(("stats", "win")).float()
-        ).unsqueeze(-1)
-
-        transition_player_0: TensorDict = tensordict_t.select(
+        transition_white: TensorDict = tensordict_t_minus_1.select(
             "observation",
             "action_mask",
             "action",
         )
-        transition_player_0.set(
+        transition_white.set(
+            "next",
+            tensordict_t_plus_1.select("observation", "action_mask"),
+        )
+        transition_white.set(("next", "reward"), reward_white)
+        done_white = tensordict_t_plus_1["done"] | tensordict_t["done"]
+        transition_white.set(("next", "done"), done_white)
+        transition_white = transition_white[~tensordict_t_minus_1["done"]]
+
+        with torch.no_grad():
+            tensordict_t_plus_1 = player_white(tensordict_t_plus_1)
+        # if player_black wins at t (and the env is reset), the env doesn't take a step at t+1
+        # this makes no difference to player_black's transition from t to t+2
+        # but player_white's transition from t-1 to t+1 is invalid where tensordict_t_minus_1['done']==True
+        tensordict_t_plus_2 = self._step_and_maybe_reset(
+            tensordict_t_plus_1, env_indices=~tensordict_t_plus_1.get("done")
+        )
+
+        reward_black: torch.Tensor = (
+            tensordict_t_plus_1.get("done").float()
+            - tensordict_t_plus_2.get("done").float()
+        ).unsqueeze(-1)
+
+        transition_black: TensorDict = tensordict_t.select(
+            "observation",
+            "action_mask",
+            "action",
+        )
+        transition_black.set(
             "next", tensordict_t_plus_2.select("observation", "action_mask")
         )
-        transition_player_0.set(("next", "reward"), reward_t_plus_2)
-        transition_player_0.set(("next", "done"), done_t_plus_1 | done_t_plus_2)
+        transition_black.set(("next", "reward"), reward_black)
+        done_black = tensordict_t_plus_1["done"] | tensordict_t_plus_2["done"]
+        transition_black.set(("next", "done"), done_black)
 
         return (
-            transition_player_0,
-            transition_player_1,
-            done_t_plus_2,
+            transition_black,
+            transition_white,
             tensordict_t_plus_1,
             tensordict_t_plus_2,
         )
 
     @torch.no_grad
-    def rollout(
+    def _rollout(
         self,
         max_steps: int,
-        player_0: _policy_t,
-        player_1: _policy_t,
+        player_black: _policy_t,
+        player_white: _policy_t,
     ):
-        tensordict_t_minus_1 = None
+        tensordict_t_minus_1 = self.reset()
         tensordict_t = self.reset()
-        done_t = tensordict_t["done"]
 
-        transitions_player_0 = []
-        transitions_player_1 = []
+        tensordict_t_minus_1.update(
+            {
+                "done": torch.ones(self.num_envs, dtype=torch.bool, device=self.device),
+                "action": self.action_spec.zero(),
+            }
+        )
+        tensordict_t.update(
+            {"done": torch.ones(self.num_envs, dtype=torch.bool, device=self.device)}
+        )
+
+        buffer_black = TensorDictReplayBuffer(
+            storage=LazyTensorStorage(max_size=max_steps * self.num_envs),
+            sampler=SamplerWithoutReplacement(drop_last=False),
+        )
+        buffer_white = TensorDictReplayBuffer(
+            storage=LazyTensorStorage(max_size=max_steps * self.num_envs),
+            sampler=SamplerWithoutReplacement(drop_last=False),
+        )
 
         for i in range(max_steps):
             (
-                transition_player_0,
-                transition_player_1,
-                done_t,
+                transition_black,
+                transition_white,
                 tensordict_t_minus_1,
                 tensordict_t,
             ) = self._round(
-                tensordict_t_minus_1, tensordict_t, done_t, player_0, player_1
+                tensordict_t_minus_1, tensordict_t, player_black, player_white
             )
 
-            transitions_player_0.append(transition_player_0.cpu())
-            if transition_player_1 is not None:
-                transitions_player_1.append(transition_player_1.cpu())
+            buffer_black.extend(transition_black)
+            if len(transition_white) > 0:
+                buffer_white.extend(transition_white)
 
-        transitions_player_0 = torch.stack(transitions_player_0, dim=1)
-        transitions_player_1 = torch.stack(transitions_player_1, dim=1)
+        return buffer_black, buffer_white
 
-        return transitions_player_0, transitions_player_1
+    def rollout(
+        self,
+        max_steps: int,
+        player_black: _policy_t,
+        player_white: _policy_t,
+    ):
+        start = time.perf_counter()
+        r = self._rollout(
+            max_steps=max_steps, player_black=player_black, player_white=player_white
+        )
+        end = time.perf_counter()
+        self._fps = (max_steps * 2 * self.num_envs) / (end - start)
+        return r
