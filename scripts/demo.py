@@ -26,7 +26,7 @@ def main(cfg: DictConfig):
         device=cfg.device,
     )
 
-    if cfg.get("human_first", True):
+    if cfg.get("human_black", True):
         human_color = Piece.BLACK
     else:
         human_color = Piece.WHITE

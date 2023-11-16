@@ -4,7 +4,7 @@
 
 *gomoku_rl* is an open-sourced project focused on training Gomoku AI through reinforcement learning. While there are repositories using RL algorithms to teach AI to play Gomoku, they are based on legacy approaches and do not harness the full potential of GPU resources. *gomoku_rl* features GPU-parallelized simulation and modern self-play algorithms.
 
-## Installation
+## Getting Started
 
 To get started, install gomoku_rl with the following command:
 
@@ -18,8 +18,6 @@ I use the following versions of Python packages:
 - `python==3.11.5`
 - `torch==2.1.0`
 
-## Usage
-
 *gomoku_rl* uses `hydra` to configure training hyperparameters. You can modify the settings in `cfg/train.yaml` or override them via the command line:
 
 ```bash
@@ -29,8 +27,13 @@ python scripts/train.py board_size=10
 Once you've trained an AI, you can play Gomoku with it using the `scripts/demo.py` script:
 
 ```bash
-python scripts/demo.py human_first=True board_size=10 model_ckpt_path=/path/to/your/model
+python scripts/demo.py human_black=True board_size=10 model_ckpt_path=/path/to/your/model
 ```
+
+## Usage
+
+
+
 
 ## References
 
