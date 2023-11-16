@@ -212,7 +212,7 @@ class GomokuEnv:
     def __init__(
         self,
         num_envs: int,
-        board_size: int = 19,
+        board_size: int,
         device: DEVICE_TYPING = None,
     ):
         self.gomoku = Gomoku(num_envs=num_envs, board_size=board_size, device=device)
@@ -362,6 +362,8 @@ class GomokuEnv:
             "observation",
             "action_mask",
             "action",
+            "sample_log_prob",
+            strict=False,
         )
         transition_white.set(
             "next",
@@ -390,6 +392,8 @@ class GomokuEnv:
             "observation",
             "action_mask",
             "action",
+            "sample_log_prob",
+            strict=False,
         )
         transition_black.set(
             "next", tensordict_t_plus_2.select("observation", "action_mask")
@@ -428,11 +432,15 @@ class GomokuEnv:
         buffer_black = TensorDictReplayBuffer(
             storage=LazyTensorStorage(max_size=max_steps * self.num_envs),
             sampler=SamplerWithoutReplacement(drop_last=False),
+            batch_size=self.num_envs,
         )
         buffer_white = TensorDictReplayBuffer(
             storage=LazyTensorStorage(max_size=max_steps * self.num_envs),
             sampler=SamplerWithoutReplacement(drop_last=False),
+            batch_size=self.num_envs,
         )
+
+        info = {}
 
         for i in range(max_steps):
             (
@@ -448,19 +456,18 @@ class GomokuEnv:
             if len(transition_white) > 0:
                 buffer_white.extend(transition_white)
 
-        self.reset()
-        return buffer_black, buffer_white
+        return buffer_black, buffer_white, info
 
     def rollout(
         self,
-        max_steps: int,
+        episode_len: int,
         player_black: _policy_t,
         player_white: _policy_t,
     ):
         start = time.perf_counter()
         r = self._rollout(
-            max_steps=max_steps, player_black=player_black, player_white=player_white
+            max_steps=episode_len, player_black=player_black, player_white=player_white
         )
         end = time.perf_counter()
-        self._fps = (max_steps * 2 * self.num_envs) / (end - start)
+        self._fps = (episode_len * 2 * self.num_envs) / (end - start)
         return r
