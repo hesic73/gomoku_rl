@@ -14,8 +14,12 @@ import logging
 from tqdm import tqdm
 import numpy as np
 from tensordict.nn import TensorDictModule
-from typing import Callable, Any
+from typing import Callable, Any, Dict
 from tensordict import TensorDict
+
+
+def add_prefix(d: Dict, prefix: str):
+    return {f"{prefix}/{k}": v for k, v in d.items()}
 
 
 @hydra.main(version_base=None, config_path=CONFIG_PATH, config_name="train")
@@ -60,8 +64,10 @@ def main(cfg: DictConfig):
             episode_len=episode_len, player_black=player_0, player_white=player_1
         )
 
-        info.update(player_0.learn(data_0))
-        info.update(player_1.learn(data_1))
+        info.update(add_prefix(player_0.learn(data_0), "player_0"))
+        info.update(add_prefix(player_1.learn(data_1), "player_1"))
+
+        run.log(info)
 
         pbar.set_postfix(
             {

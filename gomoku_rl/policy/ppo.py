@@ -4,7 +4,7 @@ from tensordict.utils import NestedKey
 import torch
 import torch.nn as nn
 
-from tensordict.nn import TensorDictModule
+from tensordict.nn import TensorDictModule, make_functional
 
 from torchrl.data import TensorSpec, DiscreteTensorSpec
 from torch.cuda import _device_t

@@ -3,7 +3,6 @@ from tensordict import TensorDict
 from tensordict.nn import TensorDictModule
 from tensordict.tensordict import TensorDictBase
 import torch
-from torchrl.data.utils import DEVICE_TYPING
 from torchrl.data import LazyTensorStorage, TensorDictReplayBuffer
 from torchrl.data.replay_buffers import SamplerWithoutReplacement
 from torchrl.envs import EnvBase
@@ -26,7 +25,7 @@ class GomokuEnvWithOpponent(EnvBase):
         num_envs: int,
         board_size: int = 19,
         initial_policy: Optional[_policy_t] = None,
-        device: DEVICE_TYPING = None,
+        device=None,
     ):
         super().__init__(device, batch_size=[num_envs])
         self.gomoku = Gomoku(num_envs=num_envs, board_size=board_size, device=device)
@@ -73,7 +72,7 @@ class GomokuEnvWithOpponent(EnvBase):
     ):
         self.opponent_policy = policy
 
-    def to(self, device: DEVICE_TYPING) -> EnvBase:
+    def to(self, device) -> EnvBase:
         self.gomoku.to(device)
         if isinstance(self.opponent_policy, TensorDictModule):
             self.opponent_policy.to(device)
@@ -208,12 +207,16 @@ def _action_to_xy(action: torch.Tensor, board_size: int):
     return f"({x:02d},{y:02d})"
 
 
+from gomoku_rl.utils.log import get_log_func
+from collections import defaultdict
+
+
 class GomokuEnv:
     def __init__(
         self,
         num_envs: int,
         board_size: int,
-        device: DEVICE_TYPING = None,
+        device=None,
     ):
         self.gomoku = Gomoku(num_envs=num_envs, board_size=board_size, device=device)
 
@@ -246,6 +249,13 @@ class GomokuEnv:
             shape=[num_envs, 1],
             device=self.device,
         )
+
+        self._post_step: Callable[
+            [
+                TensorDict,
+            ],
+            None,
+        ] | None = None
 
     @property
     def batch_size(self):
@@ -288,22 +298,9 @@ class GomokuEnv:
         env_indices: torch.Tensor = tensordict.get("env_indices", None)
         episode_len = self.gomoku.move_count + 1  # (E,)
         win, illegal = self.gomoku.step(action=action, env_indices=env_indices)
-        try:
-            assert not illegal.any()
-        except AssertionError as e:
-            illegal_ids = illegal.nonzero()[0].tolist()
-            illegal_id = illegal_ids[0]
 
-            print(illegal_ids)
-            self.gomoku._debug_info(illegal_id)
-            obs: torch.Tensor = tensordict.get("observation")[illegal_id].long()
-            action_mask: torch.Tensor = tensordict.get("action_mask")[illegal_id].long()
-            action_mask = action_mask.view(obs.shape[1:])
-            print(obs)
-            print(action_mask)
-            print(_action_to_xy(action[illegal_id], self.board_size))
-            print(tensordict["probs"][illegal_id])
-            raise e
+        assert not illegal.any()
+
         done = win
         tensordict = TensorDict({}, self.batch_size, device=self.device)
         tensordict.update(
@@ -318,6 +315,8 @@ class GomokuEnv:
                 },
             }
         )
+        if self._post_step:
+            self._post_step(tensordict)
         return tensordict
 
     def _step_and_maybe_reset(
@@ -440,8 +439,6 @@ class GomokuEnv:
             batch_size=self.num_envs,
         )
 
-        info = {}
-
         for i in range(max_steps):
             (
                 transition_black,
@@ -456,7 +453,7 @@ class GomokuEnv:
             if len(transition_white) > 0:
                 buffer_white.extend(transition_white)
 
-        return buffer_black, buffer_white, info
+        return buffer_black, buffer_white
 
     def rollout(
         self,
@@ -464,10 +461,15 @@ class GomokuEnv:
         player_black: _policy_t,
         player_white: _policy_t,
     ):
+        info = defaultdict(float)
+        self._post_step=get_log_func(info)
+
         start = time.perf_counter()
         r = self._rollout(
             max_steps=episode_len, player_black=player_black, player_white=player_white
         )
         end = time.perf_counter()
         self._fps = (episode_len * 2 * self.num_envs) / (end - start)
-        return r
+
+        self._post_step = None
+        return *r, info

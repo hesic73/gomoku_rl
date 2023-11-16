@@ -5,7 +5,7 @@ device: cuda
 total_frames: 100_000_000
 
 epochs: 100
-episode_len: 30
+episode_len: 50
 
 wandb:
   group: board_${board_size}_${board_size}
