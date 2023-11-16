@@ -6,9 +6,9 @@ from torch.distributions.categorical import Categorical
 from torchrl.modules.models import ConvNet, MLP
 from torchrl.modules import ValueOperator
 from torchrl.data import TensorSpec
-from torchrl.modules import DuelingCnnDQNet, EGreedyWrapper, QValueActor
+from torchrl.modules import DuelingCnnDQNet, EGreedyModule, QValueActor
 
-from tensordict.nn import TensorDictModule
+from tensordict.nn import TensorDictModule, TensorDictSequential
 from tensordict import TensorDict
 
 
@@ -84,19 +84,23 @@ def make_egreedy_actor(
     cfg: DictConfig,
     action_spec: TensorSpec,
     eps_init: float = 1.0,
-    eps_end: float = 0.05,
+    eps_end: float = 0.10,
     annealing_num_steps: int = 1000,
     device: _device_t = "cuda",
 ):
     actor = make_dqn_actor(cfg=cfg, action_spec=action_spec, device=device)
-    actor_explore = EGreedyWrapper(
+
+    explorative_policy = TensorDictSequential(
         actor,
-        action_mask_key="action_mask",
-        eps_init=eps_init,
-        eps_end=eps_end,
-        annealing_num_steps=annealing_num_steps,
+        EGreedyModule(
+            spec=action_spec,
+            eps_init=eps_init,
+            eps_end=eps_end,
+            annealing_num_steps=annealing_num_steps,
+            action_mask_key="action_mask",
+        ),
     )
-    return actor_explore
+    return explorative_policy
 
 
 def make_ppo_actor(

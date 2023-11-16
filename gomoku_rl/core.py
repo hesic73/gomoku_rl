@@ -241,3 +241,9 @@ class Gomoku:
         invalid = out_of_range | not_empty
 
         return ~invalid
+
+    
+    def _debug_info(self,index:int):
+        print(self.board[index])
+        print(self.turn[index].item())
+        print(self.move_count[index].item())

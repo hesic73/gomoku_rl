@@ -48,6 +48,7 @@ def make_nfsp_agent(
         behavioural_strategy=actor_explore,
         average_policy_network=average_policy_network,
         device=device,
+        action_spec=action_spec,
     )
     return player
 
@@ -62,6 +63,7 @@ class NFSPAgent(object):
         self,
         behavioural_strategy: TensorDictModule,
         average_policy_network: TensorDictModule,
+        action_spec: TensorSpec,
         anticipatory_param: float = 0.1,
         buffer_capacity: int = 200_000,
         batch_size: int = 2048,
@@ -86,7 +88,9 @@ class NFSPAgent(object):
             batch_size=batch_size,
         )
 
-        self.loss_module = DQNLoss(self.behavioural_strategy, delay_value=True)
+        self.loss_module = DQNLoss(
+            self.behavioural_strategy, delay_value=True, action_space=action_spec
+        )
         self.loss_module.make_value_estimator(gamma=gamma)
         self.target_updater = SoftUpdate(self.loss_module, eps=0.995)
 
@@ -147,7 +151,7 @@ class NFSPAgent(object):
         output = self.average_policy_network(input)
         forcast_probs: torch.Tensor = output["probs"]
         log_forcast_probs = torch.log(forcast_probs)
-
+        
         loss = -(eval_probs * log_forcast_probs).sum(dim=-1).mean()
         loss.backward()
         self.opt_sl.step()

@@ -201,6 +201,13 @@ class GomokuEnvWithOpponent(EnvBase):
         return tensordict
 
 
+def _action_to_xy(action: torch.Tensor, board_size: int):
+    action = action.item()
+    y = action % board_size
+    x = action // board_size
+    return f"({x:02d},{y:02d})"
+
+
 class GomokuEnv:
     def __init__(
         self,
@@ -281,7 +288,21 @@ class GomokuEnv:
         env_indices: torch.Tensor = tensordict.get("env_indices", None)
         episode_len = self.gomoku.move_count + 1  # (E,)
         win, illegal = self.gomoku.step(action=action, env_indices=env_indices)
-        assert not illegal.any()
+        try:
+            assert not illegal.any()
+        except AssertionError as e:
+            illegal_ids = illegal.nonzero()[0].tolist()
+            illegal_id = illegal_ids[0]
+
+            print(illegal_ids)
+            self.gomoku._debug_info(illegal_id)
+            obs: torch.Tensor = tensordict.get("observation")[illegal_id].long()
+            action_mask: torch.Tensor = tensordict.get("action_mask")[illegal_id].long()
+            action_mask = action_mask.view(obs.shape[1:])
+            print(obs)
+            print(action_mask)
+            print(_action_to_xy(action[illegal_id], self.board_size))
+            raise e
         done = win
         tensordict = TensorDict({}, self.batch_size, device=self.device)
         tensordict.update(
@@ -426,6 +447,7 @@ class GomokuEnv:
             if len(transition_white) > 0:
                 buffer_white.extend(transition_white)
 
+        self.reset()
         return buffer_black, buffer_white
 
     def rollout(
