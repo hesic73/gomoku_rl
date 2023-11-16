@@ -40,8 +40,13 @@ class _Actor(nn.Module):
         x = self.features(x)
         advantage: torch.Tensor = self.advantage(x)
         if mask is not None:
-            advantage = torch.where(mask.bool(), advantage, -1e10)
+            advantage[mask == 0] = -float("inf")
         probs = torch.special.softmax(advantage, dim=-1)  # (E, board_size^2)
+        try:
+            assert not torch.isnan(probs).any()
+        except AssertionError as e:
+            print(advantage[torch.isnan(probs)])
+            raise e
         return probs
 
 

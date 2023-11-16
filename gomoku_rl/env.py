@@ -302,6 +302,7 @@ class GomokuEnv:
             print(obs)
             print(action_mask)
             print(_action_to_xy(action[illegal_id], self.board_size))
+            print(tensordict["probs"][illegal_id])
             raise e
         done = win
         tensordict = TensorDict({}, self.batch_size, device=self.device)
