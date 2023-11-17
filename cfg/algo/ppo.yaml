@@ -2,11 +2,9 @@ name: ppo
 
 
 # ppo
-train_every: 64
-num_minibatches: 16
 ppo_epochs: 4
 clip_param: 0.1 # 0.2 可能需要搜索
-entropy_coef: 0.005 # 0.01
+entropy_coef: 0.001 # 0.01
 gae_lambda: 0.95
 gamma: 0.99 # 0.99
 max_grad_norm: 1.0
@@ -21,11 +19,17 @@ actor:
     strides: [1, 1, 1, 1]
     paddings: [1, 1, 1, 0]
     activation_class: ReLU
+    norm_class: LazyBatchNorm2d
+    norm_kwargs:
+      track_running_stats: false
 
   mlp_kwargs:
     depth: 2
     num_cells: [64, 64]
     activation_class: ReLU
+    norm_class: LazyBatchNorm1d
+    norm_kwargs:
+      track_running_stats: false
 
 
 critic:
@@ -35,8 +39,14 @@ critic:
     strides: [1, 1, 1, 1]
     paddings: [1, 1, 1, 0]
     activation_class: ReLU
+    norm_class: LazyBatchNorm2d
+    norm_kwargs:
+      track_running_stats: false
 
   mlp_kwargs:
     depth: 2
     num_cells: [64, 64]
     activation_class: ReLU
+    norm_class: LazyBatchNorm1d
+    norm_kwargs:
+      track_running_stats: false

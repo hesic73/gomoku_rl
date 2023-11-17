@@ -89,9 +89,9 @@ class PPOPolicy(Policy):
         actor_output = actor_output.exclude("probs")
         tensordict.update(actor_output)
 
-        critic_input = tensordict.select("observation")
-        critic_output = self.critic(critic_input)
-        tensordict.update(critic_output)
+        # critic_input = tensordict.select("observation")
+        # critic_output = self.critic(critic_input)
+        # tensordict.update(critic_output)
 
         return tensordict
 

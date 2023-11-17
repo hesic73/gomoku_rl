@@ -24,14 +24,11 @@ class _Actor(nn.Module):
         self.features = ConvNet(
             device=device,
             **cnn_kwargs,
-            norm_class=nn.LazyBatchNorm2d,
-            norm_kwargs={"track_running_stats": False},
         )
         self.advantage = MLP(
             out_features=n_action,
             device=device,
             **mlp_kwargs,
-            norm_kwargs={"track_running_stats": False},
         )
 
     def forward(
@@ -42,10 +39,26 @@ class _Actor(nn.Module):
         if mask is not None:
             advantage = torch.where(mask == 0, -float("inf"), advantage)
         probs = torch.special.softmax(advantage, dim=-1)  # (E, board_size^2)
-
         assert not torch.isnan(probs).any()
-        
         return probs
+
+
+def _get_cnn_mlp_kwargs(cfg: DictConfig):
+    cnn_kwargs = OmegaConf.to_container(cfg.cnn_kwargs)
+    cnn_kwargs.update(
+        {"activation_class": getattr(nn, cnn_kwargs.get("activation_class", "ReLU"))}
+    )
+    if (norm_class := cnn_kwargs.get("norm_class", None)) is not None:
+        cnn_kwargs.update({"norm_class": getattr(nn, norm_class)})
+
+    mlp_kwargs = OmegaConf.to_container(cfg.mlp_kwargs)
+    mlp_kwargs.update(
+        {"activation_class": getattr(nn, mlp_kwargs.get("activation_class", "ReLU"))}
+    )
+    if (norm_class := mlp_kwargs.get("norm_class", None)) is not None:
+        mlp_kwargs.update({"norm_class": getattr(nn, norm_class)})
+
+    return cnn_kwargs, mlp_kwargs
 
 
 def make_dqn_actor(
@@ -53,26 +66,7 @@ def make_dqn_actor(
     action_spec: TensorSpec,
     device: _device_t,
 ):
-    cnn_kwargs = OmegaConf.to_container(cfg.cnn_kwargs)
-    cnn_kwargs.update(
-        {"activation_class": getattr(nn, cnn_kwargs.get("activation_class", "ReLU"))}
-    )
-    cnn_kwargs.update(
-        {
-            "norm_class": nn.LazyBatchNorm2d,
-            "norm_kwargs": {"track_running_stats": False},
-        }
-    )
-    mlp_kwargs = OmegaConf.to_container(cfg.mlp_kwargs)
-    mlp_kwargs.update(
-        {"activation_class": getattr(nn, mlp_kwargs.get("activation_class", "ReLU"))}
-    )
-    mlp_kwargs.update(
-        {
-            "norm_class": nn.LazyBatchNorm1d,
-            "norm_kwargs": {"track_running_stats": False},
-        }
-    )
+    cnn_kwargs, mlp_kwargs = _get_cnn_mlp_kwargs(cfg)
 
     net = DuelingCnnDQNet(action_spec.space.n, 1, cnn_kwargs, mlp_kwargs, device=device)
     actor = QValueActor(
@@ -111,14 +105,7 @@ def make_ppo_actor(
     action_spec: TensorSpec,
     device: _device_t,
 ):
-    cnn_kwargs = OmegaConf.to_container(cfg.cnn_kwargs)
-    cnn_kwargs.update(
-        {"activation_class": getattr(nn, cnn_kwargs.get("activation_class", "ReLU"))}
-    )
-    mlp_kwargs = OmegaConf.to_container(cfg.mlp_kwargs)
-    mlp_kwargs.update(
-        {"activation_class": getattr(nn, mlp_kwargs.get("activation_class", "ReLU"))}
-    )
+    cnn_kwargs, mlp_kwargs = _get_cnn_mlp_kwargs(cfg)
 
     actor_net = _Actor(
         device=device,
@@ -146,28 +133,17 @@ def make_critic(
     cfg: DictConfig,
     device: _device_t,
 ):
-    cnn_kwargs = OmegaConf.to_container(cfg.cnn_kwargs)
-    cnn_kwargs.update(
-        {"activation_class": getattr(nn, cnn_kwargs.get("activation_class", "ReLU"))}
-    )
-    mlp_kwargs = OmegaConf.to_container(cfg.mlp_kwargs)
-    mlp_kwargs.update(
-        {"activation_class": getattr(nn, mlp_kwargs.get("activation_class", "ReLU"))}
-    )
+    cnn_kwargs, mlp_kwargs = _get_cnn_mlp_kwargs(cfg)
 
     value_net = nn.Sequential(
         ConvNet(
             device=device,
             **cnn_kwargs,
-            norm_class=nn.LazyBatchNorm2d,
-            norm_kwargs={"track_running_stats": False},
         ),
         MLP(
             out_features=1,
             device=device,
             **mlp_kwargs,
-            norm_class=nn.LazyBatchNorm1d,
-            norm_kwargs={"track_running_stats": False},
         ),
     )
 
@@ -177,13 +153,3 @@ def make_critic(
     )
 
     return value_module
-
-
-def make_dataset_naive(tensordict: TensorDict, num_minibatches: int = 4):
-    tensordict = tensordict.reshape(-1)
-    perm = torch.randperm(
-        (tensordict.shape[0] // num_minibatches) * num_minibatches,
-        device=tensordict.device,
-    ).reshape(num_minibatches, -1)
-    for indices in perm:
-        yield tensordict[indices]

@@ -2,7 +2,6 @@ seed: 0
 num_envs: 2048
 board_size: 8
 device: cuda
-total_frames: 100_000_000
 
 epochs: 100
 episode_len: 64
