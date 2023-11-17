@@ -1,6 +1,6 @@
 from typing import Optional, Union, Callable
 from tensordict import TensorDict
-from tensordict.nn import TensorDictModule
+from tensordict.nn import TensorDictModule, set_interaction_type, InteractionType
 from tensordict.tensordict import TensorDictBase
 import torch
 from torchrl.data import LazyTensorStorage, TensorDictReplayBuffer
@@ -120,15 +120,6 @@ class GomokuEnvWithOpponent(EnvBase):
         action: torch.Tensor = tensordict.get("action")
         episode_len = self.gomoku.move_count.clone()  # (E,)
 
-        # obs1: torch.Tensor = tensordict.get("observation").bool()
-        # obs2 = self.gomoku.get_encoded_board().bool()
-        # eq = (obs1 == obs2).flatten(start_dim=1).all(dim=-1)
-        # try:
-        #     assert eq.all()
-        # except AssertionError:
-        #     print("GG")
-        #     exit()
-
         win, illegal = self.gomoku.step(action=action)
 
         assert not illegal.any()
@@ -198,13 +189,6 @@ class GomokuEnvWithOpponent(EnvBase):
             }
         )
         return tensordict
-
-
-def _action_to_xy(action: torch.Tensor, board_size: int):
-    action = action.item()
-    y = action % board_size
-    x = action // board_size
-    return f"({x:02d},{y:02d})"
 
 
 from gomoku_rl.utils.log import get_log_func
@@ -302,6 +286,8 @@ class GomokuEnv:
         assert not illegal.any()
 
         done = win
+        black_win = win & (episode_len % 2 == 1)
+        white_win = win & (episode_len % 2 == 0)
         tensordict = TensorDict({}, self.batch_size, device=self.device)
         tensordict.update(
             {
@@ -311,7 +297,8 @@ class GomokuEnv:
                 # reward is calculated later
                 "stats": {
                     "episode_len": episode_len,
-                    "win": win,
+                    "black_win": black_win,
+                    "white_win": white_win,
                 },
             }
         )
@@ -348,7 +335,7 @@ class GomokuEnv:
         player_black: _policy_t,
         player_white: _policy_t,
     ) -> tuple[TensorDict, TensorDict]:
-        with torch.no_grad():
+        with set_interaction_type(type=InteractionType.RANDOM):
             tensordict_t = player_black(tensordict_t)
         tensordict_t_plus_1 = self._step_and_maybe_reset(tensordict=tensordict_t)
 
@@ -373,7 +360,7 @@ class GomokuEnv:
         transition_white.set(("next", "done"), done_white)
         transition_white = transition_white[~tensordict_t_minus_1["done"]]
 
-        with torch.no_grad():
+        with set_interaction_type(type=InteractionType.RANDOM):
             tensordict_t_plus_1 = player_white(tensordict_t_plus_1)
         # if player_black wins at t (and the env is reset), the env doesn't take a step at t+1
         # this makes no difference to player_black's transition from t to t+2
@@ -462,7 +449,7 @@ class GomokuEnv:
         player_white: _policy_t,
     ):
         info = defaultdict(float)
-        self._post_step=get_log_func(info)
+        self._post_step = get_log_func(info)
 
         start = time.perf_counter()
         r = self._rollout(

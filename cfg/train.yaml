@@ -5,12 +5,12 @@ device: cuda
 total_frames: 100_000_000
 
 epochs: 100
-episode_len: 50
+episode_len: 64
 
 wandb:
   group: board_${board_size}_${board_size}
   project: gomoku_rl
-#  mode: online # set to 'disabled' when debugging locally
+  mode: online # set to 'disabled' when debugging locally
 
 defaults:
   - algo: ppo

@@ -66,7 +66,7 @@ def main(cfg: DictConfig):
 
         info.update(add_prefix(player_0.learn(data_0), "player_0"))
         info.update(add_prefix(player_1.learn(data_1), "player_1"))
-
+        
         run.log(info)
 
         pbar.set_postfix(
