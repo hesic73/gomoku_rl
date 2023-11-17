@@ -9,6 +9,7 @@ import torch
 from gomoku_rl.env import GomokuEnv
 from gomoku_rl.utils.eval import eval_win_rate
 from gomoku_rl.utils.wandb import init_wandb
+from gomoku_rl.utils.policy import uniform_policy
 from gomoku_rl.policy import get_policy
 import logging
 from tqdm import tqdm
@@ -17,7 +18,7 @@ from typing import Callable, Any, Dict
 
 
 def add_prefix(d: Dict, prefix: str):
-    return {f"{prefix}/{k}": v for k, v in d.items()}
+    return {prefix + k: v for k, v in d.items()}
 
 
 @hydra.main(version_base=None, config_path=CONFIG_PATH, config_name="train")
@@ -52,6 +53,11 @@ def main(cfg: DictConfig):
         device=env.device,
     )
 
+    if black_checkpoint := cfg.get("black_checkpoint", None):
+        player_0.load_state_dict(torch.load(black_checkpoint))
+    if white_checkpoint := cfg.get("white_checkpoint", None):
+        player_1.load_state_dict(torch.load(white_checkpoint))
+
     epochs: int = cfg.get("epochs")
     episode_len: int = cfg.get("episode_len")
 
@@ -62,8 +68,20 @@ def main(cfg: DictConfig):
             episode_len=episode_len, player_black=player_0, player_white=player_1
         )
 
-        info.update(add_prefix(player_0.learn(data_0), "player_0"))
-        info.update(add_prefix(player_1.learn(data_1), "player_1"))
+        info.update(add_prefix(player_0.learn(data_0), "train/player_black_"))
+        info.update(add_prefix(player_1.learn(data_1), "train/player_white_"))
+
+        info.update(
+            {
+                "eval/black_against_random": eval_win_rate(
+                    env, player_black=player_0, player_white=uniform_policy
+                ),
+                "eval/white_against_random": 1
+                - eval_win_rate(
+                    env, player_white=player_1, player_black=uniform_policy
+                ),
+            }
+        )
 
         run.log(info)
 
@@ -75,7 +93,7 @@ def main(cfg: DictConfig):
 
     run.log(
         {
-            "eval/black_win": eval_win_rate(
+            "eval/black_win_final": eval_win_rate(
                 env, player_black=player_0, player_white=player_1
             ),
         }

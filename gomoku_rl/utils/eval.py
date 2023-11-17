@@ -5,7 +5,7 @@ import torch
 
 
 def eval_win_rate(env: GomokuEnv, player_black: _policy_t, player_white: _policy_t):
-    tmp = [_eval_win_rate(env, player_black, player_white) for _ in range(5)]
+    tmp = [_eval_win_rate(env, player_black, player_white) for _ in range(1)]
     return sum(tmp) / len(tmp)
 
 
@@ -44,6 +44,11 @@ def _eval_win_rate(env: GomokuEnv, player_black: _policy_t, player_white: _polic
             break
 
     env.reset()
+
+    if hasattr(player_black, "train"):
+        player_black.train()
+    if hasattr(player_white, "train"):
+        player_white.train()
 
     interested_tensordict = torch.stack(interested_tensordict, dim=0)
     return interested_tensordict["black_win"].float().mean().item()
