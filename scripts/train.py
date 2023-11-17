@@ -7,15 +7,13 @@ import torch
 
 
 from gomoku_rl.env import GomokuEnv
-
+from gomoku_rl.utils.eval import eval_win_rate
 from gomoku_rl.utils.wandb import init_wandb
 from gomoku_rl.policy import get_policy
 import logging
 from tqdm import tqdm
 import numpy as np
-from tensordict.nn import TensorDictModule
 from typing import Callable, Any, Dict
-from tensordict import TensorDict
 
 
 def add_prefix(d: Dict, prefix: str):
@@ -66,7 +64,7 @@ def main(cfg: DictConfig):
 
         info.update(add_prefix(player_0.learn(data_0), "player_0"))
         info.update(add_prefix(player_1.learn(data_1), "player_1"))
-        
+
         run.log(info)
 
         pbar.set_postfix(
@@ -74,6 +72,17 @@ def main(cfg: DictConfig):
                 "fps": env._fps,
             }
         )
+
+    run.log(
+        {
+            "eval/black_win": eval_win_rate(
+                env, player_black=player_0, player_white=player_1
+            ),
+        }
+    )
+
+    torch.save(player_0.state_dict(), os.path.join(run.dir, "player_black.pt"))
+    torch.save(player_1.state_dict(), os.path.join(run.dir, "player_white.pt"))
 
 
 if __name__ == "__main__":

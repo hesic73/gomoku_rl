@@ -155,3 +155,11 @@ class PPOPolicy(Policy):
         )
 
         self.optim = torch.optim.Adam(self.loss_module.parameters(), self.cfg.lr)
+
+    def train(self):
+        self.actor.train()
+        self.critic.train()
+
+    def eval(self):
+        self.actor.eval()
+        self.critic.eval()

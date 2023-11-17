@@ -33,3 +33,13 @@ class Policy(abc.ABC):
     @abc.abstractmethod
     def load_state_dict(self, state_dict: Dict):
         ...
+        
+    @abc.abstractmethod
+    def train(self):
+        ...
+        
+    @abc.abstractmethod
+    def eval(self):
+        ...
+        
+    

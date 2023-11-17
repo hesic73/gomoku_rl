@@ -1,6 +1,6 @@
 board_size: 8
 
-model_ckpt_path: sp_root/11-13_17-05/actor_10.pt
+checkpoint: wandb/latest-run/files/player_black.pt
 device: cuda
 
 human_black: false

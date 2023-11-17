@@ -6,9 +6,15 @@ from gomoku_rl.gui import Piece
 import sys
 from PyQt5.QtWidgets import QApplication, QMainWindow
 import logging
-from gomoku_rl.algo import PPOPolicy
-from torchrl.data.tensor_specs import DiscreteTensorSpec,CompositeSpec,UnboundedContinuousTensorSpec
+from gomoku_rl.policy import get_policy
+from torchrl.data.tensor_specs import (
+    DiscreteTensorSpec,
+    CompositeSpec,
+    UnboundedContinuousTensorSpec,
+    BinaryDiscreteTensorSpec,
+)
 import torch
+
 
 @hydra.main(version_base=None, config_path=CONFIG_PATH, config_name="demo")
 def main(cfg: DictConfig):
@@ -18,22 +24,51 @@ def main(cfg: DictConfig):
 
     # 设计的有点问题，耦合了
     # 有空再改
-    action_spec = DiscreteTensorSpec(
-        cfg.board_size * cfg.board_size,
-        shape=[
-            1,
-        ],
-        device=cfg.device,
-    )
 
     if cfg.get("human_black", True):
         human_color = Piece.BLACK
     else:
         human_color = Piece.WHITE
 
-    model_ckpt_path = cfg.get("model_ckpt_path", None)
+    model_ckpt_path = cfg.get("checkpoint", None)
     if model_ckpt_path is not None:
-        model=PPOPolicy.from_checkpoint(torch.load(model_ckpt_path),cfg=cfg.algo.actor,action_spec=action_spec,device=cfg.device)
+        board_size = cfg.board_size
+        device = cfg.device
+        action_spec = DiscreteTensorSpec(
+            board_size * board_size,
+            shape=[
+                1,
+            ],
+            device=device,
+        )
+        # when using PPO, setting num_envs=1 will cause an error in critic
+        observation_spec = CompositeSpec(
+            {
+                "observation": UnboundedContinuousTensorSpec(
+                    device=cfg.device,
+                    shape=[2, 3, board_size, board_size],
+                ),
+                "action_mask": BinaryDiscreteTensorSpec(
+                    n=board_size * board_size,
+                    device=device,
+                    shape=[2, board_size * board_size],
+                    dtype=torch.bool,
+                ),
+            },
+            shape=[
+                2,
+            ],
+            device=device,
+        )
+        model = get_policy(
+            name=cfg.algo.name,
+            cfg=cfg.algo,
+            action_spec=action_spec,
+            observation_spec=observation_spec,
+            device=cfg.device,
+        )
+        model.load_state_dict(torch.load(model_ckpt_path))
+        model.eval()
     else:
         model = None
 

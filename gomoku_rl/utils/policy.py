@@ -4,15 +4,13 @@ from tensordict import TensorDict
 from tensordict.nn import TensorDictModule
 from typing import Callable
 
-_policy_t = (
-    TensorDictModule
-    | Callable[
-        [
-            TensorDict,
-        ],
+_policy_t = Callable[
+    [
         TensorDict,
-    ]
-)
+    ],
+    TensorDict,
+]
+
 
 def _uniform_policy_with_mask(action_mask: torch.Tensor):
     probs = torch.zeros_like(action_mask, dtype=torch.float)

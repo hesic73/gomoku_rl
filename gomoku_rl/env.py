@@ -66,6 +66,22 @@ class GomokuEnvWithOpponent(EnvBase):
 
         self.black = torch.zeros(num_envs, dtype=torch.bool, device=device)  # (E,)
 
+    @property
+    def batch_size(self):
+        return torch.Size((self.num_envs,))
+
+    @property
+    def board_size(self):
+        return self.gomoku.board_size
+
+    @property
+    def device(self):
+        return self.gomoku.device
+
+    @property
+    def num_envs(self):
+        return self.gomoku.num_envs
+
     def set_opponent_policy(
         self,
         policy: _policy_t,
@@ -448,7 +464,7 @@ class GomokuEnv:
         player_black: _policy_t,
         player_white: _policy_t,
     ):
-        info = defaultdict(float)
+        info: defaultdict[str, float] = defaultdict(float)
         self._post_step = get_log_func(info)
 
         start = time.perf_counter()

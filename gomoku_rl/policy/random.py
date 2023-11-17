@@ -29,3 +29,9 @@ class RandomPolicy(Policy):
 
     def learn(self, data: ReplayBuffer) -> Dict:
         return {}
+
+    def train(self):
+        pass
+    
+    def eval(self):
+        pass
