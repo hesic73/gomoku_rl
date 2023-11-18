@@ -1,11 +1,11 @@
 seed: 0
-num_envs: 2048
+num_envs: 1024
 board_size: 10
 device: cuda
 
 augment: true # to do
 
-epochs: 500
+epochs: 300
 episode_len: 50
 
 black_checkpoint: 
@@ -14,7 +14,7 @@ white_checkpoint:
 wandb:
   group: board_${board_size}_${board_size}
   project: gomoku_rl
-  mode: online # set to 'disabled' when debugging locally
+#  mode: online # set to 'disabled' when debugging locally
 
 defaults:
   - algo: ppo

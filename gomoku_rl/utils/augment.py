@@ -179,10 +179,55 @@ _TRANSFORMS = [
 ]
 
 
-def _augment(transition: TensorDict, transform: Transform):
-    pass
+def get_augmented_transition(
+    transition: TensorDict, transform: Transform, inplace: bool = False
+) -> TensorDict:
+    board_size: int = transition["observation"].shape[-1]
+    batch_size = transition.batch_size
+
+    action = transform.map_index(transition["action"], board_size)
+    action_mask = transform.map_board(
+        transition["action_mask"].reshape(*batch_size, board_size, board_size)
+    ).flatten(start_dim=-2)
+    observation = transform.map_board(transition["observation"])
+    next_action_mask = transform.map_board(
+        transition["next", "action_mask"].reshape(*batch_size, board_size, board_size)
+    ).flatten(start_dim=-2)
+    next_observation = transform.map_board(transition["next", "observation"])
+    if inplace:
+        transition.update(
+            {
+                "action": action,
+                "action_mask": action_mask,
+                "observation": observation,
+                "next": {
+                    "action_mask": next_action_mask,
+                    "observation": next_observation,
+                },
+            }
+        )
+        return transition
+
+    else:
+        tmp: TensorDict = transition.clone()
+        tmp.update(
+            {
+                "action": action,
+                "action_mask": action_mask,
+                "observation": observation,
+                "next": {
+                    "action_mask": next_action_mask,
+                    "observation": next_observation,
+                },
+            }
+        )
+        return tmp
 
 
 def augment_transition(transition: TensorDict) -> TensorDict:
-    print(transition)
-    exit()
+    tmp = [transition]
+    for t in _TRANSFORMS[1:]:
+        tmp.append(get_augmented_transition(transition, t))
+
+    transition = torch.stack(tmp).reshape(-1)
+    return transition
