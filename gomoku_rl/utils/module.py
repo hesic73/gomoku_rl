@@ -92,15 +92,18 @@ class ValueHead(nn.Module):
     def __init__(self, track_running_stats: bool = True) -> None:
         super().__init__()
         self.cnn = nn.Conv2d(in_channels=32, out_channels=1, kernel_size=1)
-        self.bn = nn.LazyBatchNorm2d(track_running_stats=track_running_stats)
+        self.bn = nn.LazyBatchNorm1d(track_running_stats=track_running_stats)
         self.linear_0 = nn.LazyLinear(out_features=32)
         self.linear_1 = nn.LazyLinear(out_features=1)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
+        # Note: the order is different from the original implementation(bn,relu,flatten)
+        # it seems when using vmap and nn.Conv.out_channels=1,
+        # it will throw a RuntimeError
         x = self.cnn(x)
+        x = torch.flatten(x, start_dim=-3)
         x = self.bn(x)
         x = nn.functional.relu(x)
-        x = torch.flatten(x, start_dim=-3)
         x = self.linear_0(x)
         x = nn.functional.relu(x)
         x = self.linear_1(x)
