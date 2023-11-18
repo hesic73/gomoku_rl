@@ -1,6 +1,6 @@
 seed: 0
 num_envs: 2048
-board_size: 8
+board_size: 10
 device: cuda
 
 

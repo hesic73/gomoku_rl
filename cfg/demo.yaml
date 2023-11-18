@@ -1,4 +1,4 @@
-board_size: 8
+board_size: 10
 
 checkpoint: wandb/latest-run/files/player_black.pt
 device: cuda

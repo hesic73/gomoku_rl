@@ -96,8 +96,7 @@ class PPOPolicy(Policy):
         return tensordict
 
     def learn(self, data: ReplayBuffer):
-        self.actor.train()
-        self.critic.train()
+        self.train()
         losses = []
         for _ in range(self.ppo_epoch):
             for minibatch in data:
@@ -121,8 +120,7 @@ class PPOPolicy(Policy):
                 self.optim.step()
                 self.optim.zero_grad()
 
-        self.critic.eval()
-        self.actor.eval()
+        self.eval()
         return {
             "loss": torch.stack(losses).mean().item(),
         }
