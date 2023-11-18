@@ -15,6 +15,8 @@ from tensordict import TensorDict
 from omegaconf import DictConfig, OmegaConf
 from typing import Callable
 
+from gomoku_rl.utils.module import ValueNet, ActorNet
+
 
 class _Actor(nn.Module):
     def __init__(
@@ -105,14 +107,16 @@ def make_ppo_actor(
     action_spec: TensorSpec,
     device: _device_t,
 ):
-    cnn_kwargs, mlp_kwargs = _get_cnn_mlp_kwargs(cfg)
+    # cnn_kwargs, mlp_kwargs = _get_cnn_mlp_kwargs(cfg)
 
-    actor_net = _Actor(
-        device=device,
-        n_action=action_spec.space.n,
-        cnn_kwargs=cnn_kwargs,
-        mlp_kwargs=mlp_kwargs,
-    )
+    # actor_net = _Actor(
+    #     device=device,
+    #     n_action=action_spec.space.n,
+    #     cnn_kwargs=cnn_kwargs,
+    #     mlp_kwargs=mlp_kwargs,
+    # )
+
+    actor_net = ActorNet(in_channels=3, out_features=action_spec.space.n).to(device)
 
     policy_module = TensorDictModule(
         module=actor_net, in_keys=["observation", "action_mask"], out_keys=["probs"]
@@ -135,17 +139,19 @@ def make_critic(
 ):
     cnn_kwargs, mlp_kwargs = _get_cnn_mlp_kwargs(cfg)
 
-    value_net = nn.Sequential(
-        ConvNet(
-            device=device,
-            **cnn_kwargs,
-        ),
-        MLP(
-            out_features=1,
-            device=device,
-            **mlp_kwargs,
-        ),
-    )
+    # value_net = nn.Sequential(
+    #     ConvNet(
+    #         device=device,
+    #         **cnn_kwargs,
+    #     ),
+    #     MLP(
+    #         out_features=1,
+    #         device=device,
+    #         **mlp_kwargs,
+    #     ),
+    # )
+
+    value_net = ValueNet(in_channels=3).to(device)
 
     value_module = ValueOperator(
         module=value_net,

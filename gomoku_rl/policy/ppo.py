@@ -63,6 +63,7 @@ class PPOPolicy(Policy):
         self.actor(fake_input)
         self.critic(fake_input)
 
+
         self.advantage_module = GAE(
             gamma=self.gae_gamma,
             lmbda=self.gae_lambda,

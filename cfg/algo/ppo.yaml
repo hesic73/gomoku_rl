@@ -1,6 +1,5 @@
 name: ppo
 
-
 # ppo
 ppo_epochs: 4
 clip_param: 0.1 # 0.2 可能需要搜索
@@ -9,43 +8,41 @@ gae_lambda: 0.95
 gamma: 0.99 # 0.99
 max_grad_norm: 1.0
 
-
 lr: 5e-4
 
 actor:
   cnn_kwargs:
-    num_cells: [32, 64, 128, 4]
-    kernel_sizes: [3, 3, 3, 1]
-    strides: [1, 1, 1, 1]
-    paddings: [1, 1, 1, 0]
+    num_cells: [32, 32, 32, 32, 32, 2]
+    kernel_sizes: [3, 3, 3, 3, 3, 1]
+    strides: [1, 1, 1, 1, 1, 1]
+    paddings: [1, 1, 1, 1, 1, 0]
     activation_class: ReLU
     norm_class: LazyBatchNorm2d
     norm_kwargs:
       track_running_stats: true
 
   mlp_kwargs:
-    depth: 2
-    num_cells: [64, 64]
+    depth: 0
+    num_cells: []
     activation_class: ReLU
     norm_class: LazyBatchNorm1d
     norm_kwargs:
       track_running_stats: true
 
-
 critic:
   cnn_kwargs:
-    num_cells: [32, 64, 128, 4]
-    kernel_sizes: [3, 3, 3, 1]
-    strides: [1, 1, 1, 1]
-    paddings: [1, 1, 1, 0]
+    num_cells: [32, 32, 32, 32, 32, 2]
+    kernel_sizes: [3, 3, 3, 3, 3, 1]
+    strides: [1, 1, 1, 1, 1, 1]
+    paddings: [1, 1, 1, 1, 1, 0]
     activation_class: ReLU
     norm_class: LazyBatchNorm2d
     norm_kwargs:
       track_running_stats: false # the advantage module uses vmap, which is incompatible with bn
 
   mlp_kwargs:
-    depth: 2
-    num_cells: [64, 64]
+    depth: 1
+    num_cells: [32]
     activation_class: ReLU
     norm_class: LazyBatchNorm1d
     norm_kwargs:
