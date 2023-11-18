@@ -21,7 +21,7 @@ actor:
     activation_class: ReLU
     norm_class: LazyBatchNorm2d
     norm_kwargs:
-      track_running_stats: false
+      track_running_stats: true
 
   mlp_kwargs:
     depth: 2
@@ -29,7 +29,7 @@ actor:
     activation_class: ReLU
     norm_class: LazyBatchNorm1d
     norm_kwargs:
-      track_running_stats: false
+      track_running_stats: true
 
 
 critic:
@@ -39,14 +39,14 @@ critic:
     strides: [1, 1, 1, 1]
     paddings: [1, 1, 1, 0]
     activation_class: ReLU
-    # norm_class: LazyBatchNorm2d
-    # norm_kwargs:
-    #   track_running_stats: false
+    norm_class: LazyBatchNorm2d
+    norm_kwargs:
+      track_running_stats: false # the advantage module uses vmap, which is incompatible with bn
 
   mlp_kwargs:
     depth: 2
     num_cells: [64, 64]
     activation_class: ReLU
-    # norm_class: LazyBatchNorm1d
-    # norm_kwargs:
-    #   track_running_stats: false
+    norm_class: LazyBatchNorm1d
+    norm_kwargs:
+      track_running_stats: false
