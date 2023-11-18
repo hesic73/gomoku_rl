@@ -14,197 +14,9 @@ from torchrl.data.tensor_specs import (
     UnboundedContinuousTensorSpec,
 )
 import time
-from gomoku_rl.utils.policy import _policy_t, uniform_policy
-
+from gomoku_rl.utils.policy import _policy_t
+from gomoku_rl.utils.augment import augment_transition
 from .core import Gomoku
-
-
-class GomokuEnvWithOpponent(EnvBase):
-    def __init__(
-        self,
-        num_envs: int,
-        board_size: int = 19,
-        initial_policy: Optional[_policy_t] = None,
-        device=None,
-    ):
-        super().__init__(device, batch_size=[num_envs])
-        self.gomoku = Gomoku(num_envs=num_envs, board_size=board_size, device=device)
-
-        self.opponent_policy = initial_policy or uniform_policy
-
-        self.observation_spec = CompositeSpec(
-            {
-                "observation": UnboundedContinuousTensorSpec(
-                    device=self.device,
-                    shape=[num_envs, 3, board_size, board_size],
-                ),
-            },
-            shape=[
-                num_envs,
-            ],
-            device=self.device,
-        )
-        self.action_spec = DiscreteTensorSpec(
-            board_size * board_size,
-            shape=[
-                num_envs,
-            ],
-            device=self.device,
-        )
-        self.reward_spec = UnboundedContinuousTensorSpec(
-            shape=[num_envs, 1],
-            device=self.device,
-        )
-
-        self.stats_keys = [
-            "episode_len",
-            "win",
-            "black_win_rate",
-            "white_win_rate",
-        ]
-        self.stats_keys = [("stats", k) for k in self.stats_keys]
-
-        self.black = torch.zeros(num_envs, dtype=torch.bool, device=device)  # (E,)
-
-    @property
-    def batch_size(self):
-        return torch.Size((self.num_envs,))
-
-    @property
-    def board_size(self):
-        return self.gomoku.board_size
-
-    @property
-    def device(self):
-        return self.gomoku.device
-
-    @property
-    def num_envs(self):
-        return self.gomoku.num_envs
-
-    def set_opponent_policy(
-        self,
-        policy: _policy_t,
-    ):
-        self.opponent_policy = policy
-
-    def to(self, device) -> EnvBase:
-        self.gomoku.to(device)
-        if isinstance(self.opponent_policy, TensorDictModule):
-            self.opponent_policy.to(device)
-        return super().to(device)
-
-    def _set_seed(self, seed: Optional[int]):
-        torch.manual_seed(seed)
-
-    def _reset(self, tensordict: TensorDictBase, **kwargs) -> TensorDictBase:
-        if tensordict is not None:
-            env_mask = tensordict.get("_reset").reshape(self.gomoku.num_envs)
-        else:
-            env_mask = torch.ones(self.gomoku.num_envs, dtype=bool, device=self.device)
-
-        self.gomoku.reset(env_ids=env_mask)
-
-        opponent_tensordict = TensorDict(
-            {
-                "observation": self.gomoku.get_encoded_board(),
-                "action_mask": self.gomoku.get_action_mask(),
-            },
-            self.batch_size,
-            device=self.device,
-        )
-        with torch.no_grad():
-            opponent_tensordict = self.opponent_policy(opponent_tensordict)
-        opponent_action = opponent_tensordict.get("action")
-        _opponent_first_mask = torch.rand_like(env_mask, dtype=torch.float) > 0.5
-        self.gomoku.step(
-            action=opponent_action, env_indices=env_mask & _opponent_first_mask
-        )
-        self.black = torch.where(env_mask, ~_opponent_first_mask, self.black)
-
-        tensordict = TensorDict(
-            {
-                "observation": self.gomoku.get_encoded_board(),
-                "action_mask": self.gomoku.get_action_mask(),
-            },
-            self.batch_size,
-            device=self.device,
-        )
-        return tensordict
-
-    def _step(self, tensordict: TensorDictBase) -> TensorDictBase:
-        action: torch.Tensor = tensordict.get("action")
-        episode_len = self.gomoku.move_count.clone()  # (E,)
-
-        win, illegal = self.gomoku.step(action=action)
-
-        assert not illegal.any()
-
-        self.gomoku.reset(env_ids=win)
-        episode_len = torch.where(
-            self.gomoku.move_count == 0, episode_len, self.gomoku.move_count
-        )  # (E,)
-
-        opponent_tensordict = TensorDict(
-            {
-                "observation": self.gomoku.get_encoded_board(),
-                "action_mask": self.gomoku.get_action_mask(),
-            },
-            self.batch_size,
-            device=self.device,
-        )
-        with torch.no_grad():
-            opponent_tensordict = self.opponent_policy(opponent_tensordict)
-        opponent_action = opponent_tensordict.get("action")
-
-        # if the environment has been reset, the opponent can never win or make an illegal move at the first step
-        # so opponent_win/illegal is nonzero only if win/illegal is nonzero
-
-        # UPDATE: if the game is over, the opponent will not make a move
-
-        env_indices = ~win
-        opponent_win, opponent_illegal = self.gomoku.step(
-            action=opponent_action, env_indices=env_indices
-        )
-
-        assert not opponent_illegal.any()
-
-        self.gomoku.reset(env_ids=opponent_win)
-        episode_len = torch.where(
-            self.gomoku.move_count == 0, episode_len, self.gomoku.move_count
-        )  # (E,)
-
-        done = win | opponent_win
-
-        black_win_rate = torch.zeros(
-            self.gomoku.num_envs, 2, device=self.device, dtype=torch.bool
-        )
-        black_win_rate[:, 0] = win
-        black_win_rate[:, 1] = self.black
-        white_win_rate = torch.zeros(
-            self.gomoku.num_envs, 2, device=self.device, dtype=torch.bool
-        )
-        white_win_rate[:, 0] = win
-        white_win_rate[:, 1] = ~self.black
-
-        reward = win.float() - opponent_win.float()
-
-        tensordict = TensorDict({}, self.batch_size, device=self.device)
-        tensordict.update(
-            {
-                "done": done,
-                "observation": self.gomoku.get_encoded_board(),
-                "action_mask": self.gomoku.get_action_mask(),
-                "reward": reward,
-                "stats": {
-                    "episode_len": episode_len,
-                    "win": win,
-                    "black_win_rate": black_win_rate,
-                    "white_win_rate": white_win_rate,
-                },
-            }
-        )
-        return tensordict
 
 
 from gomoku_rl.utils.log import get_log_func
@@ -417,6 +229,7 @@ class GomokuEnv:
         max_steps: int,
         player_black: _policy_t,
         player_white: _policy_t,
+        augment: bool = False,
     ):
         tensordict_t_minus_1 = self.reset()
         tensordict_t = self.reset()
@@ -431,14 +244,18 @@ class GomokuEnv:
             {"done": torch.ones(self.num_envs, dtype=torch.bool, device=self.device)}
         )
 
+        buffer_size = max_steps * self.num_envs
+        if augment:
+            buffer_size *= 8
+
         buffer_black = TensorDictReplayBuffer(
-            storage=LazyTensorStorage(max_size=max_steps * self.num_envs),
-            sampler=SamplerWithoutReplacement(drop_last=False),
+            storage=LazyTensorStorage(max_size=buffer_size),
+            sampler=SamplerWithoutReplacement(drop_last=True),
             batch_size=self.num_envs,
         )
         buffer_white = TensorDictReplayBuffer(
-            storage=LazyTensorStorage(max_size=max_steps * self.num_envs),
-            sampler=SamplerWithoutReplacement(drop_last=False),
+            storage=LazyTensorStorage(max_size=buffer_size),
+            sampler=SamplerWithoutReplacement(drop_last=True),
             batch_size=self.num_envs,
         )
 
@@ -452,6 +269,10 @@ class GomokuEnv:
                 tensordict_t_minus_1, tensordict_t, player_black, player_white
             )
 
+            if augment:
+                transition_black = augment_transition(transition_black)
+                transition_white = augment_transition(transition_white)
+
             buffer_black.extend(transition_black)
             if len(transition_white) > 0:
                 buffer_white.extend(transition_white)
@@ -463,13 +284,17 @@ class GomokuEnv:
         episode_len: int,
         player_black: _policy_t,
         player_white: _policy_t,
+        augment: bool = False,
     ):
         info: defaultdict[str, float] = defaultdict(float)
         self._post_step = get_log_func(info)
 
         start = time.perf_counter()
         r = self._rollout(
-            max_steps=episode_len, player_black=player_black, player_white=player_white
+            max_steps=episode_len,
+            player_black=player_black,
+            player_white=player_white,
+            augment=augment,
         )
         end = time.perf_counter()
         self._fps = (episode_len * 2 * self.num_envs) / (end - start)

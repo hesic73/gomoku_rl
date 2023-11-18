@@ -97,6 +97,9 @@ class PPOPolicy(Policy):
 
     def learn(self, data: ReplayBuffer):
         self.train()
+        loss_objectives = []
+        loss_critics = []
+        loss_entropies = []
         losses = []
         for _ in range(self.ppo_epoch):
             for minibatch in data:
@@ -109,6 +112,9 @@ class PPOPolicy(Policy):
                     + loss_vals["loss_critic"]
                     + loss_vals["loss_entropy"]
                 )
+                loss_objectives.append(loss_vals["loss_objective"].clone().detach())
+                loss_critics.append(loss_vals["loss_critic"].clone().detach())
+                loss_entropies.append(loss_vals["loss_entropy"].clone().detach())
                 losses.append(loss_value.clone().detach())
                 # Optimization: backward, grad clipping and optim step
                 loss_value.backward()
@@ -123,6 +129,9 @@ class PPOPolicy(Policy):
         self.eval()
         return {
             "loss": torch.stack(losses).mean().item(),
+            "loss_objective": torch.stack(loss_objectives).mean().item(),
+            "loss_critic": torch.stack(loss_critics).mean().item(),
+            "loss_entropy": torch.stack(loss_entropies).mean().item(),
         }
 
     def state_dict(self) -> Dict:

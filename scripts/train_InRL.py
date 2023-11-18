@@ -65,7 +65,10 @@ def main(cfg: DictConfig):
 
     for i in pbar:
         data_0, data_1, info = env.rollout(
-            episode_len=episode_len, player_black=player_0, player_white=player_1
+            episode_len=episode_len,
+            player_black=player_0,
+            player_white=player_1,
+            augment=cfg.get("augment", False),
         )
 
         info.update(add_prefix(player_0.learn(data_0), "train/player_black_"))

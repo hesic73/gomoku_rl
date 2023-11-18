@@ -1,5 +1,6 @@
 import torch
 import abc
+from tensordict import TensorDict
 
 
 class Augmentation(abc.ABC):
@@ -43,3 +44,18 @@ class VerticalFlipAugmentation(Augmentation):
 
     def inverse(self, board: torch.Tensor):
         return torch.flip(board, dims=[-2])
+
+
+_AUGMENTATIONS=[
+    RotationAugmentation(1),
+    RotationAugmentation(2),
+    RotationAugmentation(3),
+]
+
+def _augment_transition(transition:TensorDict,augmentation:Augmentation):
+    pass
+
+
+def augment_transition(transition: TensorDict) -> TensorDict:
+    print(transition)
+    exit()
