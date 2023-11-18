@@ -12,7 +12,6 @@ setup(
         "torchrl==0.2.1",
         "omegaconf",
         "hydra-core",
-        "PyQt5",
         "tqdm",
         "wandb",
     ],  # and other dependencies
