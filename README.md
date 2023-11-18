@@ -45,7 +45,7 @@ python scripts/demo.py human_black=True board_size=10 checkpoint=/path/to/your/m
 
 ## Details
 
-- **Policy**
+- The network architecture remains consistent with [[1]](#refer-anchor-1), with modifications detailed in `gomoku_rl.utils.module`.
 
 ## Limitations
 

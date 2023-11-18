@@ -137,7 +137,7 @@ def make_critic(
     cfg: DictConfig,
     device: _device_t,
 ):
-    cnn_kwargs, mlp_kwargs = _get_cnn_mlp_kwargs(cfg)
+    # cnn_kwargs, mlp_kwargs = _get_cnn_mlp_kwargs(cfg)
 
     # value_net = nn.Sequential(
     #     ConvNet(
