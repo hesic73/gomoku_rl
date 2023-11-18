@@ -71,8 +71,8 @@ def main(cfg: DictConfig):
             augment=cfg.get("augment", False),
         )
 
-        info.update(add_prefix(player_0.learn(data_0), "train/player_black_"))
-        info.update(add_prefix(player_1.learn(data_1), "train/player_white_"))
+        info.update(add_prefix(player_0.learn(data_0), "player_black/"))
+        info.update(add_prefix(player_1.learn(data_1), "player_white/"))
 
         info.update(
             {
