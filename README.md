@@ -1,8 +1,8 @@
-# Reinforcement Learning in Gomoku(五子棋)
+# Gomoku RL
 
 ## Introduction
 
-*gomoku_rl* is an open-sourced project dedicated to training Gomoku AI through self-play. Previous works often rely on variants of AlphaGo/AlphaZero and inefficiently use GPU resources. Notably, many existing projects are limited to small boards, with only a few exceptions. [[1]](#refer-anchor-1) incorporates curriculum learning and other enhancements. [[2]](#refer-anchor-2) and [[3]](#refer-anchor-3) implement an asynchronous self-play training pipeline and parallelize MCTS. In contrast, *gomoku_rl* features GPU-parallelized simulation and leverages recent advancements in self-play algorithms. This enables AI training without exploiting game rules through MCTS, except the use of action masking to prevent illegal moves.
+*gomoku_rl* is an open-sourced project that trains Gomoku agents through self-play. Previous works often rely on variants of AlphaGo/AlphaZero and inefficiently use GPU resources. Notably, many existing projects are limited to small boards, with only a few exceptions. [[1]](#refer-anchor-1) incorporates curriculum learning and other enhancements, and [[2]](#refer-anchor-2) and [[3]](#refer-anchor-3) parallelize MCTS execution. In contrast, *gomoku_rl* features GPU-parallelized simulation and leverages recent advancements in **MARL**. This enables AI training without exploiting game rules through MCTS, except the use of action masking to prevent illegal moves.
 
 ## Algorithms
 
@@ -65,3 +65,7 @@ python scripts/demo.py human_black=True board_size=10 checkpoint=/path/to/your/m
 <div id="refer-anchor-3"></div>
 
 - [3] [https://github.com/hijkzzz/alpha-zero-gomoku](https://github.com/hijkzzz/alpha-zero-gomoku)
+
+<div id="refer-anchor-4"></div>
+
+- [4] [A Unified Game-Theoretic Approach to Multiagent Reinforcement Learning](https://arxiv.org/pdf/1711.00832.pdf)

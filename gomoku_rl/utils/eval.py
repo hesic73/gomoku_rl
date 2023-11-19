@@ -4,8 +4,10 @@ from gomoku_rl.utils.policy import _policy_t
 import torch
 
 
-def eval_win_rate(env: GomokuEnv, player_black: _policy_t, player_white: _policy_t):
-    tmp = [_eval_win_rate(env, player_black, player_white) for _ in range(1)]
+def eval_win_rate(
+    env: GomokuEnv, player_black: _policy_t, player_white: _policy_t, n: int = 1
+):
+    tmp = [_eval_win_rate(env, player_black, player_white) for _ in range(n)]
     return sum(tmp) / len(tmp)
 
 
@@ -52,3 +54,16 @@ def _eval_win_rate(env: GomokuEnv, player_black: _policy_t, player_white: _polic
 
     interested_tensordict = torch.stack(interested_tensordict, dim=0)
     return interested_tensordict["black_win"].float().mean().item()
+
+
+def get_payoff_matrix(env: GomokuEnv, policies: list[_policy_t]):
+    n_policies = len(policies)
+    assert n_policies > 0
+    payoff = torch.zeros(n_policies, n_policies)
+    for i in range(n_policies):
+        for j in range(n_policies):
+            p0 = policies[i]
+            p1 = policies[j]
+            payoff[i, j] = eval_win_rate(env, player_black=p0, player_white=p1)
+
+    return payoff
