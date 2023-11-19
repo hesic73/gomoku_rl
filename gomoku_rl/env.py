@@ -240,13 +240,10 @@ class GomokuEnv:
         tensordict_t = self.reset()
 
         tensordict_t_minus_1.update(
-            {
-                "done": torch.ones(self.num_envs, dtype=torch.bool, device=self.device),
-                "action": self.action_spec.zero(),
-            }
-        )
-        tensordict_t.update(
             {"done": torch.ones(self.num_envs, dtype=torch.bool, device=self.device)}
+        ) # here we set it to True
+        tensordict_t.update(
+            {"done": torch.zeros(self.num_envs, dtype=torch.bool, device=self.device)}
         )
 
         buffer_size = rounds * self.num_envs
@@ -288,12 +285,12 @@ class GomokuEnv:
                 transition_black = (
                     augment_transition(transition_black)
                     if return_black_transitions
-                    else None
+                    else transition_black
                 )
                 transition_white = (
                     augment_transition(transition_white)
-                    if return_white_transitions
-                    else None
+                    if return_white_transitions and len(transition_white) > 0
+                    else transition_white
                 )
             if return_black_transitions:
                 buffer_black.extend(transition_black)
