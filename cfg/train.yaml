@@ -5,7 +5,7 @@ device: cuda
 
 augment: true # to do
 
-epochs: 10
+epochs: 100
 episode_len: 50
 
 black_checkpoint: pretrained_models/${board_size}_${board_size}/baseline.pt
@@ -17,4 +17,5 @@ wandb:
   mode: online # set to 'disabled' when debugging locally
 
 defaults:
+  - _self_
   - algo: ppo

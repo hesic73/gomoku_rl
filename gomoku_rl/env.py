@@ -23,6 +23,30 @@ from gomoku_rl.utils.log import get_log_func
 from collections import defaultdict
 
 
+def make_transition(
+    tensordict_t_minus_1, tensordict_t, tensordict_t_plus_1
+) -> TensorDict:
+    # if a player wins at time t, its opponent cannot win immediately after reset
+    reward: torch.Tensor = (
+        tensordict_t.get("done").float() - tensordict_t_plus_1.get("done").float()
+    ).unsqueeze(-1)
+    transition: TensorDict = tensordict_t_minus_1.select(
+        "observation",
+        "action_mask",
+        "action",
+        "sample_log_prob",
+        strict=False,
+    )
+    transition.set(
+        "next",
+        tensordict_t_plus_1.select("observation", "action_mask"),
+    )
+    transition.set(("next", "reward"), reward)
+    done_white = tensordict_t_plus_1["done"] | tensordict_t["done"]
+    transition.set(("next", "done"), done_white)
+    return transition
+
+
 class GomokuEnv:
     def __init__(
         self,
@@ -162,31 +186,22 @@ class GomokuEnv:
         tensordict_t: TensorDict,
         player_black: _policy_t,
         player_white: _policy_t,
-    ) -> tuple[TensorDict, TensorDict]:
+        return_black_transitions: bool = True,
+        return_white_transitions: bool = True,
+    ) -> tuple[TensorDict | None, TensorDict | None, TensorDict, TensorDict]:
         with set_interaction_type(type=InteractionType.RANDOM):
             tensordict_t = player_black(tensordict_t)
         tensordict_t_plus_1 = self._step_and_maybe_reset(tensordict=tensordict_t)
 
-        # if a player wins at time t, its opponent cannot win immediately after reset
-        reward_white: torch.Tensor = (
-            tensordict_t.get("done").float() - tensordict_t_plus_1.get("done").float()
-        ).unsqueeze(-1)
-
-        transition_white: TensorDict = tensordict_t_minus_1.select(
-            "observation",
-            "action_mask",
-            "action",
-            "sample_log_prob",
-            strict=False,
-        )
-        transition_white.set(
-            "next",
-            tensordict_t_plus_1.select("observation", "action_mask"),
-        )
-        transition_white.set(("next", "reward"), reward_white)
-        done_white = tensordict_t_plus_1["done"] | tensordict_t["done"]
-        transition_white.set(("next", "done"), done_white)
-        transition_white = transition_white[~tensordict_t_minus_1["done"]]
+        if return_white_transitions:
+            transition_white = make_transition(
+                tensordict_t_minus_1, tensordict_t, tensordict_t_plus_1
+            )
+            # for player_white, if the env is reset at t-1, he won't make a move at t
+            # this is different from player_black
+            transition_white = transition_white[~tensordict_t_minus_1["done"]]
+        else:
+            transition_white = None
 
         with set_interaction_type(type=InteractionType.RANDOM):
             tensordict_t_plus_1 = player_white(tensordict_t_plus_1)
@@ -197,24 +212,12 @@ class GomokuEnv:
             tensordict_t_plus_1, env_indices=~tensordict_t_plus_1.get("done")
         )
 
-        reward_black: torch.Tensor = (
-            tensordict_t_plus_1.get("done").float()
-            - tensordict_t_plus_2.get("done").float()
-        ).unsqueeze(-1)
-
-        transition_black: TensorDict = tensordict_t.select(
-            "observation",
-            "action_mask",
-            "action",
-            "sample_log_prob",
-            strict=False,
-        )
-        transition_black.set(
-            "next", tensordict_t_plus_2.select("observation", "action_mask")
-        )
-        transition_black.set(("next", "reward"), reward_black)
-        done_black = tensordict_t_plus_1["done"] | tensordict_t_plus_2["done"]
-        transition_black.set(("next", "done"), done_black)
+        if return_black_transitions:
+            transition_black = make_transition(
+                tensordict_t, tensordict_t_plus_1, tensordict_t_plus_2
+            )
+        else:
+            transition_black = None
 
         return (
             transition_black,
@@ -226,10 +229,12 @@ class GomokuEnv:
     @torch.no_grad
     def _rollout(
         self,
-        max_steps: int,
+        rounds: int,
         player_black: _policy_t,
         player_white: _policy_t,
         augment: bool = False,
+        return_black_transitions: bool = True,
+        return_white_transitions: bool = True,
     ):
         tensordict_t_minus_1 = self.reset()
         tensordict_t = self.reset()
@@ -244,60 +249,122 @@ class GomokuEnv:
             {"done": torch.ones(self.num_envs, dtype=torch.bool, device=self.device)}
         )
 
-        buffer_size = max_steps * self.num_envs
+        buffer_size = rounds * self.num_envs
         if augment:
             buffer_size *= 8
+        if return_black_transitions:
+            buffer_black = TensorDictReplayBuffer(
+                storage=LazyTensorStorage(max_size=buffer_size),
+                sampler=SamplerWithoutReplacement(drop_last=True),
+                batch_size=self.num_envs,
+            )
+        else:
+            buffer_black = None
+        if return_white_transitions:
+            buffer_white = TensorDictReplayBuffer(
+                storage=LazyTensorStorage(max_size=buffer_size),
+                sampler=SamplerWithoutReplacement(drop_last=True),
+                batch_size=self.num_envs,
+            )
+        else:
+            buffer_white = None
 
-        buffer_black = TensorDictReplayBuffer(
-            storage=LazyTensorStorage(max_size=buffer_size),
-            sampler=SamplerWithoutReplacement(drop_last=True),
-            batch_size=self.num_envs,
-        )
-        buffer_white = TensorDictReplayBuffer(
-            storage=LazyTensorStorage(max_size=buffer_size),
-            sampler=SamplerWithoutReplacement(drop_last=True),
-            batch_size=self.num_envs,
-        )
-
-        for i in range(max_steps):
+        for i in range(rounds):
             (
                 transition_black,
                 transition_white,
                 tensordict_t_minus_1,
                 tensordict_t,
             ) = self._round(
-                tensordict_t_minus_1, tensordict_t, player_black, player_white
+                tensordict_t_minus_1,
+                tensordict_t,
+                player_black,
+                player_white,
+                return_black_transitions,
+                return_white_transitions,
             )
 
             if augment:
-                transition_black = augment_transition(transition_black)
-                transition_white = augment_transition(transition_white)
-
-            buffer_black.extend(transition_black)
-            if len(transition_white) > 0:
+                transition_black = (
+                    augment_transition(transition_black)
+                    if return_black_transitions
+                    else None
+                )
+                transition_white = (
+                    augment_transition(transition_white)
+                    if return_white_transitions
+                    else None
+                )
+            if return_black_transitions:
+                buffer_black.extend(transition_black)
+            if return_white_transitions and len(transition_white) > 0:
                 buffer_white.extend(transition_white)
 
         return buffer_black, buffer_white
 
     def rollout(
         self,
-        episode_len: int,
+        rounds: int,
         player_black: _policy_t,
         player_white: _policy_t,
         augment: bool = False,
+        return_black_transitions: bool = True,
+        return_white_transitions: bool = True,
     ):
         info: defaultdict[str, float] = defaultdict(float)
         self._post_step = get_log_func(info)
 
         start = time.perf_counter()
         r = self._rollout(
-            max_steps=episode_len,
+            rounds=rounds,
             player_black=player_black,
             player_white=player_white,
             augment=augment,
+            return_black_transitions=return_black_transitions,
+            return_white_transitions=return_white_transitions,
         )
         end = time.perf_counter()
-        self._fps = (episode_len * 2 * self.num_envs) / (end - start)
+        self._fps = (rounds * 2 * self.num_envs) / (end - start)
+
+        self._post_step = None
+        return *r, info
+
+    @torch.no_grad
+    def _flexible_rollout(
+        self,
+        rounds: int,
+        player_0: _policy_t,
+        player_1: _policy_t,
+        augment: bool = False,
+        return_0_transitions: bool = True,
+        return_1_transitions: bool = True,
+    ):
+        raise NotImplementedError
+
+    @torch.no_grad
+    def flexible_rollout(
+        self,
+        rounds: int,
+        player_0: _policy_t,
+        player_1: _policy_t,
+        augment: bool = False,
+        return_0_transitions: bool = True,
+        return_1_transitions: bool = True,
+    ):
+        info: defaultdict[str, float] = defaultdict(float)
+        self._post_step = get_log_func(info)
+
+        start = time.perf_counter()
+        r = self._flexible_rollout(
+            rounds=rounds,
+            player_0=player_0,
+            player_1=player_1,
+            augment=augment,
+            return_0_transitions=return_0_transitions,
+            return_1_transitions=return_1_transitions,
+        )
+        end = time.perf_counter()
+        self._fps = (rounds * 2 * self.num_envs) / (end - start)
 
         self._post_step = None
         return *r, info

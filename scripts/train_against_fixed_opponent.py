@@ -45,14 +45,6 @@ def main(cfg: DictConfig):
         device=env.device,
     )
 
-    player_1 = get_policy(
-        name=cfg.algo.name,
-        cfg=cfg.algo,
-        action_spec=env.action_spec,
-        observation_spec=env.observation_spec,
-        device=env.device,
-    )
-
     baseline_path = os.path.join(
         "pretrained_models", f"{cfg.board_size}_{cfg.board_size}", "baseline.pt"
     )
@@ -73,8 +65,6 @@ def main(cfg: DictConfig):
 
     if black_checkpoint := cfg.get("black_checkpoint", None):
         player_0.load_state_dict(torch.load(black_checkpoint))
-    if white_checkpoint := cfg.get("white_checkpoint", None):
-        player_1.load_state_dict(torch.load(white_checkpoint))
 
     epochs: int = cfg.get("epochs")
     episode_len: int = cfg.get("episode_len")
@@ -85,23 +75,18 @@ def main(cfg: DictConfig):
         data_0, data_1, info = env.rollout(
             episode_len=episode_len,
             player_black=player_0,
-            player_white=player_1,
+            player_white=baseline,
             augment=cfg.get("augment", False),
+            return_white_transitions=False,
         )
 
         info.update(add_prefix(player_0.learn(data_0), "player_black/"))
-        info.update(add_prefix(player_1.learn(data_1), "player_white/"))
 
         info.update(
             {
-                "eval/black_vs_white": eval_win_rate(
-                    env, player_black=player_0, player_white=player_1
-                ),
                 "eval/black_vs_baseline": eval_win_rate(
                     env, player_black=player_0, player_white=baseline
                 ),
-                "eval/white_vs_baseline": 1
-                - eval_win_rate(env, player_white=player_1, player_black=baseline),
             }
         )
 
@@ -116,13 +101,12 @@ def main(cfg: DictConfig):
     run.log(
         {
             "eval/black_win_final": eval_win_rate(
-                env, player_black=player_0, player_white=player_1
+                env, player_black=player_0, player_white=baseline
             ),
         }
     )
 
     torch.save(player_0.state_dict(), os.path.join(run.dir, "player_black.pt"))
-    torch.save(player_1.state_dict(), os.path.join(run.dir, "player_white.pt"))
 
 
 if __name__ == "__main__":
