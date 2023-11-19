@@ -5,14 +5,14 @@ device: cuda
 
 augment: true # to do
 
-epochs: 100
+epochs: 800
 rounds: 64
+save_interval: 100
 
-black_checkpoint: pretrained_models/${board_size}_${board_size}/baseline.pt
-white_checkpoint: pretrained_models/${board_size}_${board_size}/baseline.pt
+checkpoint: pretrained_models/${board_size}_${board_size}/baseline.pt
 
 wandb:
-  group: InRL_${board_size}_${board_size}
+  group: self_play_${board_size}_${board_size}
   project: gomoku_rl
   mode: online # set to 'disabled' when debugging locally
 
