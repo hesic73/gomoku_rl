@@ -7,6 +7,7 @@ import torch
 
 
 from gomoku_rl.env import GomokuEnv
+from gomoku_rl.utils.misc import add_prefix
 from gomoku_rl.utils.eval import eval_win_rate
 from gomoku_rl.utils.wandb import init_wandb
 from gomoku_rl.utils.policy import uniform_policy
@@ -17,11 +18,7 @@ import numpy as np
 from typing import Callable, Any, Dict
 
 
-def add_prefix(d: Dict, prefix: str):
-    return {prefix + k: v for k, v in d.items()}
-
-
-@hydra.main(version_base=None, config_path=CONFIG_PATH, config_name="train")
+@hydra.main(version_base=None, config_path=CONFIG_PATH, config_name="train_InRL")
 def main(cfg: DictConfig):
     OmegaConf.register_new_resolver("eval", eval)
     OmegaConf.resolve(cfg)
@@ -77,13 +74,13 @@ def main(cfg: DictConfig):
         player_1.load_state_dict(torch.load(white_checkpoint))
 
     epochs: int = cfg.get("epochs")
-    episode_len: int = cfg.get("episode_len")
+    rounds: int = cfg.get("rounds")
 
     pbar = tqdm(range(epochs))
 
     for i in pbar:
         data_0, data_1, info = env.rollout(
-            episode_len=episode_len,
+            rounds=rounds,
             player_black=player_0,
             player_white=player_1,
             augment=cfg.get("augment", False),

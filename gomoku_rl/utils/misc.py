@@ -5,6 +5,10 @@ from typing import Optional,Dict
 import random
 
 
+def add_prefix(d: Dict, prefix: str):
+    return {prefix + k: v for k, v in d.items()}
+
+
 class ActorBank:
     def __init__(self, dir: str, latest_n: Optional[int] = None) -> None:
         self.dir = dir

@@ -49,7 +49,8 @@ python scripts/demo.py human_black=True board_size=10 checkpoint=/path/to/your/m
 
 ## Limitations
 
-- only support Free-style Gomoku
+- Limited to Free-style Gomoku support only.
+- The internal use of `vmap` in `torchrl.objectives.value.GAE` clashes with `torch.nn.BatchNorm2d(track_running_stats=True)`. Consequently, for batch normalization modules in the critic, `track_running_stats` is set to False, rendering it unusable in evaluation mode.
 
 ## References
 
