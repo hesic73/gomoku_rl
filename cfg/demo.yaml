@@ -1,6 +1,6 @@
 board_size: 10
 
-checkpoint: wandb/latest-run/files/player_black.pt
+checkpoint: pretrained_models/10_10/baseline.pt
 device: cuda
 
 human_black: false

@@ -51,7 +51,6 @@ python scripts/demo.py human_black=True board_size=10 checkpoint=/path/to/your/m
 
 - only support Free-style Gomoku
 
-
 ## References
 
 <div id="refer-anchor-1"></div>

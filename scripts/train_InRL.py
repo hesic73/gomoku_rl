@@ -53,6 +53,24 @@ def main(cfg: DictConfig):
         device=env.device,
     )
 
+    baseline_path = os.path.join(
+        "pretrained_models", f"{cfg.board_size}_{cfg.board_size}", "baseline.pt"
+    )
+    if os.path.isfile(baseline_path):
+        baseline = get_policy(
+            name=cfg.algo.name,
+            cfg=cfg.algo,
+            action_spec=env.action_spec,
+            observation_spec=env.observation_spec,
+            device=env.device,
+        )
+        baseline.load_state_dict(torch.load(baseline_path))
+
+        logging.info(f"Baseline: {baseline_path}.")
+    else:
+        baseline = uniform_policy
+        logging.info("Baseline: random.")
+
     if black_checkpoint := cfg.get("black_checkpoint", None):
         player_0.load_state_dict(torch.load(black_checkpoint))
     if white_checkpoint := cfg.get("white_checkpoint", None):
@@ -76,13 +94,11 @@ def main(cfg: DictConfig):
 
         info.update(
             {
-                "eval/black_against_random": eval_win_rate(
-                    env, player_black=player_0, player_white=uniform_policy
+                "eval/black_vs_baseline": eval_win_rate(
+                    env, player_black=player_0, player_white=baseline
                 ),
-                "eval/white_against_random": 1
-                - eval_win_rate(
-                    env, player_white=player_1, player_black=uniform_policy
-                ),
+                "eval/white_vs_baseline": 1
+                - eval_win_rate(env, player_white=player_1, player_black=baseline),
             }
         )
 

@@ -5,16 +5,16 @@ device: cuda
 
 augment: true # to do
 
-epochs: 300
+epochs: 10
 episode_len: 50
 
-black_checkpoint: 
-white_checkpoint:
+black_checkpoint: pretrained_models/${board_size}_${board_size}/baseline.pt
+white_checkpoint: pretrained_models/${board_size}_${board_size}/baseline.pt
 
 wandb:
   group: board_${board_size}_${board_size}
   project: gomoku_rl
-#  mode: online # set to 'disabled' when debugging locally
+  mode: online # set to 'disabled' when debugging locally
 
 defaults:
   - algo: ppo
