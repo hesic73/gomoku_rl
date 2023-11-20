@@ -15,15 +15,21 @@ def init_params(m: nn.Module):
 # Besides, action masking is added
 
 
-class _ResidualBlock(nn.Module):
-    def __init__(self, track_running_stats: bool = True) -> None:
+class ResidualBlock(nn.Module):
+    def __init__(self, num_channels: int, track_running_stats: bool = True) -> None:
         super().__init__()
         self.cnn_0 = nn.Conv2d(
-            in_channels=32, out_channels=32, kernel_size=3, padding=1
+            in_channels=num_channels,
+            out_channels=num_channels,
+            kernel_size=3,
+            padding=1,
         )
         self.bn_0 = nn.LazyBatchNorm2d(track_running_stats=track_running_stats)
         self.cnn_1 = nn.Conv2d(
-            in_channels=32, out_channels=32, kernel_size=3, padding=1
+            in_channels=num_channels,
+            out_channels=num_channels,
+            kernel_size=3,
+            padding=1,
         )
         self.bn_1 = nn.LazyBatchNorm2d(track_running_stats=track_running_stats)
 
@@ -44,17 +50,20 @@ class ResidualTower(nn.Module):
     def __init__(
         self,
         in_channels: int,
-        num_residual_blocks: int = 3,
+        num_channels: int,
+        num_residual_blocks: int,
         track_running_stats: bool = True,
     ) -> None:
         super().__init__()
         self.cnn = nn.Conv2d(
-            in_channels=in_channels, out_channels=32, kernel_size=3, padding=1
+            in_channels=in_channels, out_channels=num_channels, kernel_size=3, padding=1
         )
         self.bn = nn.LazyBatchNorm2d(track_running_stats=track_running_stats)
 
         tmp = [
-            _ResidualBlock(track_running_stats=track_running_stats)
+            ResidualBlock(
+                num_channels=num_channels, track_running_stats=track_running_stats
+            )
             for _ in range(num_residual_blocks)
         ]
         self.layers = nn.Sequential(*tmp)
@@ -68,9 +77,9 @@ class ResidualTower(nn.Module):
 
 
 class PolicyHead(nn.Module):
-    def __init__(self, out_features: int) -> None:
+    def __init__(self, out_features: int, num_channels: int) -> None:
         super().__init__()
-        self.cnn = nn.Conv2d(in_channels=32, out_channels=2, kernel_size=1)
+        self.cnn = nn.Conv2d(in_channels=num_channels, out_channels=2, kernel_size=1)
         self.bn = nn.LazyBatchNorm2d()
         self.linear = nn.LazyLinear(out_features=out_features)
 
@@ -89,9 +98,13 @@ class PolicyHead(nn.Module):
 
 
 class ValueHead(nn.Module):
-    def __init__(self, track_running_stats: bool = True) -> None:
+    def __init__(
+        self,
+        num_channels: int,
+        track_running_stats: bool = True,
+    ) -> None:
         super().__init__()
-        self.cnn = nn.Conv2d(in_channels=32, out_channels=1, kernel_size=1)
+        self.cnn = nn.Conv2d(in_channels=num_channels, out_channels=1, kernel_size=1)
         self.bn = nn.LazyBatchNorm1d(track_running_stats=track_running_stats)
         self.linear_0 = nn.LazyLinear(out_features=32)
         self.linear_1 = nn.LazyLinear(out_features=1)
@@ -112,13 +125,22 @@ class ValueHead(nn.Module):
 
 class ActorNet(nn.Module):
     def __init__(
-        self, in_channels: int, out_features: int, num_residual_blocks: int = 3
+        self,
+        in_channels: int,
+        out_features: int,
+        num_channels: int = 32,
+        num_residual_blocks: int = 3,
     ) -> None:
         super().__init__()
         self.residual_tower = ResidualTower(
-            in_channels=in_channels, num_residual_blocks=num_residual_blocks
+            in_channels=in_channels,
+            num_channels=num_channels,
+            num_residual_blocks=num_residual_blocks,
         )
-        self.policy_head = PolicyHead(out_features=out_features)
+        self.policy_head = PolicyHead(
+            out_features=out_features,
+            num_channels=num_channels,
+        )
 
     def forward(
         self, x: torch.Tensor, mask: torch.Tensor | None = None
@@ -129,7 +151,9 @@ class ActorNet(nn.Module):
 
 
 class ValueNet(nn.Module):
-    def __init__(self, in_channels: int, num_residual_blocks: int = 3) -> None:
+    def __init__(
+        self, in_channels: int, num_channels: int = 32, num_residual_blocks: int = 3
+    ) -> None:
         super().__init__()
         # vmap is incompatible with bn, so we had to set track_running_stats=False
         # And we cannot eval the value net
@@ -138,10 +162,13 @@ class ValueNet(nn.Module):
 
         self.residual_tower = ResidualTower(
             in_channels=in_channels,
+            num_channels=num_channels,
             num_residual_blocks=num_residual_blocks,
             track_running_stats=False,
         )
-        self.value_head = ValueHead(track_running_stats=False)
+        self.value_head = ValueHead(
+            num_channels=num_channels, track_running_stats=False
+        )
 
     def forward(self, x: torch.Tensor):
         x = self.residual_tower(x)

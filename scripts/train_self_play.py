@@ -7,15 +7,42 @@ import torch
 
 
 from gomoku_rl.env import GomokuEnv
+from gomoku_rl.utils.policy import _policy_t
+from gomoku_rl.utils.eval import get_payoff_matrix
+from gomoku_rl.utils.visual import annotate_heatmap, heatmap
 from gomoku_rl.utils.misc import add_prefix
 from gomoku_rl.utils.eval import eval_win_rate
 from gomoku_rl.utils.wandb import init_wandb
 from gomoku_rl.utils.policy import uniform_policy
-from gomoku_rl.policy import get_policy
+from gomoku_rl.policy import get_policy, get_pretrained_policy
 import logging
 from tqdm import tqdm
 import numpy as np
 import copy
+import functools
+import matplotlib.pyplot as plt
+import io
+from PIL import Image
+import wandb
+
+
+def payoff_headmap(env: GomokuEnv, policies: list[_policy_t], labels: list[str]):
+    payoff = get_payoff_matrix(env=env, policies=policies, n=1)
+    print(payoff)
+    im, _ = heatmap(
+        payoff * 100,
+        row_labels=labels,
+        col_labels=labels,
+    )
+    annotate_heatmap(im, valfmt="{x:.2f}%")
+    plt.tight_layout()
+    # https://stackoverflow.com/questions/8598673/how-to-save-a-pylab-figure-into-in-memory-file-which-can-be-read-into-pil-image/8598881
+    buf = io.BytesIO()
+    plt.savefig(buf, format="png")
+    buf.seek(0)
+    im = Image.open(buf)
+    im = wandb.Image(im)
+    return im
 
 
 @hydra.main(version_base=None, config_path=CONFIG_PATH, config_name="train_self_play")
@@ -68,6 +95,8 @@ def main(cfg: DictConfig):
     save_interval: int = cfg.get("save_interval")
     log_interval: int = cfg.get("log_interval")
 
+    history_paths: list[str] = []
+
     pbar = tqdm(range(epochs))
 
     for i in pbar:
@@ -110,6 +139,7 @@ def main(cfg: DictConfig):
 
         if i % save_interval == 0 and i != 0:
             path = os.path.join(run.dir, f"player_{i}.pt")
+            history_paths.append(path)
             torch.save(player.state_dict(), path)
             logging.info(f"Save checkpoint to {path}.")
             if (
@@ -127,6 +157,23 @@ def main(cfg: DictConfig):
     )
 
     torch.save(player.state_dict(), os.path.join(run.dir, "player_final.pt"))
+
+    make_player = functools.partial(
+        get_pretrained_policy,
+        name=cfg.algo.name,
+        cfg=cfg.algo,
+        action_spec=env.action_spec,
+        observation_spec=env.observation_spec,
+        device=env.device,
+    )
+    num_players = 5
+    history_paths = history_paths[-num_players:]
+    num_players = len(history_paths)
+
+    players = [make_player(checkpoint_path=p) for p in history_paths]
+    labels = [f"policy_{i:02d}" for i in range(num_players)]
+
+    run.log({"payoff": payoff_headmap(env, players, labels)})
 
 
 if __name__ == "__main__":

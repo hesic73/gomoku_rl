@@ -15,6 +15,7 @@ checkpoint: pretrained_models/${board_size}_${board_size}/baseline.pt
 wandb:
   group: self_play_${board_size}_${board_size}
   project: gomoku_rl
+  name: test
 #  mode: online # set to 'disabled' when debugging locally
 
 defaults:

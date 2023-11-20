@@ -56,7 +56,7 @@ def _eval_win_rate(env: GomokuEnv, player_black: _policy_t, player_white: _polic
     return interested_tensordict["black_win"].float().mean().item()
 
 
-def get_payoff_matrix(env: GomokuEnv, policies: list[_policy_t]):
+def get_payoff_matrix(env: GomokuEnv, policies: list[_policy_t], n: int = 1):
     n_policies = len(policies)
     assert n_policies > 0
     payoff = torch.zeros(n_policies, n_policies)
@@ -64,6 +64,6 @@ def get_payoff_matrix(env: GomokuEnv, policies: list[_policy_t]):
         for j in range(n_policies):
             p0 = policies[i]
             p1 = policies[j]
-            payoff[i, j] = eval_win_rate(env, player_black=p0, player_white=p1)
+            payoff[i, j] = eval_win_rate(env, player_black=p0, player_white=p1, n=n)
 
     return payoff

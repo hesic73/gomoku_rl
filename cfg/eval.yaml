@@ -1,11 +1,10 @@
 seed: 0
-num_envs: 2048
+num_envs: 1024
 board_size: 15
 device: cuda
 
 checkpoints:
   - pretrained_models/15_15/baseline.pt
-
 
 defaults:
   - algo: ppo
