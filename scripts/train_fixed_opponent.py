@@ -64,27 +64,45 @@ def main(cfg: DictConfig):
 
     epochs: int = cfg.get("epochs")
     rounds: int = cfg.get("rounds")
+    log_interval: int = cfg.get("log_interval")
+    color: str = cfg.get("color").lower()
+    assert color in ("white", "black")
+
+    if color == "white":
+        player_black = opponent
+        player_white = player
+    else:
+        player_black = player
+        player_white = opponent
 
     pbar = tqdm(range(epochs))
 
     for i in pbar:
         data_0, data_1, info = env.rollout(
             rounds=rounds,
-            player_black=player,
-            player_white=opponent,
+            player_black=player_black,
+            player_white=player_white,
             augment=cfg.get("augment", False),
-            return_white_transitions=False,
+            return_black_transitions=color == "black",
+            return_white_transitions=color == "white",
         )
+        data = data_0 if color == "black" else data_1
 
-        info.update(add_prefix(player.learn(data_0), "player/"))
+        info.update(add_prefix(player.learn(data), f"player_{color}/"))
 
         info.update(
             {
-                "eval/player_vs_opponent": eval_win_rate(
-                    env, player_black=player, player_white=opponent
+                "eval/black_vs_white": eval_win_rate(
+                    env, player_black=player_black, player_white=player_white
                 ),
             }
         )
+        if i % log_interval == 0:
+            print(
+                "Black vs White:{:.2f}%".format(
+                    info["eval/black_vs_white"] * 100,
+                )
+            )
 
         run.log(info)
 
@@ -94,15 +112,7 @@ def main(cfg: DictConfig):
             }
         )
 
-    run.log(
-        {
-            "eval/player_win_final": eval_win_rate(
-                env, player_black=player, player_white=opponent
-            ),
-        }
-    )
-
-    torch.save(player.state_dict(), os.path.join(run.dir, "player.pt"))
+    torch.save(player.state_dict(), os.path.join(run.dir, f"player_{color}.pt"))
 
 
 if __name__ == "__main__":

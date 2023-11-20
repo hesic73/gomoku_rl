@@ -226,6 +226,26 @@ class GomokuEnv:
             tensordict_t_plus_2,
         )
 
+    def _self_play_step(
+        self,
+        tensordict_t_minus_1: TensorDict,
+        tensordict_t: TensorDict,
+        player: _policy_t,
+    ):
+        with set_interaction_type(type=InteractionType.RANDOM):
+            tensordict_t = player(tensordict_t)
+        tensordict_t_plus_1 = self._step_and_maybe_reset(tensordict=tensordict_t)
+
+        transition = make_transition(
+            tensordict_t_minus_1, tensordict_t, tensordict_t_plus_1
+        )
+
+        return (
+            transition,
+            tensordict_t,
+            tensordict_t_plus_1,
+        )
+
     @torch.no_grad
     def _rollout(
         self,
@@ -241,7 +261,7 @@ class GomokuEnv:
 
         tensordict_t_minus_1.update(
             {"done": torch.ones(self.num_envs, dtype=torch.bool, device=self.device)}
-        ) # here we set it to True
+        )  # here we set it to True
         tensordict_t.update(
             {"done": torch.zeros(self.num_envs, dtype=torch.bool, device=self.device)}
         )
@@ -327,41 +347,62 @@ class GomokuEnv:
         return *r, info
 
     @torch.no_grad
-    def _flexible_rollout(
+    def _self_play_rollout(
         self,
-        rounds: int,
-        player_0: _policy_t,
-        player_1: _policy_t,
+        steps: int,
+        player: _policy_t,
         augment: bool = False,
-        return_0_transitions: bool = True,
-        return_1_transitions: bool = True,
-    ):
-        raise NotImplementedError
+    ) -> TensorDictReplayBuffer:
+        tensordict_t_minus_1 = self.reset()
+        with set_interaction_type(type=InteractionType.RANDOM):
+            tensordict_t_minus_1 = player(tensordict_t_minus_1)
+        tensordict_t = self._step(tensordict_t_minus_1)
 
-    @torch.no_grad
-    def flexible_rollout(
+        buffer_size = steps * self.num_envs
+        if augment:
+            buffer_size *= 8
+
+        buffer = TensorDictReplayBuffer(
+            storage=LazyTensorStorage(max_size=buffer_size),
+            sampler=SamplerWithoutReplacement(drop_last=True),
+            batch_size=self.num_envs,
+        )
+
+        for i in range(steps - 1):
+            (
+                transition,
+                tensordict_t_minus_1,
+                tensordict_t,
+            ) = self._self_play_step(
+                tensordict_t_minus_1,
+                tensordict_t,
+                player,
+            )
+
+            if augment:
+                transition = augment_transition(transition)
+
+            buffer.extend(transition)
+
+        return buffer
+
+    def self_play_rollout(
         self,
-        rounds: int,
-        player_0: _policy_t,
-        player_1: _policy_t,
+        steps: int,
+        player: _policy_t,
         augment: bool = False,
-        return_0_transitions: bool = True,
-        return_1_transitions: bool = True,
-    ):
+    ) -> tuple[TensorDictReplayBuffer, defaultdict[str, float]]:
         info: defaultdict[str, float] = defaultdict(float)
         self._post_step = get_log_func(info)
 
         start = time.perf_counter()
-        r = self._flexible_rollout(
-            rounds=rounds,
-            player_0=player_0,
-            player_1=player_1,
+        r = self._self_play_rollout(
+            steps=steps,
+            player=player,
             augment=augment,
-            return_0_transitions=return_0_transitions,
-            return_1_transitions=return_1_transitions,
         )
         end = time.perf_counter()
-        self._fps = (rounds * 2 * self.num_envs) / (end - start)
+        self._fps = (steps * self.num_envs) / (end - start)
 
         self._post_step = None
-        return *r, info
+        return r, info

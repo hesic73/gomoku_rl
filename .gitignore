@@ -164,4 +164,4 @@ logs
 outputs
 .vscode
 wandb
-*.pt
+/*.pt

@@ -64,21 +64,20 @@ def main(cfg: DictConfig):
         player.load_state_dict(torch.load(checkpoint))
 
     epochs: int = cfg.get("epochs")
-    rounds: int = cfg.get("rounds")
+    steps: int = cfg.get("steps")
     save_interval: int = cfg.get("save_interval")
+    log_interval: int = cfg.get("log_interval")
 
     pbar = tqdm(range(epochs))
 
     for i in pbar:
-        data_0, data_1, info = env.rollout(
-            rounds=rounds,
-            player_black=player,
-            player_white=player,
+        data, info = env.self_play_rollout(
+            steps=steps,
+            player=player,
             augment=cfg.get("augment", False),
         )
 
-        info.update(add_prefix(player.learn(data_0), "player_black/"))
-        info.update(add_prefix(player.learn(data_1), "player_white/"))
+        info.update(add_prefix(player.learn(data), "player/"))
 
         info.update(
             {
@@ -92,6 +91,14 @@ def main(cfg: DictConfig):
                 - eval_win_rate(env, player_white=player, player_black=baseline),
             }
         )
+
+        if i % log_interval == 0:
+            print(
+                "Black vs baseline:{:.2f}%\tWhite vs baseline:{:.2f}%".format(
+                    info["eval/black_vs_baseline"] * 100,
+                    info["eval/white_vs_baseline"] * 100,
+                )
+            )
 
         run.log(info)
 

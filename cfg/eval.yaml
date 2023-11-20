@@ -1,11 +1,11 @@
 seed: 0
 num_envs: 2048
-board_size: 10
+board_size: 15
 device: cuda
 
 
-black_checkpoint: wandb/latest-run/files/player_black.pt
-white_checkpoint: wandb/latest-run/files/player_white.pt
+black_checkpoint: pretrained_models/15_15/baseline.pt
+white_checkpoint: pretrained_models/15_15/player_final.pt
 
 defaults:
   - algo: ppo
