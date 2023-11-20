@@ -1,4 +1,4 @@
-from gomoku_rl.utils.eval import eval_win_rate
+from gomoku_rl.utils.eval import get_payoff_matrix
 import hydra
 from omegaconf import DictConfig, OmegaConf
 import os
@@ -32,26 +32,22 @@ def main(cfg: DictConfig):
     torch.manual_seed(seed)
     np.random.seed(seed)
 
-    player_0 = get_policy(
-        name=cfg.algo.name,
-        cfg=cfg.algo,
-        action_spec=env.action_spec,
-        observation_spec=env.observation_spec,
-        device=env.device,
-    )
+    def make_player(checkpoint_path: str):
+        player = get_policy(
+            name=cfg.algo.name,
+            cfg=cfg.algo,
+            action_spec=env.action_spec,
+            observation_spec=env.observation_spec,
+            device=env.device,
+        )
+        player.load_state_dict(torch.load(checkpoint_path))
+        return player
 
-    player_1 = get_policy(
-        name=cfg.algo.name,
-        cfg=cfg.algo,
-        action_spec=env.action_spec,
-        observation_spec=env.observation_spec,
-        device=env.device,
-    )
+    checkpoints = cfg.checkpoints
+    players = [make_player(p) for p in checkpoints]
 
-    player_0.load_state_dict(torch.load(cfg.black_checkpoint))
-    player_1.load_state_dict(torch.load(cfg.white_checkpoint))
-
-    print(eval_win_rate(env=env, player_black=player_0, player_white=player_1))
+    payoff = get_payoff_matrix(env=env, policies=players)
+    print(payoff)
 
 
 if __name__ == "__main__":

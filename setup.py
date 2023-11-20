@@ -14,5 +14,6 @@ setup(
         "hydra-core",
         "tqdm",
         "wandb",
+        "matplotlib",
     ],  # and other dependencies
 )

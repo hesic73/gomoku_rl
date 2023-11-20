@@ -3,9 +3,9 @@ num_envs: 2048
 board_size: 15
 device: cuda
 
+checkpoints:
+  - pretrained_models/15_15/baseline.pt
 
-black_checkpoint: pretrained_models/15_15/baseline.pt
-white_checkpoint: pretrained_models/15_15/player_final.pt
 
 defaults:
   - algo: ppo

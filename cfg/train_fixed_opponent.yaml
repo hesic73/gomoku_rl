@@ -17,7 +17,7 @@ opponent_checkpoint: pretrained_models/${board_size}_${board_size}/baseline.pt
 wandb:
   group: fixed_opponent_${board_size}_${board_size}
   project: gomoku_rl
-#  mode: online # set to 'disabled' when debugging locally
+  mode: online # set to 'disabled' when debugging locally
 
 defaults:
   - _self_

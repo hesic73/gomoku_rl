@@ -3,7 +3,7 @@ board_size: 15
 checkpoint: pretrained_models/${board_size}_${board_size}/baseline.pt
 device: cuda
 
-human_black: false
+human_black: true
 
 defaults:
   - algo: ppo
