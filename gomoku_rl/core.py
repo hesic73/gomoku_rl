@@ -186,8 +186,8 @@ class Gomoku:
     def get_encoded_board(self):
         piece = turn_to_piece(self.turn).unsqueeze(-1).unsqueeze(-1)
 
-        layer1 = (self.board == piece).long()
-        layer2 = (self.board == (-piece)).long()
+        layer1 = (self.board == piece).float()
+        layer2 = (self.board == (-piece)).float()
 
         last_x = self.last_move // self.board_size  # (E,)
         last_y = self.last_move % self.board_size  # (E,)
@@ -199,22 +199,22 @@ class Gomoku:
                 torch.arange(self.board_size, device=self.device).unsqueeze(0)
                 == last_x.unsqueeze(-1)
             )
-            .long()
+            .float()
             .unsqueeze(-1)
         ) * (
             (
                 torch.arange(self.board_size, device=self.device).unsqueeze(0)
                 == last_y.unsqueeze(-1)
             )
-            .long()
+            .float()
             .unsqueeze(1)
         )  # (E,B,B)
 
-        # layer4 = (self.turn == 0).long().unsqueeze(-1).unsqueeze(-1)  # (E,1,1)
+        # layer4 = (self.turn == 0).float().unsqueeze(-1).unsqueeze(-1)  # (E,1,1)
         # layer4 = layer4.expand(-1, self.board_size, self.board_size)
 
         output = torch.stack([layer1, layer2, layer3], dim=1)  # (E,*,B,B)
-        return output.float()
+        return output
 
     def get_action_mask(self):
         return (self.board == 0).flatten(start_dim=1)
