@@ -64,7 +64,7 @@ def get_payoff_matrix(
 ):
     payoff = torch.zeros(len(row_policies), len(col_policies))
     for i, row_p in enumerate(row_policies):
-        for j, col_p in enumerate(range(col_policies)):
+        for j, col_p in enumerate(col_policies):
             payoff[i, j] = eval_win_rate(
                 env, player_black=row_p, player_white=col_p, n=n
             )
