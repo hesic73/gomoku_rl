@@ -16,13 +16,13 @@ pip install -e .
 
 I use `python 3.11.5`, `torch 2.1.0` and `torchrl 0.2.1`, but lower versions of python and torch 1.x should be compatible as well. 
 
-*gomoku_rl* uses `hydra` to configure training hyperparameters. You can modify the settings in `cfg/train_self_play.yaml` or override them via the command line:
+*gomoku_rl* uses `hydra` to configure training hyperparameters. You can modify the settings in `cfg/train_*.yaml` or override them via the command line:
 
 ```bash
-# override default settings in cfg/train_self_play.yaml
-python scripts/train_self_play.py board_size=15 num_env=1024 device=cuda algo=ppo epochs=100 wandb.mode=online
+# override default settings in cfg/train_InRL.yaml
+python scripts/train_InRL.py board_size=15 num_env=1024 device=cuda algo=ppo epochs=100 wandb.mode=online
 # or simply:
-python scripts/train_self_play.py
+python scripts/train_InRL.py
 ```
 
 The default location for saving checkpoints is `wandb/*/files` or `tempfile.gettempdir()` if `wandb.mode` is disabled. Modify the output directory by specifying the `run_dir` parameter.

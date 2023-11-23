@@ -26,13 +26,21 @@ from PIL import Image
 import wandb
 
 
-def payoff_headmap(env: GomokuEnv, policies: list[_policy_t], labels: list[str]):
-    payoff = get_payoff_matrix(env=env, policies=policies, n=1)
+def payoff_headmap(
+    env: GomokuEnv,
+    row_policies: list[_policy_t],
+    col_policies: list[_policy_t],
+    row_labels: list[str],
+    col_labels: list[str],
+):
+    payoff = get_payoff_matrix(
+        env=env, row_policies=row_policies, col_policies=col_policies, n=1
+    )
     print(payoff)
     im, _ = heatmap(
         payoff * 100,
-        row_labels=labels,
-        col_labels=labels,
+        row_labels=row_labels,
+        col_labels=col_labels,
     )
     annotate_heatmap(im, valfmt="{x:.2f}%")
     plt.tight_layout()
@@ -177,7 +185,7 @@ def main(cfg: DictConfig):
     players = [make_player(checkpoint_path=p) for p in history_paths]
     labels = [os.path.split(p)[1] for p in history_paths]
 
-    run.log({"payoff": payoff_headmap(env, players, labels)})
+    run.log({"payoff": payoff_headmap(env, players, players, labels, labels)})
 
 
 if __name__ == "__main__":
