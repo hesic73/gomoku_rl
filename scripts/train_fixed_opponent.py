@@ -7,7 +7,7 @@ import torch
 
 
 from gomoku_rl.env import GomokuEnv
-from gomoku_rl.utils.misc import add_prefix
+from gomoku_rl.utils.misc import add_prefix, set_seed
 from gomoku_rl.utils.eval import eval_win_rate
 from gomoku_rl.utils.wandb import init_wandb
 from gomoku_rl.utils.policy import uniform_policy
@@ -33,8 +33,7 @@ def main(cfg: DictConfig):
     )
 
     seed = cfg.get("seed", 12345)
-    torch.manual_seed(seed)
-    np.random.seed(seed)
+    set_seed(seed)
 
     player = get_policy(
         name=cfg.algo.name,

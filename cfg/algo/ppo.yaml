@@ -11,9 +11,9 @@ max_grad_norm: 1.0
 lr: 5e-4
 
 actor:
-  num_channels: 32
-  num_residual_blocks: 3
+  num_channels: 256
+  num_residual_blocks: 4
 
 critic:
-  num_channels: 32
-  num_residual_blocks: 3
+  num_channels: 256
+  num_residual_blocks: 4

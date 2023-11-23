@@ -122,7 +122,7 @@ class Gomoku:
         """_summary_
 
         Args:
-            env_ids (torch.Tensor): (E,)
+            env_ids (torch.Tensor): (#,)
         """
         if env_ids is None:
             self.board.zero_()
@@ -131,7 +131,7 @@ class Gomoku:
             self.move_count.zero_()
             self.last_move.fill_(-1)
         else:
-            self.board = (~env_ids).long().unsqueeze(-1).unsqueeze(-1) * self.board
+            self.board[env_ids] = 0
             self.done[env_ids] = False
             self.turn[env_ids] = 0
             self.move_count[env_ids] = 0
@@ -184,10 +184,10 @@ class Gomoku:
         return self.done & env_indices, nop & env_indices
 
     def get_encoded_board(self):
-        piece = turn_to_piece(self.turn).unsqueeze(-1).unsqueeze(-1)
+        piece = turn_to_piece(self.turn).unsqueeze(-1).unsqueeze(-1)  # (E,1,1)
 
         layer1 = (self.board == piece).float()
-        layer2 = (self.board == (-piece)).float()
+        layer2 = (self.board == -piece).float()
 
         last_x = self.last_move // self.board_size  # (E,)
         last_y = self.last_move % self.board_size  # (E,)
@@ -198,22 +198,27 @@ class Gomoku:
             (
                 torch.arange(self.board_size, device=self.device).unsqueeze(0)
                 == last_x.unsqueeze(-1)
-            )
-            .float()
-            .unsqueeze(-1)
-        ) * (
+            ).unsqueeze(-1)
+        ) & (
             (
                 torch.arange(self.board_size, device=self.device).unsqueeze(0)
                 == last_y.unsqueeze(-1)
-            )
-            .float()
-            .unsqueeze(1)
+            ).unsqueeze(1)
         )  # (E,B,B)
+        layer3 = layer3.float()
 
         # layer4 = (self.turn == 0).float().unsqueeze(-1).unsqueeze(-1)  # (E,1,1)
         # layer4 = layer4.expand(-1, self.board_size, self.board_size)
 
-        output = torch.stack([layer1, layer2, layer3], dim=1)  # (E,*,B,B)
+        output = torch.stack(
+            [
+                layer1,
+                layer2,
+                layer3,
+                # layer4,
+            ],
+            dim=1,
+        )  # (E,*,B,B)
         return output
 
     def get_action_mask(self):

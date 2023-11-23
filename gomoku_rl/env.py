@@ -16,6 +16,7 @@ from torchrl.data.tensor_specs import (
 import time
 from gomoku_rl.utils.policy import _policy_t
 from gomoku_rl.utils.augment import augment_transition
+from gomoku_rl.utils.misc import no_nan_in_tensordict
 from .core import Gomoku
 
 
@@ -24,7 +25,9 @@ from collections import defaultdict
 
 
 def make_transition(
-    tensordict_t_minus_1, tensordict_t, tensordict_t_plus_1
+    tensordict_t_minus_1: TensorDict,
+    tensordict_t: TensorDict,
+    tensordict_t_plus_1: TensorDict,
 ) -> TensorDict:
     # if a player wins at time t, its opponent cannot win immediately after reset
     reward: torch.Tensor = (
@@ -37,13 +40,19 @@ def make_transition(
         "sample_log_prob",
         strict=False,
     )
+    next_observation: torch.Tensor = tensordict_t_plus_1["observation"]  # .clone()
+    next_action_mask: torch.Tensor = tensordict_t_plus_1["action_mask"]  # .clone()
     transition.set(
         "next",
-        tensordict_t_plus_1.select("observation", "action_mask"),
+        {
+            "observation": next_observation,
+            "action_mask": next_action_mask,
+        },
     )
     transition.set(("next", "reward"), reward)
-    done_white = tensordict_t_plus_1["done"] | tensordict_t["done"]
-    transition.set(("next", "done"), done_white)
+    done = tensordict_t_plus_1["done"] | tensordict_t["done"]
+    transition.set(("next", "done"), done)
+    # assert no_nan_in_tensordict(transition)
     return transition
 
 
@@ -176,7 +185,8 @@ class GomokuEnv:
         tensordict.exclude("env_indices", inplace=True)
 
         done: torch.Tensor = next_tensordict.get("done")  # (E,)
-        reset_td = self.reset(done)
+        env_ids = done.nonzero().squeeze(0)
+        reset_td = self.reset(env_ids=env_ids)
         next_tensordict.update(reset_td)  # no impact on training
         return next_tensordict
 
@@ -313,9 +323,9 @@ class GomokuEnv:
                     else transition_white
                 )
             if return_black_transitions:
-                buffer_black.extend(transition_black)
+                buffer_black.extend(transition_black.cpu())
             if return_white_transitions and len(transition_white) > 0:
-                buffer_white.extend(transition_white)
+                buffer_white.extend(transition_white.cpu())
 
         return buffer_black, buffer_white
 
@@ -332,7 +342,7 @@ class GomokuEnv:
         self._post_step = get_log_func(info)
 
         start = time.perf_counter()
-        r = self._rollout(
+        buffer_black, buffer_white = self._rollout(
             rounds=rounds,
             player_black=player_black,
             player_white=player_white,
@@ -344,7 +354,7 @@ class GomokuEnv:
         self._fps = (rounds * 2 * self.num_envs) / (end - start)
 
         self._post_step = None
-        return *r, info
+        return buffer_black, buffer_white, info
 
     @torch.no_grad
     def _self_play_rollout(
@@ -382,7 +392,7 @@ class GomokuEnv:
             if augment:
                 transition = augment_transition(transition)
 
-            buffer.extend(transition)
+            buffer.extend(transition.cpu())
 
         return buffer
 
