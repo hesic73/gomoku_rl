@@ -2,11 +2,7 @@
 
 ## Introduction
 
-*gomoku_rl* is an open-sourced project that trains Gomoku agents through self-play. Previous works often rely on variants of AlphaGo/AlphaZero and inefficiently use GPU resources. Notably, many existing projects are limited to small boards, with only a few exceptions. [[1]](#refer-anchor-1) incorporates curriculum learning and other enhancements, and [[2]](#refer-anchor-2) and [[3]](#refer-anchor-3) parallelize MCTS execution. In contrast, *gomoku_rl* features GPU-parallelized simulation and leverages recent advancements in **MARL**. This enables AI training without exploiting game rules through MCTS, except the use of action masking to prevent illegal moves.
-
-## Algorithms
-
-TO DO
+*gomoku_rl* is an open-sourced project that trains agents to play the game of Gomoku through deep reinforcement learning. Previous works often rely on variants of AlphaGo/AlphaZero and inefficiently use GPU resources. Notably, many existing projects are limited to small boards, with only a few exceptions. [[1]](#refer-anchor-1) incorporates curriculum learning and other enhancements;  [[2]](#refer-anchor-2)  and  [[3]](#refer-anchor-3)  collect transitions from multiple environments and also parallelize MCTS execution. In contrast, *gomoku_rl* features GPU-parallelized simulation and leverages recent advancements in **MARL**. Starting from random play, an model with fewer than 1M parameters can achieve human-level performance on a $15\times15$ board after a few hours of training on a 3090.
 
 ## Getting Started
 
@@ -18,34 +14,44 @@ conda activate gomoku
 pip install -e .
 ```
 
-I use python 3.11.5, and the following versions of packages:
+I use `python 3.11.5`, `torch 2.1.0` and `torchrl 0.2.1`, but lower versions of python and torch 1.x should be compatible as well. 
 
-- `torchrl==0.2.1`
-- `torch==2.1.0`
-
-PS: lower versions of python and torch 1.x should be compatible as well. Note that torchrl is currently in development, so I can't assure the code's functionality with other versions.
-
-`PyQt5` is needed to run `scripts/demo.py`:
+*gomoku_rl* uses `hydra` to configure training hyperparameters. You can modify the settings in `cfg/train_self_play.yaml` or override them via the command line:
 
 ```bash
+# override default settings in cfg/train_self_play.yaml
+python scripts/train_self_play.py board_size=15 num_env=1024 device=cuda algo=ppo epochs=100 wandb.mode=online
+# or simply:
+python scripts/train_self_play.py
+```
+
+The default location for saving checkpoints is `wandb/*/files` or `tempfile.gettempdir()` if `wandb.mode` is disabled. Modify the output directory by specifying the `run_dir` parameter.
+
+After training, play Gomoku with your model using the `scripts/demo.py` script:
+
+```bash
+# Install PyQt5
 pip install PyQt5
+python scripts/demo.py human_black=True board_size=15 checkpoint=/path/to/your/model
+# default checkpoint (only for board_size=15)
+python scripts/demo.py human_black=True
 ```
 
-*gomoku_rl* uses `hydra` to configure training hyperparameters. You can modify the settings in `cfg/train.yaml` or override them via the command line:
-
-```bash
-python scripts/train.py board_size=10
-```
-
-Once you've trained an AI, you can play Gomoku with it using the `scripts/demo.py` script:
-
-```bash
-python scripts/demo.py human_black=True board_size=10 checkpoint=/path/to/your/model
-```
+A pretrained model for a $15\times15$ board is available at `pretrained_models/15_15/baseline.pt`, serving as the default checkpoint. Be aware that using the wrong model  for the board size will lead to loading errors due to mismatches in AI architectures.
 
 ## Details
 
-- The network architecture remains consistent with [[1]](#refer-anchor-1), with modifications detailed in `gomoku_rl.utils.module`.
+### General
+
+Free-style Gomoku is a two-player zero-sum extensive-form game. Two players alternatively place black and white stones on a board and the first who forms an unbroken line of five or more stones of his color wins. In the context of Multi-Agent Reinforcement Learning (**MARL**), two agents learn in the environment competitively. During each agent's turn, its observation is the (encoded) current board state, and its action is the selection of a position on the board to place a stone. We use action masking to prevent illegal moves. Winning rewards the agent with +1, while losing incurs a penalty of -1. 
+
+The simplest form is *independent reinforcement learning* (InRL), where each agen treats its opponent as part of the environment. In `scripts/train_InRL.py`, black and white players are controlled by distinct neural networks. In `scripts/train_self_play.py`,  a single model is used to handle both black and white roles.
+
+### Neural Networks
+
+
+
+
 
 ## Limitations
 

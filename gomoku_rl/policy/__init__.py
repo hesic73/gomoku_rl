@@ -1,6 +1,5 @@
 from .base import Policy
 from .ppo import PPOPolicy
-from .random import RandomPolicy
 
 from torchrl.data.replay_buffers import ReplayBuffer
 from torchrl.data.tensor_specs import DiscreteTensorSpec, TensorSpec
@@ -18,7 +17,6 @@ def get_policy(
 ) -> Policy:
     policies = {
         "ppo": PPOPolicy,
-        "random": RandomPolicy,
     }
     assert name.lower() in policies
     cls = policies[name.lower()]

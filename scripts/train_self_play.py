@@ -93,6 +93,11 @@ def main(cfg: DictConfig):
     steps: int = cfg.get("steps")
     save_interval: int = cfg.get("save_interval")
     log_interval: int = cfg.get("log_interval")
+    run_dir = cfg.get("run_dir", None)
+    if run_dir is None:
+        run_dir = run.dir
+    os.makedirs(run_dir, exist_ok=True)
+    logging.info(f"run_dir:{run_dir}")
 
     history_paths: list[str] = []
 
@@ -170,7 +175,7 @@ def main(cfg: DictConfig):
     num_players = len(history_paths)
 
     players = [make_player(checkpoint_path=p) for p in history_paths]
-    labels = [f"policy_{i:02d}" for i in range(num_players)]
+    labels = [os.path.split(p)[1] for p in history_paths]
 
     run.log({"payoff": payoff_headmap(env, players, labels)})
 

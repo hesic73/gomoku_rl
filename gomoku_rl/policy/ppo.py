@@ -30,6 +30,7 @@ from torchrl.data.replay_buffers import ReplayBuffer
 
 from .base import Policy
 from .common import make_ppo_actor, make_critic
+from gomoku_rl.utils.module import count_parameters
 
 
 class PPOPolicy(Policy):
@@ -62,7 +63,8 @@ class PPOPolicy(Policy):
         fake_input["action_mask"] = ~fake_input["action_mask"]
         self.actor(fake_input)
         self.critic(fake_input)
-
+        print(f"actor params:{count_parameters(self.actor)}")
+        print(f"critic params:{count_parameters(self.critic)}")
 
         self.advantage_module = GAE(
             gamma=self.gae_gamma,

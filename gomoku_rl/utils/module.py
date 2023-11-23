@@ -8,6 +8,10 @@ def init_params(m: nn.Module):
             nn.init.xavier_uniform_(p)
 
 
+def count_parameters(model: nn.Module):
+    return sum(p.numel() for p in model.parameters())
+
+
 # The architecture described in https://arxiv.org/pdf/1809.10595.pdf
 # https://github.com/PolyKen/15_by_15_AlphaGomoku/blob/demo/AlphaGomoku/network/network.py
 # It seems in the paper the residual tower has 2 residual blocks
