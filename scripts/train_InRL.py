@@ -163,9 +163,15 @@ def main(cfg: DictConfig):
         if i % save_interval == 0 and i != 0:
             path_black = os.path.join(run_dir, f"player_black_{i}.pt")
             history_paths_black.append(path_black)
+            if len(history_paths_black) > 5:
+                tmp = history_paths_black.pop(0)
+                os.remove(tmp)
             torch.save(player_0.state_dict(), path_black)
             path_white = os.path.join(run_dir, f"player_white_{i}.pt")
             history_paths_white.append(path_white)
+            if len(history_paths_white) > 5:
+                tmp = history_paths_white.pop(0)
+                os.remove(tmp)
             torch.save(player_1.state_dict(), path_white)
 
     run.log(
@@ -187,11 +193,6 @@ def main(cfg: DictConfig):
         observation_spec=env.observation_spec,
         device=env.device,
     )
-    num_players = 5
-    history_paths_black = history_paths_black[-num_players:]
-    history_paths_white = history_paths_white[-num_players:]
-    assert len(history_paths_white) == len(history_paths_black)
-    num_players = len(history_paths_black)
 
     players_black = [make_player(checkpoint_path=p) for p in history_paths_black]
     labels_black = [os.path.split(p)[1] for p in history_paths_black]

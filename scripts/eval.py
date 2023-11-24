@@ -47,13 +47,13 @@ def main(cfg: DictConfig):
     checkpoints = cfg.checkpoints
     players = [make_player(checkpoint_path=p) for p in checkpoints]
 
-    payoff = get_payoff_matrix(env=env, policies=players, n=3)
+    payoff = get_payoff_matrix(env=env, row_policies=players, col_policies=players, n=5)
     print(payoff)
 
     im, _ = heatmap(
         payoff * 100,
-        row_labels=[f"policy_{i:02d}" for i in range(len(checkpoints))],
-        col_labels=[f"policy_{i:02d}" for i in range(len(checkpoints))],
+        row_labels=[os.path.split(p)[1] for p in checkpoints],
+        col_labels=[os.path.split(p)[1] for p in checkpoints],
     )
     annotate_heatmap(im, valfmt="{x:.2f}%")
     plt.tight_layout()
