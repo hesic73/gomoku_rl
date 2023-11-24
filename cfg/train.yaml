@@ -2,13 +2,17 @@ seed: 0
 num_envs: 512
 board_size: 15
 device: cuda
-run_dir: 
+run_dir:
 
-augment: true # to do
+augment: true
 
-epochs: 400
+epochs: 1000
 rounds: 64
 log_interval: 5
+
+# psro
+mean_threshold: 0.99
+std_threshold: 0.005
 
 # black_checkpoint: pretrained_models/${board_size}_${board_size}/baseline.pt
 # white_checkpoint: pretrained_models/${board_size}_${board_size}/baseline.pt

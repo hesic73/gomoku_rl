@@ -91,6 +91,8 @@ def get_baseline(
 def main(cfg: DictConfig):
     OmegaConf.register_new_resolver("eval", eval)
     OmegaConf.resolve(cfg)
+    OmegaConf.set_struct(cfg, False)
+    cfg.board_size = int(cfg.board_size)
     run = init_wandb(cfg=cfg)
 
     env = GomokuEnv(
@@ -118,6 +120,14 @@ def main(cfg: DictConfig):
         device=env.device,
     )
 
+    # td = env.reset()
+    # print(player_0.actor)
+    # actor = copy.deepcopy(player_0.actor)
+    # with torch.no_grad():
+    #     td = actor(td)
+    # print(td)
+    # exit()
+
     if black_checkpoint := cfg.get("black_checkpoint", None):
         player_0.load_state_dict(torch.load(black_checkpoint))
         logging.info(f"black_checkpoint:{black_checkpoint}")
@@ -142,7 +152,10 @@ def main(cfg: DictConfig):
     logging.info(f"run_dir:{run_dir}")
 
     learning_player_id = 0
-    converged_indicator = ConvergedIndicator()
+    converged_indicator = ConvergedIndicator(
+        mean_threshold=cfg.get("mean_threshold", 0.99),
+        std_threshold=cfg.get("std_threshold", 0.005),
+    )
 
     population_0 = Population()
     population_1 = Population()

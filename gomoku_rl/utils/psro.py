@@ -13,7 +13,7 @@ class ConvergedIndicator:
         mean_threshold: float = 0.99,
         std_threshold: float = 0.005,
         min_iter_steps: int = 10,
-        max_iter_steps: int = 100,
+        max_iter_steps: int = 150,
     ) -> None:
         self.win_rates = []
         self.max_size = max_size
@@ -64,7 +64,7 @@ class Population:
     def sample(self, meta_policy: np.ndarray | None = None):
         self._idx = np.random.choice(len(self.policy_sets), p=meta_policy)
 
-    @set_interaction_type(type=InteractionType.MEAN)
+    @set_interaction_type(type=InteractionType.MODE)
     def __call__(self, tensordict: TensorDict) -> TensorDict:
         tensordict = tensordict.to(self.device)
         return self.policy_sets[self._idx](tensordict)
