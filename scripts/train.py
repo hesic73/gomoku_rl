@@ -120,13 +120,6 @@ def main(cfg: DictConfig):
         device=env.device,
     )
 
-    # td = env.reset()
-    # print(player_0.actor)
-    # actor = copy.deepcopy(player_0.actor)
-    # with torch.no_grad():
-    #     td = actor(td)
-    # print(td)
-    # exit()
 
     if black_checkpoint := cfg.get("black_checkpoint", None):
         player_0.load_state_dict(torch.load(black_checkpoint))
