@@ -110,7 +110,7 @@ class ValueHead(nn.Module):
         super().__init__()
         self.cnn = nn.Conv2d(in_channels=num_channels, out_channels=1, kernel_size=1)
         self.bn = nn.LazyBatchNorm1d(track_running_stats=track_running_stats)
-        self.linear_0 = nn.LazyLinear(out_features=256)
+        self.linear_0 = nn.LazyLinear(out_features=128)
         self.linear_1 = nn.LazyLinear(out_features=1)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:

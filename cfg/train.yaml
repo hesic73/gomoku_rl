@@ -8,14 +8,13 @@ augment: true # to do
 
 epochs: 400
 rounds: 64
-save_interval: 20
 log_interval: 5
 
 # black_checkpoint: pretrained_models/${board_size}_${board_size}/baseline.pt
 # white_checkpoint: pretrained_models/${board_size}_${board_size}/baseline.pt
 
 wandb:
-  group: InRL_${board_size}_${board_size}
+  group: ${board_size}_${board_size}
   project: gomoku_rl
   mode: online # set to 'disabled' when debugging locally
 

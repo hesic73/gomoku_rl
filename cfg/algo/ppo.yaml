@@ -6,14 +6,14 @@ clip_param: 0.1 # 0.2
 entropy_coef: 0.001 # 0.01
 gae_lambda: 0.95
 gamma: 0.99 # 0.99
-max_grad_norm: 1.0
+max_grad_norm: 3.0
 
-lr: 5e-4
+lr: 1e-3
 
 actor:
-  num_channels: 64
+  num_channels: 32
   num_residual_blocks: 4
 
 critic:
-  num_channels: 64
+  num_channels: 32
   num_residual_blocks: 4

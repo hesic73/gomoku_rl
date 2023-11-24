@@ -8,6 +8,7 @@ import torch
 
 from gomoku_rl.env import GomokuEnv
 from gomoku_rl.utils.misc import add_prefix, set_seed
+from gomoku_rl.utils.psro import ConvergedIndicator, Population
 from gomoku_rl.utils.eval import eval_win_rate, get_payoff_matrix
 from gomoku_rl.utils.visual import annotate_heatmap, heatmap
 import matplotlib.pyplot as plt
@@ -22,19 +23,25 @@ from tqdm import tqdm
 import numpy as np
 from typing import Callable, Any, Dict
 import functools
+import copy
 
 
 def payoff_headmap(
     env: GomokuEnv,
     row_policies: list[_policy_t],
     col_policies: list[_policy_t],
-    row_labels: list[str],
-    col_labels: list[str],
+    row_labels: list[str] | None = None,
+    col_labels: list[str] | None = None,
 ):
     payoff = get_payoff_matrix(
         env=env, row_policies=row_policies, col_policies=col_policies, n=1
     )
     print(payoff)
+    if row_labels is None:
+        row_labels = [i for i in range(len(row_policies))]
+    if col_labels is None:
+        col_labels = [i for i in range(len(col_policies))]
+
     im, _ = heatmap(
         payoff * 100,
         row_labels=row_labels,
@@ -51,7 +58,36 @@ def payoff_headmap(
     return im
 
 
-@hydra.main(version_base=None, config_path=CONFIG_PATH, config_name="train_InRL")
+def get_baseline(
+    cfg: DictConfig,
+    action_spec,
+    observation_spec,
+    device,
+    baseline_path: str | None = None,
+):
+    if baseline_path is None:
+        baseline_path = os.path.join(
+            "pretrained_models", f"{cfg.board_size}_{cfg.board_size}", "baseline.pt"
+        )
+    if os.path.isfile(baseline_path):
+        baseline = get_policy(
+            name=cfg.algo.name,
+            cfg=cfg.algo,
+            action_spec=action_spec,
+            observation_spec=observation_spec,
+            device=device,
+        )
+        baseline.load_state_dict(torch.load(baseline_path))
+
+        logging.info(f"Baseline: {baseline_path}.")
+    else:
+        baseline = uniform_policy
+        logging.info("Baseline: random.")
+
+    return baseline
+
+
+@hydra.main(version_base=None, config_path=CONFIG_PATH, config_name="train")
 def main(cfg: DictConfig):
     OmegaConf.register_new_resolver("eval", eval)
     OmegaConf.resolve(cfg)
@@ -82,32 +118,22 @@ def main(cfg: DictConfig):
         device=env.device,
     )
 
-    baseline_path = os.path.join(
-        "pretrained_models", f"{cfg.board_size}_{cfg.board_size}", "baseline.pt"
-    )
-    if os.path.isfile(baseline_path):
-        baseline = get_policy(
-            name=cfg.algo.name,
-            cfg=cfg.algo,
-            action_spec=env.action_spec,
-            observation_spec=env.observation_spec,
-            device=env.device,
-        )
-        baseline.load_state_dict(torch.load(baseline_path))
-
-        logging.info(f"Baseline: {baseline_path}.")
-    else:
-        baseline = uniform_policy
-        logging.info("Baseline: random.")
-
     if black_checkpoint := cfg.get("black_checkpoint", None):
         player_0.load_state_dict(torch.load(black_checkpoint))
+        logging.info(f"black_checkpoint:{black_checkpoint}")
     if white_checkpoint := cfg.get("white_checkpoint", None):
         player_1.load_state_dict(torch.load(white_checkpoint))
+        logging.info(f"white_checkpoint:{white_checkpoint}")
+
+    baseline = get_baseline(
+        cfg=cfg,
+        action_spec=env.action_spec,
+        observation_spec=env.observation_spec,
+        device=cfg.device,
+    )
 
     epochs: int = cfg.get("epochs")
     rounds: int = cfg.get("rounds")
-    save_interval: int = cfg.get("save_interval")
     log_interval: int = cfg.get("log_interval")
     run_dir = cfg.get("run_dir", None)
     if run_dir is None:
@@ -115,21 +141,29 @@ def main(cfg: DictConfig):
     os.makedirs(run_dir, exist_ok=True)
     logging.info(f"run_dir:{run_dir}")
 
-    history_paths_black: list[str] = []
-    history_paths_white: list[str] = []
+    learning_player_id = 0
+    converged_indicator = ConvergedIndicator()
+
+    population_0 = Population()
+    population_1 = Population()
 
     pbar = tqdm(range(epochs))
 
     for i in pbar:
+        population_0.sample()
+        population_1.sample()
         data_0, data_1, info = env.rollout(
             rounds=rounds,
-            player_black=player_0,
-            player_white=player_1,
+            player_black=player_0 if learning_player_id == 0 else population_0,
+            player_white=player_1 if learning_player_id != 0 else population_1,
             augment=cfg.get("augment", False),
+            return_black_transitions=learning_player_id == 0,
+            return_white_transitions=learning_player_id != 0,
         )
-
-        info.update(add_prefix(player_0.learn(data_0), "player_black/"))
-        info.update(add_prefix(player_1.learn(data_1), "player_white/"))
+        if learning_player_id == 0:
+            info.update(add_prefix(player_0.learn(data_0), "player_black/"))
+        else:
+            info.update(add_prefix(player_1.learn(data_1), "player_white/"))
 
         info.update(
             {
@@ -143,6 +177,25 @@ def main(cfg: DictConfig):
                 - eval_win_rate(env, player_white=player_1, player_black=baseline),
             }
         )
+
+        converged_indicator.update(
+            info["eval/black_vs_white"]
+            if learning_player_id == 0
+            else (1 - info["eval/black_vs_white"])
+        )
+        if converged_indicator.converged():
+            converged_indicator.reset()
+            if learning_player_id == 0:
+                actor = copy.deepcopy(player_0.actor)
+                actor.eval()
+                population_0.add(actor)
+            else:
+                actor = copy.deepcopy(player_1.actor)
+                actor.eval()
+                population_1.add(actor)
+
+            learning_player_id = (learning_player_id + 1) % 2
+            logging.info(f"learning_player_id:{learning_player_id}")
 
         if i % log_interval == 0:
             print(
@@ -159,20 +212,6 @@ def main(cfg: DictConfig):
                 "fps": env._fps,
             }
         )
-
-        if i % save_interval == 0 and i != 0:
-            path_black = os.path.join(run_dir, f"player_black_{i}.pt")
-            history_paths_black.append(path_black)
-            if len(history_paths_black) > 5:
-                tmp = history_paths_black.pop(0)
-                os.remove(tmp)
-            torch.save(player_0.state_dict(), path_black)
-            path_white = os.path.join(run_dir, f"player_white_{i}.pt")
-            history_paths_white.append(path_white)
-            if len(history_paths_white) > 5:
-                tmp = history_paths_white.pop(0)
-                os.remove(tmp)
-            torch.save(player_1.state_dict(), path_white)
 
     run.log(
         {
@@ -194,15 +233,12 @@ def main(cfg: DictConfig):
         device=env.device,
     )
 
-    players_black = [make_player(checkpoint_path=p) for p in history_paths_black]
-    labels_black = [os.path.split(p)[1] for p in history_paths_black]
-    players_white = [make_player(checkpoint_path=p) for p in history_paths_white]
-    labels_white = [os.path.split(p)[1] for p in history_paths_white]
-
     run.log(
         {
             "payoff": payoff_headmap(
-                env, players_black, players_white, labels_black, labels_white
+                env,
+                population_0.policy_sets,
+                population_1.policy_sets,
             )
         }
     )
