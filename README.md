@@ -39,6 +39,10 @@ python scripts/demo.py human_black=True
 
 A pretrained model for a $15\times15$ board is available at `pretrained_models/15_15/baseline.pt`, serving as the default checkpoint. Be aware that using the wrong model  for the board size will lead to loading errors due to mismatches in AI architectures.
 
+## API Usage
+
+
+
 ## Details
 
 ### General

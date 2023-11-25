@@ -119,8 +119,15 @@ def get_new_payoffs(
     population_0: Population,
     population_1: Population,
     old_payoffs: np.ndarray | None,
-    n: int,
 ):
+    assert len(population_0) == len(population_1)
+    n = len(population_0)
+    if old_payoffs is not None:
+        assert (
+            len(old_payoffs.shape) == 2
+            and old_payoffs.shape[0] == old_payoffs.shape[1]
+            and old_payoffs.shape[0] == n
+        )
     new_payoffs = np.zeros(shape=(n, n))
     if old_payoffs is not None:
         new_payoffs[:-1, :-1] = old_payoffs

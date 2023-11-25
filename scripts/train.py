@@ -161,7 +161,6 @@ def main(cfg: DictConfig):
         population_0=player_0.population,
         population_1=player_1.population,
         old_payoffs=None,
-        n=1,
     )
 
     pbar = tqdm(range(epochs))
@@ -246,7 +245,6 @@ def main(cfg: DictConfig):
                     population_0=player_0.population,
                     population_1=player_1.population,
                     old_payoffs=payoffs,
-                    n=learning_player_id // 2 + 1,
                 )
 
         pbar.set_postfix(
