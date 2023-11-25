@@ -8,7 +8,7 @@ import torch
 
 from gomoku_rl.env import GomokuEnv
 from gomoku_rl.utils.misc import add_prefix, set_seed
-from gomoku_rl.utils.psro import ConvergedIndicator, Population
+from gomoku_rl.utils.psro import ConvergedIndicator, PSROPolicyWrapper, get_new_payoffs
 from gomoku_rl.utils.eval import eval_win_rate, get_payoff_matrix
 from gomoku_rl.utils.visual import annotate_heatmap, heatmap
 import matplotlib.pyplot as plt
@@ -149,26 +149,38 @@ def main(cfg: DictConfig):
         std_threshold=cfg.get("std_threshold", 0.005),
     )
 
-    population_0 = Population()
-    population_1 = Population()
+    player_0 = PSROPolicyWrapper(player_0, device=cfg.device)
+    player_1 = PSROPolicyWrapper(player_1, device=cfg.device)
+    player_0.set_oracle_mode(True)
+    player_1.set_oracle_mode(False)
+
+    payoffs = get_new_payoffs(
+        env=env,
+        population_0=player_0.population,
+        population_1=player_1.population,
+        old_payoffs=None,
+        n=1,
+    )
 
     pbar = tqdm(range(epochs))
 
     for i in pbar:
-        population_0.sample()
-        population_1.sample()
+        if learning_player_id == 0:
+            player_1.sample()
+        else:
+            player_0.sample()
         data_0, data_1, info = env.rollout(
             rounds=rounds,
-            player_black=player_0 if learning_player_id == 0 else population_0,
-            player_white=player_1 if learning_player_id != 0 else population_1,
+            player_black=player_0,
+            player_white=player_1,
             augment=cfg.get("augment", False),
             return_black_transitions=learning_player_id == 0,
             return_white_transitions=learning_player_id != 0,
         )
         if learning_player_id == 0:
-            info.update(add_prefix(player_0.learn(data_0), "player_black/"))
+            info.update(add_prefix(player_0.policy.learn(data_0), "player_black/"))
         else:
-            info.update(add_prefix(player_1.learn(data_1), "player_white/"))
+            info.update(add_prefix(player_1.policy.learn(data_1), "player_white/"))
 
         info.update(
             {
@@ -183,6 +195,25 @@ def main(cfg: DictConfig):
             }
         )
 
+        if i % log_interval == 0:
+            print(
+                "Black vs White:{:.2f}%\tBlack vs baseline:{:.2f}%\tWhite vs baseline:{:.2f}%".format(
+                    info["eval/black_vs_white"] * 100,
+                    info["eval/black_vs_baseline"] * 100,
+                    info["eval/white_vs_baseline"] * 100,
+                )
+            )
+
+        if i % 100 == 0 and i != 0:
+            torch.save(
+                player_0.policy.state_dict(), os.path.join(run.dir, f"player_black_{i}.pt")
+            )
+            torch.save(
+                player_1.policy.state_dict(), os.path.join(run.dir, f"player_white_{i}.pt")
+            )
+
+        run.log(info)
+
         converged_indicator.update(
             info["eval/black_vs_white"]
             if learning_player_id == 0
@@ -191,34 +222,24 @@ def main(cfg: DictConfig):
         if converged_indicator.converged():
             converged_indicator.reset()
             if learning_player_id == 0:
-                actor = copy.deepcopy(player_0.actor)
-                actor.eval()
-                population_0.add(actor)
+                player_0.add_current_policy()
+                player_0.set_oracle_mode(False)
+                player_1.set_oracle_mode(True)
             else:
-                actor = copy.deepcopy(player_1.actor)
-                actor.eval()
-                population_1.add(actor)
+                player_1.add_current_policy()
+                player_1.set_oracle_mode(False)
+                player_0.set_oracle_mode(True)
 
             learning_player_id = (learning_player_id + 1) % 2
             logging.info(f"learning_player_id:{learning_player_id}")
-
-        if i % log_interval == 0:
-            print(
-                "Black vs baseline:{:.2f}%\tWhite vs baseline:{:.2f}%".format(
-                    info["eval/black_vs_baseline"] * 100,
-                    info["eval/white_vs_baseline"] * 100,
+            if learning_player_id % 2 == 0:
+                payoffs = get_new_payoffs(
+                    env,
+                    population_0=player_0.population,
+                    population_1=player_1.population,
+                    old_payoffs=payoffs,
+                    n=learning_player_id // 2 + 1,
                 )
-            )
-
-        if i % 100 == 0 and i != 0:
-            torch.save(
-                player_0.state_dict(), os.path.join(run.dir, f"player_black_{i}.pt")
-            )
-            torch.save(
-                player_1.state_dict(), os.path.join(run.dir, f"player_white_{i}.pt")
-            )
-
-        run.log(info)
 
         pbar.set_postfix(
             {
@@ -234,24 +255,19 @@ def main(cfg: DictConfig):
         }
     )
 
-    torch.save(player_0.state_dict(), os.path.join(run_dir, "player_black_final.pt"))
-    torch.save(player_1.state_dict(), os.path.join(run_dir, "player_white_final.pt"))
-
-    make_player = functools.partial(
-        get_pretrained_policy,
-        name=cfg.algo.name,
-        cfg=cfg.algo,
-        action_spec=env.action_spec,
-        observation_spec=env.observation_spec,
-        device=env.device,
+    torch.save(
+        player_0.policy.state_dict(), os.path.join(run_dir, "player_black_final.pt")
+    )
+    torch.save(
+        player_1.policy.state_dict(), os.path.join(run_dir, "player_white_final.pt")
     )
 
     run.log(
         {
             "payoff": payoff_headmap(
                 env,
-                population_0.policy_sets,
-                population_1.policy_sets,
+                player_0.population.policy_sets,
+                player_1.population.policy_sets,
             )
         }
     )

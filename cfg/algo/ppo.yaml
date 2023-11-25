@@ -8,7 +8,7 @@ gae_lambda: 0.95
 gamma: 0.99 # 0.99
 max_grad_norm: 3.0
 
-lr: 1e-3
+lr: 5e-4
 
 actor:
   num_channels: 32
