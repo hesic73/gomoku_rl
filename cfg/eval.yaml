@@ -5,7 +5,6 @@ device: cuda
 
 checkpoints:
   - pretrained_models/15_15/baseline.pt
-  - pretrained_models/15_15/player_white_final.pt
 
 defaults:
   - _self_

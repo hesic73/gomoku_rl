@@ -120,7 +120,6 @@ def main(cfg: DictConfig):
         device=env.device,
     )
 
-
     if black_checkpoint := cfg.get("black_checkpoint", None):
         player_0.load_state_dict(torch.load(black_checkpoint))
         logging.info(f"black_checkpoint:{black_checkpoint}")
@@ -209,6 +208,14 @@ def main(cfg: DictConfig):
                     info["eval/black_vs_baseline"] * 100,
                     info["eval/white_vs_baseline"] * 100,
                 )
+            )
+
+        if i % 100 == 0 and i != 0:
+            torch.save(
+                player_0.state_dict(), os.path.join(run.dir, f"player_black_{i}.pt")
+            )
+            torch.save(
+                player_1.state_dict(), os.path.join(run.dir, f"player_white_{i}.pt")
             )
 
         run.log(info)
