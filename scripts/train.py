@@ -206,16 +206,6 @@ def main(cfg: DictConfig):
                 )
             )
 
-        if i % 100 == 0 and i != 0:
-            torch.save(
-                player_0.policy.state_dict(),
-                os.path.join(run.dir, f"player_black_{i}.pt"),
-            )
-            torch.save(
-                player_1.policy.state_dict(),
-                os.path.join(run.dir, f"player_white_{i}.pt"),
-            )
-
         run.log(info)
 
         converged_indicator.update(
