@@ -8,6 +8,7 @@ from torch.cuda import _device_t
 from gomoku_rl.policy import Policy
 import copy
 import contextlib
+import nashpy
 
 
 class ConvergedIndicator:
@@ -16,7 +17,7 @@ class ConvergedIndicator:
         max_size: int = 10,
         mean_threshold: float = 0.99,
         std_threshold: float = 0.005,
-        min_iter_steps: int = 10,
+        min_iter_steps: int = 20,
         max_iter_steps: int = 150,
     ) -> None:
         self.win_rates = []
@@ -90,16 +91,20 @@ class PSROPolicyWrapper:
         actor = copy.deepcopy(policy.actor)
         actor.eval()
         self.population = Population(initial_policy=actor, device=device)
-        # self.meta_policy = np.ones(shape=1)
+        self.meta_policy = np.ones(shape=1)
         self._oracle_mode = True
         self._cnt = 0
+
+    def set_meta_policy(self, meta_policy: np.ndarray):
+        assert len(meta_policy) == len(self.population)
+        self.meta_policy = meta_policy
 
     def set_oracle_mode(self, value: bool = True):
         self._oracle_mode = value
 
     def sample(self):
         assert not self._oracle_mode
-        self.population.sample()
+        self.population.sample(meta_policy=self.meta_policy)
 
     def add_current_policy(self):
         actor = copy.deepcopy(self.policy.actor)
@@ -126,7 +131,7 @@ def get_new_payoffs(
         assert (
             len(old_payoffs.shape) == 2
             and old_payoffs.shape[0] == old_payoffs.shape[1]
-            and old_payoffs.shape[0] == n
+            and old_payoffs.shape[0] + 1 == n
         )
     new_payoffs = np.zeros(shape=(n, n))
     if old_payoffs is not None:
@@ -149,3 +154,10 @@ def get_new_payoffs(
 
     print(new_payoffs)
     return new_payoffs
+
+
+def solve_nash(payoffs: np.ndarray) -> np.ndarray:
+    game=nashpy.Game(payoffs)
+    print(game)
+    eqs = game.support_enumeration()
+    return list(eqs)[0]

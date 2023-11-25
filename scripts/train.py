@@ -8,7 +8,12 @@ import torch
 
 from gomoku_rl.env import GomokuEnv
 from gomoku_rl.utils.misc import add_prefix, set_seed
-from gomoku_rl.utils.psro import ConvergedIndicator, PSROPolicyWrapper, get_new_payoffs
+from gomoku_rl.utils.psro import (
+    ConvergedIndicator,
+    PSROPolicyWrapper,
+    get_new_payoffs,
+    solve_nash,
+)
 from gomoku_rl.utils.eval import eval_win_rate, get_payoff_matrix
 from gomoku_rl.utils.visual import annotate_heatmap, heatmap
 import matplotlib.pyplot as plt
@@ -246,6 +251,10 @@ def main(cfg: DictConfig):
                     population_1=player_1.population,
                     old_payoffs=payoffs,
                 )
+                meta_policy_0, meta_policy_1 = solve_nash(payoffs=payoffs)
+                logging.info(f"Meta Policy: Black {meta_policy_0}, White {meta_policy_1}")
+                player_0.set_meta_policy(meta_policy=meta_policy_0)
+                player_1.set_meta_policy(meta_policy=meta_policy_1)
 
         pbar.set_postfix(
             {
