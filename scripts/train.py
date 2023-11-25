@@ -142,6 +142,8 @@ def main(cfg: DictConfig):
         run_dir = run.dir
     os.makedirs(run_dir, exist_ok=True)
     logging.info(f"run_dir:{run_dir}")
+    os.makedirs(os.path.join(run_dir, "population_0"))
+    os.makedirs(os.path.join(run_dir, "population_1"))
 
     learning_player_id = 0
     converged_indicator = ConvergedIndicator(
@@ -206,10 +208,12 @@ def main(cfg: DictConfig):
 
         if i % 100 == 0 and i != 0:
             torch.save(
-                player_0.policy.state_dict(), os.path.join(run.dir, f"player_black_{i}.pt")
+                player_0.policy.state_dict(),
+                os.path.join(run.dir, f"player_black_{i}.pt"),
             )
             torch.save(
-                player_1.policy.state_dict(), os.path.join(run.dir, f"player_white_{i}.pt")
+                player_1.policy.state_dict(),
+                os.path.join(run.dir, f"player_white_{i}.pt"),
             )
 
         run.log(info)
@@ -225,10 +229,24 @@ def main(cfg: DictConfig):
                 player_0.add_current_policy()
                 player_0.set_oracle_mode(False)
                 player_1.set_oracle_mode(True)
+                torch.save(
+                    player_0.policy.state_dict(),
+                    os.path.join(
+                        run.dir,
+                        "population_0",
+                        f"policy_{learning_player_id//2}.pt",
+                    ),
+                )
             else:
                 player_1.add_current_policy()
                 player_1.set_oracle_mode(False)
                 player_0.set_oracle_mode(True)
+                torch.save(
+                    player_1.policy.state_dict(),
+                    os.path.join(
+                        run.dir, "population_1", f"policy_{learning_player_id//2}.pt"
+                    ),
+                )
 
             learning_player_id = (learning_player_id + 1) % 2
             logging.info(f"learning_player_id:{learning_player_id}")

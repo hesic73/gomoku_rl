@@ -4,8 +4,7 @@ board_size: 15
 device: cuda
 
 checkpoints:
-  - wandb/latest-run/files/player_black_final.pt
-  - wandb/latest-run/files/player_white_final.pt
+  - 
 
 defaults:
   - _self_
