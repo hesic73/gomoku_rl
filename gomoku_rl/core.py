@@ -15,7 +15,7 @@ def compute_done(board: torch.Tensor) -> torch.Tensor:
     Returns:
         torch.Tensor: done (E,)
     """
-    assert len(board.shape) == 3 and board.shape[1] == board.shape[2]
+
     board = board.unsqueeze(1)  # (E,1,B,B)
 
     kernel_horizontal = (
@@ -173,7 +173,7 @@ class Gomoku:
         self.move_count = self.move_count + torch.logical_not(nop).long()
 
         # F.conv2d doesn't support LongTensor on CUDA. So we use float.
-        board_one_side = (self.board == piece.unsqueeze(-1).unsqueeze(-1)).float()
+        board_one_side = (self.board == piece.unsqueeze(-1).unsqueeze(-1)).half()
         self.done = compute_done(board_one_side) | (
             self.move_count == self.board_size * self.board_size
         )

@@ -184,6 +184,7 @@ def main(cfg: DictConfig):
             rounds=rounds,
             player_black=player_0,
             player_white=player_1,
+            buffer_batch_size=cfg.get("buffer_batch_size", cfg.num_envs),
             augment=cfg.get("augment", False),
             return_black_transitions=learning_player_id == 0,
             return_white_transitions=learning_player_id != 0,

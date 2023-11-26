@@ -94,16 +94,19 @@ class Population:
         self.policy_sets.append(self._module_cnt)
         self._module_cnt += 1
 
-    def sample(self, meta_policy: np.ndarray | None = None):
-        self._idx = np.random.choice(len(self.policy_sets), p=meta_policy)
-        if not isinstance(self.policy_sets[self._idx], int):
-            self._func = self.policy_sets[self._idx]
+    def _set_policy(self, index: int):
+        if not isinstance(self.policy_sets[index], int):
+            self._func = self.policy_sets[index]
         else:
             assert self._module is not None
             self._module.load_state_dict(
-                torch.load(os.path.join(self.dir, f"{self.policy_sets[self._idx]}.pt"))
+                torch.load(os.path.join(self.dir, f"{self.policy_sets[index]}.pt"))
             )
             self._func = self._module
+
+    def sample(self, meta_policy: np.ndarray | None = None):
+        self._idx = np.random.choice(len(self.policy_sets), p=meta_policy)
+        self._set_policy(self._idx)
 
     # @set_interaction_type(type=InteractionType.MODE)
     def __call__(self, tensordict: TensorDict) -> TensorDict:
@@ -113,8 +116,11 @@ class Population:
     @contextlib.contextmanager
     def pure_strategy(self, index: int):
         _idx = self._idx
+        self._idx = index
+        self._set_policy(self._idx)
         yield
         self._idx = _idx
+        self._set_policy(self._idx)
 
 
 class PSROPolicyWrapper:

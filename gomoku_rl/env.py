@@ -262,6 +262,7 @@ class GomokuEnv:
         rounds: int,
         player_black: _policy_t,
         player_white: _policy_t,
+        buffer_batch_size: int,
         augment: bool = False,
         return_black_transitions: bool = True,
         return_white_transitions: bool = True,
@@ -284,7 +285,7 @@ class GomokuEnv:
             buffer_black = TensorDictReplayBuffer(
                 storage=LazyTensorStorage(max_size=buffer_size, device=buffer_device),
                 sampler=SamplerWithoutReplacement(drop_last=True),
-                batch_size=self.num_envs,
+                batch_size=buffer_batch_size,
             )
         else:
             buffer_black = None
@@ -292,7 +293,7 @@ class GomokuEnv:
             buffer_white = TensorDictReplayBuffer(
                 storage=LazyTensorStorage(max_size=buffer_size, device=buffer_device),
                 sampler=SamplerWithoutReplacement(drop_last=True),
-                batch_size=self.num_envs,
+                batch_size=buffer_batch_size,
             )
         else:
             buffer_white = None
@@ -335,6 +336,7 @@ class GomokuEnv:
         rounds: int,
         player_black: _policy_t,
         player_white: _policy_t,
+        buffer_batch_size: int,
         augment: bool = False,
         return_black_transitions: bool = True,
         return_white_transitions: bool = True,
@@ -348,6 +350,7 @@ class GomokuEnv:
             rounds=rounds,
             player_black=player_black,
             player_white=player_white,
+            buffer_batch_size=buffer_batch_size,
             augment=augment,
             return_black_transitions=return_black_transitions,
             return_white_transitions=return_white_transitions,
