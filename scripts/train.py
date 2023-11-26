@@ -149,8 +149,6 @@ def main(cfg: DictConfig):
         run_dir = run.dir
     os.makedirs(run_dir, exist_ok=True)
     logging.info(f"run_dir:{run_dir}")
-    os.makedirs(os.path.join(run_dir, "population_0"))
-    os.makedirs(os.path.join(run_dir, "population_1"))
 
     learning_player_id = 0
     converged_indicator = ConvergedIndicator(
@@ -158,8 +156,12 @@ def main(cfg: DictConfig):
         std_threshold=cfg.get("std_threshold", 0.005),
     )
 
-    player_0 = PSROPolicyWrapper(player_0, device=cfg.device)
-    player_1 = PSROPolicyWrapper(player_1, device=cfg.device)
+    player_0 = PSROPolicyWrapper(
+        player_0, dir=os.path.join(run_dir, "population_0"), device=cfg.device
+    )
+    player_1 = PSROPolicyWrapper(
+        player_1, dir=os.path.join(run_dir, "population_1"), device=cfg.device
+    )
     player_0.set_oracle_mode(True)
     player_1.set_oracle_mode(False)
 
@@ -225,24 +227,10 @@ def main(cfg: DictConfig):
                 player_0.add_current_policy()
                 player_0.set_oracle_mode(False)
                 player_1.set_oracle_mode(True)
-                torch.save(
-                    player_0.policy.state_dict(),
-                    os.path.join(
-                        run.dir,
-                        "population_0",
-                        f"policy_{learning_player_id//2}.pt",
-                    ),
-                )
             else:
                 player_1.add_current_policy()
                 player_1.set_oracle_mode(False)
                 player_0.set_oracle_mode(True)
-                torch.save(
-                    player_1.policy.state_dict(),
-                    os.path.join(
-                        run.dir, "population_1", f"policy_{learning_player_id//2}.pt"
-                    ),
-                )
 
             if learning_player_id % 2 == 0:
                 payoffs = payoffs_append_row(

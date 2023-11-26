@@ -1,4 +1,3 @@
-from typing import Any
 import numpy as np
 from .policy import _policy_t, uniform_policy
 from .eval import eval_win_rate
@@ -9,6 +8,8 @@ from gomoku_rl.policy import Policy
 import copy
 import contextlib
 import nashpy
+import os
+import torch
 
 
 class ConvergedIndicator:
@@ -57,26 +58,57 @@ class ConvergedIndicator:
 class Population:
     def __init__(
         self,
+        dir: str,
         initial_policy: _policy_t = uniform_policy,
         device: _device_t = "cuda",
     ):
-        self.device = device
-        self.policy_sets: list[_policy_t] = [initial_policy]
+        self.dir = dir
+        os.makedirs(self.dir, exist_ok=True)
+        self._module_cnt = 0
+        self._module = None  # assume all modules are homogeneous
         self._idx = 0
+        self.device = device
+
+        self.policy_sets: list[_policy_t | int] = []
+        # if it's a module, we save it on disk
+        if isinstance(initial_policy, TensorDictModule):
+            self.add(initial_policy)
+
+        else:
+            self.policy_sets.append(initial_policy)
+
+        self._func = None
+
+        self.sample()
 
     def __len__(self) -> int:
         return len(self.policy_sets)
 
     def add(self, policy: TensorDictModule):
-        self.policy_sets.append(policy)
+        if self._module is None:
+            self._module = policy  # assume `policy` is a copy
+        torch.save(
+            policy.state_dict(),
+            os.path.join(self.dir, f"{self._module_cnt}.pt"),
+        )
+        self.policy_sets.append(self._module_cnt)
+        self._module_cnt += 1
 
     def sample(self, meta_policy: np.ndarray | None = None):
         self._idx = np.random.choice(len(self.policy_sets), p=meta_policy)
+        if not isinstance(self.policy_sets[self._idx], int):
+            self._func = self.policy_sets[self._idx]
+        else:
+            assert self._module is not None
+            self._module.load_state_dict(
+                torch.load(os.path.join(self.dir, f"{self.policy_sets[self._idx]}.pt"))
+            )
+            self._func = self._module
 
     # @set_interaction_type(type=InteractionType.MODE)
     def __call__(self, tensordict: TensorDict) -> TensorDict:
         tensordict = tensordict.to(self.device)
-        return self.policy_sets[self._idx](tensordict)
+        return self._func(tensordict)
 
     @contextlib.contextmanager
     def pure_strategy(self, index: int):
@@ -86,11 +118,11 @@ class Population:
 
 
 class PSROPolicyWrapper:
-    def __init__(self, policy: Policy, device: _device_t):
+    def __init__(self, policy: Policy, dir: str, device: _device_t):
         self.policy = policy
         actor = copy.deepcopy(policy.actor)
         actor.eval()
-        self.population = Population(initial_policy=actor, device=device)
+        self.population = Population(initial_policy=actor, dir=dir, device=device)
         self.meta_policy = None
         self._oracle_mode = True
         self._cnt = 0
