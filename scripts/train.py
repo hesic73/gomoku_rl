@@ -15,6 +15,7 @@ from gomoku_rl.utils.psro import (
     solve_nash,
     payoffs_append_col,
     payoffs_append_row,
+    calculate_jpc,
 )
 from gomoku_rl.utils.eval import eval_win_rate, get_payoff_matrix
 from gomoku_rl.utils.visual import annotate_heatmap, heatmap
@@ -257,6 +258,8 @@ def main(cfg: DictConfig):
 
             learning_player_id = (learning_player_id + 1) % 2
             logging.info(f"learning_player_id:{learning_player_id}")
+            if learning_player_id % 2 == 0:
+                logging.info(f"JPC:{calculate_jpc(payoffs+1)/2}")
 
         if i % save_interval == 0 and i != 0:
             torch.save(

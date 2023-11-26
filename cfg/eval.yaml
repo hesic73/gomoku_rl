@@ -4,8 +4,8 @@ board_size: 15
 device: cuda
 
 checkpoints:
-  - black_500.pt
-  - white_500.pt
+  - black_200.pt
+  - white_200.pt
   - pretrained_models/15_15/baseline.pt
 
 defaults:

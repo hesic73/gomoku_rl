@@ -178,7 +178,10 @@ def payoffs_append_row(
         for i in range(len(population_1)):
             with population_1.pure_strategy(index=i):
                 wr = eval_win_rate(
-                    env=env, player_black=population_0, player_white=population_1
+                    env=env,
+                    player_black=population_0,
+                    player_white=population_1,
+                    n=2,
                 )
         new_payoffs[-1, i] = 2 * wr - 1
 
@@ -207,7 +210,10 @@ def payoffs_append_col(
         for i in range(len(population_0)):
             with population_0.pure_strategy(index=i):
                 wr = eval_win_rate(
-                    env=env, player_black=population_0, player_white=population_1
+                    env=env,
+                    player_black=population_0,
+                    player_white=population_1,
+                    n=2,
                 )
         new_payoffs[i, -1] = 2 * wr - 1
 
@@ -236,7 +242,10 @@ def get_new_payoffs(
         with population_0.pure_strategy(index=n - 1):
             with population_1.pure_strategy(index=i):
                 wr = eval_win_rate(
-                    env=env, player_black=population_0, player_white=population_1
+                    env=env,
+                    player_black=population_0,
+                    player_white=population_1,
+                    n=2,
                 )
         new_payoffs[-1, i] = 2 * wr - 1
 
@@ -244,7 +253,10 @@ def get_new_payoffs(
         with population_0.pure_strategy(index=i):
             with population_1.pure_strategy(index=n - 1):
                 wr = eval_win_rate(
-                    env=env, player_black=population_0, player_white=population_1
+                    env=env,
+                    player_black=population_0,
+                    player_white=population_1,
+                    n=2,
                 )
         new_payoffs[i, -1] = 2 * wr - 1
 
@@ -257,3 +269,13 @@ def solve_nash(payoffs: np.ndarray) -> np.ndarray:
     # print(game)
     eqs = game.support_enumeration()
     return list(eqs)[0]
+
+
+def calculate_jpc(payoffs: np.ndarray):
+    assert len(payoffs.shape) == 2 and payoffs.shape[0] == payoffs.shape[1]
+    n = payoffs.shape[0]
+    assert n > 1
+    d = np.trace(payoffs) / n
+    o = (np.sum(payoffs) - n * d) / (n * (n - 1))
+    r = (d - o) / d
+    return r

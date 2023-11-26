@@ -12,6 +12,7 @@ import matplotlib.pyplot as plt
 from gomoku_rl.env import GomokuEnv
 
 from gomoku_rl.utils.wandb import init_wandb
+from gomoku_rl.utils.psro import calculate_jpc
 from gomoku_rl.policy import get_pretrained_policy
 import logging
 from tqdm import tqdm
@@ -49,7 +50,7 @@ def main(cfg: DictConfig):
 
     payoff = get_payoff_matrix(env=env, row_policies=players, col_policies=players, n=5)
     print(payoff)
-
+    print(f"JPC:{calculate_jpc(payoff.numpy())}")
     im, _ = heatmap(
         payoff * 100,
         row_labels=[os.path.split(p)[1] for p in checkpoints],
