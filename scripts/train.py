@@ -228,37 +228,30 @@ def main(cfg: DictConfig):
         if converged_indicator.converged():
             converged_indicator.reset()
             if learning_player_id == 0:
-                player_0.add_current_policy()
                 player_0.set_oracle_mode(False)
                 player_1.set_oracle_mode(True)
             else:
-                player_1.add_current_policy()
                 player_1.set_oracle_mode(False)
                 player_0.set_oracle_mode(True)
-
-            if learning_player_id % 2 == 0:
-                payoffs = payoffs_append_row(
-                    env,
-                    population_0=player_0.population,
-                    population_1=player_1.population,
-                    old_payoffs=payoffs,
-                )
-            else:
-                payoffs = payoffs_append_col(
-                    env,
-                    population_0=player_0.population,
-                    population_1=player_1.population,
-                    old_payoffs=payoffs,
-                )
-
-            meta_policy_0, meta_policy_1 = solve_nash(payoffs=payoffs)
-            logging.info(f"Meta Policy: Black {meta_policy_0}, White {meta_policy_1}")
-            player_0.set_meta_policy(meta_policy=meta_policy_0)
-            player_1.set_meta_policy(meta_policy=meta_policy_1)
 
             learning_player_id = (learning_player_id + 1) % 2
             logging.info(f"learning_player_id:{learning_player_id}")
             if learning_player_id % 2 == 0:
+                player_0.add_current_policy()
+                player_1.add_current_policy()
+                payoffs = get_new_payoffs(
+                    env=env,
+                    population_0=player_0.population,
+                    population_1=player_1.population,
+                    old_payoffs=payoffs,
+                )
+                meta_policy_0, meta_policy_1 = solve_nash(payoffs=payoffs)
+                logging.info(
+                    f"Meta Policy: Black {meta_policy_0}, White {meta_policy_1}"
+                )
+                player_0.set_meta_policy(meta_policy=meta_policy_0)
+                player_1.set_meta_policy(meta_policy=meta_policy_1)
+
                 logging.info(f"JPC:{calculate_jpc(payoffs+1)/2}")
 
         if i % save_interval == 0 and i != 0:
