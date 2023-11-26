@@ -13,6 +13,8 @@ from gomoku_rl.utils.psro import (
     PSROPolicyWrapper,
     get_new_payoffs,
     solve_nash,
+    payoffs_append_col,
+    payoffs_append_row,
 )
 from gomoku_rl.utils.eval import eval_win_rate, get_payoff_matrix
 from gomoku_rl.utils.visual import annotate_heatmap, heatmap
@@ -242,19 +244,28 @@ def main(cfg: DictConfig):
                     ),
                 )
 
-            learning_player_id = (learning_player_id + 1) % 2
-            logging.info(f"learning_player_id:{learning_player_id}")
             if learning_player_id % 2 == 0:
-                payoffs = get_new_payoffs(
+                payoffs = payoffs_append_row(
                     env,
                     population_0=player_0.population,
                     population_1=player_1.population,
                     old_payoffs=payoffs,
                 )
-                meta_policy_0, meta_policy_1 = solve_nash(payoffs=payoffs)
-                logging.info(f"Meta Policy: Black {meta_policy_0}, White {meta_policy_1}")
-                player_0.set_meta_policy(meta_policy=meta_policy_0)
-                player_1.set_meta_policy(meta_policy=meta_policy_1)
+            else:
+                payoffs = payoffs_append_col(
+                    env,
+                    population_0=player_0.population,
+                    population_1=player_1.population,
+                    old_payoffs=payoffs,
+                )
+
+            meta_policy_0, meta_policy_1 = solve_nash(payoffs=payoffs)
+            logging.info(f"Meta Policy: Black {meta_policy_0}, White {meta_policy_1}")
+            player_0.set_meta_policy(meta_policy=meta_policy_0)
+            player_1.set_meta_policy(meta_policy=meta_policy_1)
+
+            learning_player_id = (learning_player_id + 1) % 2
+            logging.info(f"learning_player_id:{learning_player_id}")
 
         pbar.set_postfix(
             {

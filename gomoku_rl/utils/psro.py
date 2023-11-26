@@ -17,7 +17,7 @@ class ConvergedIndicator:
         max_size: int = 10,
         mean_threshold: float = 0.99,
         std_threshold: float = 0.005,
-        min_iter_steps: int = 20,
+        min_iter_steps: int = 10,
         max_iter_steps: int = 150,
     ) -> None:
         self.win_rates = []
@@ -91,7 +91,7 @@ class PSROPolicyWrapper:
         actor = copy.deepcopy(policy.actor)
         actor.eval()
         self.population = Population(initial_policy=actor, device=device)
-        self.meta_policy = np.ones(shape=1)
+        self.meta_policy = None
         self._oracle_mode = True
         self._cnt = 0
 
@@ -117,6 +117,64 @@ class PSROPolicyWrapper:
             return self.policy(tensordict)
         else:
             return self.population(tensordict)
+
+
+def payoffs_append_row(
+    env,
+    population_0: Population,
+    population_1: Population,
+    old_payoffs: np.ndarray | None,
+):
+    assert len(population_0) == len(population_1) + 1
+    if old_payoffs is not None:
+        assert (
+            len(old_payoffs.shape) == 2
+            and old_payoffs.shape[0] == old_payoffs.shape[1]
+            and old_payoffs.shape[0] == len(population_1)
+        )
+    new_payoffs = np.zeros(shape=(len(population_0), len(population_1)))
+    if old_payoffs is not None:
+        new_payoffs[:-1, :] = old_payoffs
+
+    with population_0.pure_strategy(index=-1):
+        for i in range(len(population_1)):
+            with population_1.pure_strategy(index=i):
+                wr = eval_win_rate(
+                    env=env, player_black=population_0, player_white=population_1
+                )
+        new_payoffs[-1, i] = 2 * wr - 1
+
+    print(new_payoffs)
+    return new_payoffs
+
+
+def payoffs_append_col(
+    env,
+    population_0: Population,
+    population_1: Population,
+    old_payoffs: np.ndarray | None,
+):
+    assert len(population_0) == len(population_1)
+    if old_payoffs is not None:
+        assert (
+            len(old_payoffs.shape) == 2
+            and old_payoffs.shape[0] == old_payoffs.shape[1] + 1
+            and old_payoffs.shape[0] == len(population_0)
+        )
+    new_payoffs = np.zeros(shape=(len(population_0), len(population_0)))
+    if old_payoffs is not None:
+        new_payoffs[:, :-1] = old_payoffs
+
+    with population_1.pure_strategy(index=-1):
+        for i in range(len(population_0)):
+            with population_0.pure_strategy(index=i):
+                wr = eval_win_rate(
+                    env=env, player_black=population_0, player_white=population_1
+                )
+        new_payoffs[i, -1] = 2 * wr - 1
+
+    print(new_payoffs)
+    return new_payoffs
 
 
 def get_new_payoffs(
@@ -157,7 +215,7 @@ def get_new_payoffs(
 
 
 def solve_nash(payoffs: np.ndarray) -> np.ndarray:
-    game=nashpy.Game(payoffs)
-    print(game)
+    game = nashpy.Game(payoffs)
+    # print(game)
     eqs = game.support_enumeration()
     return list(eqs)[0]
