@@ -143,6 +143,7 @@ def main(cfg: DictConfig):
 
     epochs: int = cfg.get("epochs")
     rounds: int = cfg.get("rounds")
+    save_interval: int = cfg.get("save_interval")
     log_interval: int = cfg.get("log_interval")
     run_dir = cfg.get("run_dir", None)
     if run_dir is None:
@@ -186,6 +187,7 @@ def main(cfg: DictConfig):
             augment=cfg.get("augment", False),
             return_black_transitions=learning_player_id == 0,
             return_white_transitions=learning_player_id != 0,
+            buffer_device=cfg.get("buffer_device", "cpu"),
         )
         if learning_player_id == 0:
             info.update(add_prefix(player_0.policy.learn(data_0), "player_black/"))
@@ -254,6 +256,14 @@ def main(cfg: DictConfig):
 
             learning_player_id = (learning_player_id + 1) % 2
             logging.info(f"learning_player_id:{learning_player_id}")
+
+        if i % save_interval == 0 and i != 0:
+            torch.save(
+                player_0.policy.state_dict(), os.path.join(run_dir, f"black_{i}.pt")
+            )
+            torch.save(
+                player_1.policy.state_dict(), os.path.join(run_dir, f"white_{i}.pt")
+            )
 
         pbar.set_postfix(
             {

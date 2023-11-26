@@ -265,6 +265,7 @@ class GomokuEnv:
         augment: bool = False,
         return_black_transitions: bool = True,
         return_white_transitions: bool = True,
+        buffer_device="cpu",
     ):
         tensordict_t_minus_1 = self.reset()
         tensordict_t = self.reset()
@@ -281,7 +282,7 @@ class GomokuEnv:
             buffer_size *= 8
         if return_black_transitions:
             buffer_black = TensorDictReplayBuffer(
-                storage=LazyTensorStorage(max_size=buffer_size),
+                storage=LazyTensorStorage(max_size=buffer_size, device=buffer_device),
                 sampler=SamplerWithoutReplacement(drop_last=True),
                 batch_size=self.num_envs,
             )
@@ -289,7 +290,7 @@ class GomokuEnv:
             buffer_black = None
         if return_white_transitions:
             buffer_white = TensorDictReplayBuffer(
-                storage=LazyTensorStorage(max_size=buffer_size),
+                storage=LazyTensorStorage(max_size=buffer_size, device=buffer_device),
                 sampler=SamplerWithoutReplacement(drop_last=True),
                 batch_size=self.num_envs,
             )
@@ -323,9 +324,9 @@ class GomokuEnv:
                     else transition_white
                 )
             if return_black_transitions:
-                buffer_black.extend(transition_black.cpu())
+                buffer_black.extend(transition_black.to(buffer_device))
             if return_white_transitions and len(transition_white) > 0:
-                buffer_white.extend(transition_white.cpu())
+                buffer_white.extend(transition_white.to(buffer_device))
 
         return buffer_black, buffer_white
 
@@ -337,6 +338,7 @@ class GomokuEnv:
         augment: bool = False,
         return_black_transitions: bool = True,
         return_white_transitions: bool = True,
+        buffer_device="cpu",
     ):
         info: defaultdict[str, float] = defaultdict(float)
         self._post_step = get_log_func(info)
@@ -349,6 +351,7 @@ class GomokuEnv:
             augment=augment,
             return_black_transitions=return_black_transitions,
             return_white_transitions=return_white_transitions,
+            buffer_device=buffer_device,
         )
         end = time.perf_counter()
         self._fps = (rounds * 2 * self.num_envs) / (end - start)
