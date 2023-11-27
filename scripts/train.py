@@ -35,23 +35,17 @@ import copy
 
 
 def payoff_headmap(
-    env: GomokuEnv,
-    row_policies: list[_policy_t],
-    col_policies: list[_policy_t],
+    payoff: np.ndarray,
     row_labels: list[str] | None = None,
     col_labels: list[str] | None = None,
 ):
-    payoff = get_payoff_matrix(
-        env=env, row_policies=row_policies, col_policies=col_policies, n=1
-    )
-    print(payoff)
     if row_labels is None:
-        row_labels = [i for i in range(len(row_policies))]
+        row_labels = [i for i in range(payoff.shape[0])]
     if col_labels is None:
-        col_labels = [i for i in range(len(col_policies))]
+        col_labels = [i for i in range(payoff.shape[1])]
 
     im, _ = heatmap(
-        payoff * 100,
+        payoff,
         row_labels=row_labels,
         col_labels=col_labels,
     )
@@ -207,7 +201,7 @@ def main(cfg: DictConfig):
                     env, player_black=player_0, player_white=baseline
                 ),
                 "eval/white_vs_baseline": 1
-                - eval_win_rate(env, player_white=player_1, player_black=baseline),
+                - eval_win_rate(env, player_black=baseline, player_white=player_1),
             }
         )
 
@@ -279,18 +273,17 @@ def main(cfg: DictConfig):
     )
 
     torch.save(
-        player_0.policy.state_dict(), os.path.join(run_dir, "player_black_final.pt")
+        player_0.policy.state_dict(), os.path.join(run_dir, "black_final.pt")
     )
     torch.save(
-        player_1.policy.state_dict(), os.path.join(run_dir, "player_white_final.pt")
+        player_1.policy.state_dict(), os.path.join(run_dir, "white_final.pt")
     )
 
     run.log(
         {
             "payoff": payoff_headmap(
                 env,
-                player_0.population.policy_sets,
-                player_1.population.policy_sets,
+                payoffs,
             )
         }
     )

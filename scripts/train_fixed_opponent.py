@@ -105,9 +105,11 @@ def main(cfg: DictConfig):
             rounds=rounds,
             player_black=player_black,
             player_white=player_white,
+            buffer_batch_size=cfg.get("buffer_batch_size", cfg.num_envs),
             augment=cfg.get("augment", False),
             return_black_transitions=color == "black",
             return_white_transitions=color == "white",
+            buffer_device=cfg.get("buffer_device", "cpu"),
         )
         data = data_0 if color == "black" else data_1
 
@@ -137,7 +139,7 @@ def main(cfg: DictConfig):
 
         if i % save_interval == 0 and save_interval > 0:
             torch.save(
-                player.state_dict(), os.path.join(run_dir, f"player_{color}_{i:4d}.pt")
+                player.state_dict(), os.path.join(run_dir, f"{color}_{i:4d}.pt")
             )
         run.log(info)
 
@@ -147,7 +149,7 @@ def main(cfg: DictConfig):
             }
         )
 
-    torch.save(player.state_dict(), os.path.join(run_dir, f"player_{color}_final.pt"))
+    torch.save(player.state_dict(), os.path.join(run_dir, f"{color}_final.pt"))
 
 
 if __name__ == "__main__":

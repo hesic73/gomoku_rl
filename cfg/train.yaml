@@ -10,7 +10,7 @@ augment: false
 
 epochs: 1000
 rounds: 80
-save_interval: 100
+save_interval: -1
 log_interval: 10
 
 # psro

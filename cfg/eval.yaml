@@ -5,6 +5,7 @@ device: cuda
 
 checkpoints:
   - pretrained_models/15_15/baseline.pt
+  - wandb/latest-run/files/white_final.pt
 
 defaults:
   - _self_

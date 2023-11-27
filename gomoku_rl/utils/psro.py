@@ -19,7 +19,7 @@ class ConvergedIndicator:
         max_size: int = 10,
         mean_threshold: float = 0.99,
         std_threshold: float = 0.005,
-        min_iter_steps: int = 20,
+        min_iter_steps: int = 25,
         max_iter_steps: int = 300,
     ) -> None:
         self.win_rates = []
@@ -69,7 +69,7 @@ class Population:
         self._module = None  # assume all modules are homogeneous
         self._idx = 0
         self.device = device
-        self._interaction_type = InteractionType.MODE
+        self._interaction_type = InteractionType.RANDOM
 
         self.policy_sets: list[_policy_t | int] = []
         # if it's a module, we save it on disk
