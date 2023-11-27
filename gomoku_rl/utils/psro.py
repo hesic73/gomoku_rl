@@ -69,6 +69,7 @@ class Population:
         self._module = None  # assume all modules are homogeneous
         self._idx = 0
         self.device = device
+        self._interaction_type = InteractionType.MODE
 
         self.policy_sets: list[_policy_t | int] = []
         # if it's a module, we save it on disk
@@ -109,19 +110,21 @@ class Population:
         self._idx = np.random.choice(len(self.policy_sets), p=meta_policy)
         self._set_policy(self._idx)
 
-    # @set_interaction_type(type=InteractionType.MODE)
     def __call__(self, tensordict: TensorDict) -> TensorDict:
         tensordict = tensordict.to(self.device)
-        return self._func(tensordict)
+        with set_interaction_type(type=self._interaction_type):
+            return self._func(tensordict)
 
     @contextlib.contextmanager
-    def pure_strategy(self, index: int):
+    def fixed_behavioural_strategy(self, index: int):
         _idx = self._idx
         self._idx = index
         self._set_policy(self._idx)
+        self._interaction_type = InteractionType.RANDOM
         yield
         self._idx = _idx
         self._set_policy(self._idx)
+        self._interaction_type = InteractionType.MODE
 
 
 class PSROPolicyWrapper:
@@ -175,9 +178,9 @@ def payoffs_append_row(
     if old_payoffs is not None:
         new_payoffs[:-1, :] = old_payoffs
 
-    with population_0.pure_strategy(index=-1):
+    with population_0.fixed_behavioural_strategy(index=-1):
         for i in range(len(population_1)):
-            with population_1.pure_strategy(index=i):
+            with population_1.fixed_behavioural_strategy(index=i):
                 wr = eval_win_rate(
                     env=env,
                     player_black=population_0,
@@ -207,9 +210,9 @@ def payoffs_append_col(
     if old_payoffs is not None:
         new_payoffs[:, :-1] = old_payoffs
 
-    with population_1.pure_strategy(index=-1):
+    with population_1.fixed_behavioural_strategy(index=-1):
         for i in range(len(population_0)):
-            with population_0.pure_strategy(index=i):
+            with population_0.fixed_behavioural_strategy(index=i):
                 wr = eval_win_rate(
                     env=env,
                     player_black=population_0,
@@ -240,8 +243,8 @@ def get_new_payoffs(
     if old_payoffs is not None:
         new_payoffs[:-1, :-1] = old_payoffs
     for i in range(n):
-        with population_0.pure_strategy(index=n - 1):
-            with population_1.pure_strategy(index=i):
+        with population_0.fixed_behavioural_strategy(index=n - 1):
+            with population_1.fixed_behavioural_strategy(index=i):
                 wr = eval_win_rate(
                     env=env,
                     player_black=population_0,
@@ -251,8 +254,8 @@ def get_new_payoffs(
         new_payoffs[-1, i] = 2 * wr - 1
 
     for i in range(n - 1):
-        with population_0.pure_strategy(index=i):
-            with population_1.pure_strategy(index=n - 1):
+        with population_0.fixed_behavioural_strategy(index=i):
+            with population_1.fixed_behavioural_strategy(index=n - 1):
                 wr = eval_win_rate(
                     env=env,
                     player_black=population_0,
