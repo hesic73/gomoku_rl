@@ -83,7 +83,7 @@ class ResidualTower(nn.Module):
 class PolicyHead(nn.Module):
     def __init__(self, out_features: int, num_channels: int) -> None:
         super().__init__()
-        self.cnn = nn.Conv2d(in_channels=num_channels, out_channels=4, kernel_size=1)
+        self.cnn = nn.Conv2d(in_channels=num_channels, out_channels=2, kernel_size=1)
         self.bn = nn.LazyBatchNorm2d()
         self.linear = nn.LazyLinear(out_features=out_features)
 
@@ -110,7 +110,7 @@ class ValueHead(nn.Module):
         super().__init__()
         self.cnn = nn.Conv2d(in_channels=num_channels, out_channels=1, kernel_size=1)
         self.bn = nn.LazyBatchNorm1d(track_running_stats=track_running_stats)
-        self.linear_0 = nn.LazyLinear(out_features=128)
+        self.linear_0 = nn.LazyLinear(out_features=32)
         self.linear_1 = nn.LazyLinear(out_features=1)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
