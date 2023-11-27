@@ -161,6 +161,13 @@ class PSROPolicyWrapper:
         else:
             return self.population(tensordict)
 
+    def eval(self):
+        # strategies in the policy set are always in eval mode
+        self.policy.eval()
+
+    def train(self):
+        self.policy.train()
+
 
 def payoffs_append_row(
     env,

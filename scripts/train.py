@@ -80,6 +80,7 @@ def get_baseline(
             device=device,
         )
         baseline.load_state_dict(torch.load(baseline_path))
+        baseline.eval()
 
         logging.info(f"Baseline: {baseline_path}.")
     else:
@@ -205,7 +206,7 @@ def main(cfg: DictConfig):
             }
         )
 
-        if i % log_interval == 0:
+        if i % log_interval == 0 and log_interval > 0:
             print(
                 "Black vs White:{:.2f}%\tBlack vs baseline:{:.2f}%\tWhite vs baseline:{:.2f}%".format(
                     info["eval/black_vs_white"] * 100,
@@ -250,7 +251,7 @@ def main(cfg: DictConfig):
 
                 logging.info(f"JPC:{calculate_jpc(payoffs+1)/2}")
 
-        if i % save_interval == 0 and i != 0:
+        if i % save_interval == 0 and i != 0 and save_interval > 0:
             torch.save(
                 player_0.policy.state_dict(), os.path.join(run_dir, f"black_{i}.pt")
             )
@@ -272,12 +273,8 @@ def main(cfg: DictConfig):
         }
     )
 
-    torch.save(
-        player_0.policy.state_dict(), os.path.join(run_dir, "black_final.pt")
-    )
-    torch.save(
-        player_1.policy.state_dict(), os.path.join(run_dir, "white_final.pt")
-    )
+    torch.save(player_0.policy.state_dict(), os.path.join(run_dir, "black_final.pt"))
+    torch.save(player_1.policy.state_dict(), os.path.join(run_dir, "white_final.pt"))
 
     run.log(
         {
