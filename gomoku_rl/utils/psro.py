@@ -10,6 +10,7 @@ import contextlib
 import nashpy
 import os
 import torch
+import logging
 
 
 class ConvergedIndicator:
@@ -126,7 +127,7 @@ class Population:
 class PSROPolicyWrapper:
     def __init__(self, policy: Policy, dir: str, device: _device_t):
         self.policy = policy
-        actor = copy.deepcopy(policy.actor)
+        actor = copy.deepcopy(policy)
         actor.eval()
         self.population = Population(initial_policy=actor, dir=dir, device=device)
         self.meta_policy = None
@@ -145,7 +146,7 @@ class PSROPolicyWrapper:
         self.population.sample(meta_policy=self.meta_policy)
 
     def add_current_policy(self):
-        actor = copy.deepcopy(self.policy.actor)
+        actor = copy.deepcopy(self.policy)
         actor.eval()
         self.population.add(actor)
         self._cnt += 1
@@ -268,7 +269,14 @@ def solve_nash(payoffs: np.ndarray) -> np.ndarray:
     game = nashpy.Game(payoffs)
     # print(game)
     eqs = game.support_enumeration()
-    return list(eqs)[0]
+    try:
+        return list(eqs)[0]
+    except IndexError:
+        logging.warning("solve_nash failed. Return uniform meta strategies.")
+        return (
+            np.ones(shape=payoffs.shape[0]) / payoffs.shape[0],
+            np.ones(shape=payoffs.shape[1]) / payoffs.shape[1],
+        )
 
 
 def calculate_jpc(payoffs: np.ndarray):
