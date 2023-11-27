@@ -147,7 +147,7 @@ def main(cfg: DictConfig):
     os.makedirs(run_dir, exist_ok=True)
     logging.info(f"run_dir:{run_dir}")
 
-    learning_player_id = 0
+    learning_player_id = 1
     converged_indicator = ConvergedIndicator(
         mean_threshold=cfg.get("mean_threshold", 0.99),
         std_threshold=cfg.get("std_threshold", 0.005),
@@ -159,8 +159,8 @@ def main(cfg: DictConfig):
     player_1 = PSROPolicyWrapper(
         player_1, dir=os.path.join(run_dir, "population_1"), device=cfg.device
     )
-    player_0.set_oracle_mode(True)
-    player_1.set_oracle_mode(False)
+    player_0.set_oracle_mode(learning_player_id == 0)
+    player_1.set_oracle_mode(learning_player_id != 0)
 
     payoffs = get_new_payoffs(
         env=env,
@@ -233,7 +233,7 @@ def main(cfg: DictConfig):
 
             learning_player_id = (learning_player_id + 1) % 2
             logging.info(f"learning_player_id:{learning_player_id}")
-            if learning_player_id % 2 == 0:
+            if learning_player_id == 0:
                 player_0.add_current_policy()
                 player_1.add_current_policy()
                 payoffs = get_new_payoffs(

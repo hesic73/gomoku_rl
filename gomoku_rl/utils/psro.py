@@ -123,11 +123,12 @@ class Population:
         _idx = self._idx
         self._idx = index
         self._set_policy(self._idx)
+        _interaction_type = self._interaction_type
         self._interaction_type = InteractionType.RANDOM
         yield
         self._idx = _idx
         self._set_policy(self._idx)
-        self._interaction_type = InteractionType.MODE
+        self._interaction_type = _interaction_type
 
 
 class PSROPolicyWrapper:
@@ -164,11 +165,13 @@ class PSROPolicyWrapper:
             return self.population(tensordict)
 
     def eval(self):
-        # strategies in the policy set are always in eval mode
-        self.policy.eval()
+        if self._oracle_mode:
+            # strategies in the policy set are always in eval mode
+            self.policy.eval()
 
     def train(self):
-        self.policy.train()
+        if self._oracle_mode:
+            self.policy.train()
 
 
 def payoffs_append_row(
