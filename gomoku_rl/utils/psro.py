@@ -19,8 +19,8 @@ class ConvergedIndicator:
         max_size: int = 10,
         mean_threshold: float = 0.99,
         std_threshold: float = 0.005,
-        min_iter_steps: int = 10,
-        max_iter_steps: int = 150,
+        min_iter_steps: int = 20,
+        max_iter_steps: int = 300,
     ) -> None:
         self.win_rates = []
         self.max_size = max_size
