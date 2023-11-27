@@ -81,6 +81,7 @@ class PPOPolicy(Policy):
             entropy_coef=self.entropy_coef,
             # these keys match by default but we set this for completeness
             value_target_key=self.advantage_module.value_target_key,
+            normalize_advantage=self.cfg.get("normalize_advantage", True),
             loss_critic_type="smooth_l1",
         )
 
@@ -161,6 +162,7 @@ class PPOPolicy(Policy):
             entropy_coef=self.entropy_coef,
             # these keys match by default but we set this for completeness
             value_target_key=self.advantage_module.value_target_key,
+            normalize_advantage=self.cfg.get("normalize_advantage", True),
             loss_critic_type="smooth_l1",
         )
 

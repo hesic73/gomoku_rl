@@ -193,8 +193,10 @@ def main(cfg: DictConfig):
         )
         if learning_player_id == 0:
             info.update(add_prefix(player_0.policy.learn(data_0), "player_black/"))
+            del data_0
         else:
             info.update(add_prefix(player_1.policy.learn(data_1), "player_white/"))
+            del data_1
 
         info.update(
             {
