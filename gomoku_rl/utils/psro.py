@@ -69,7 +69,7 @@ class Population:
         self._module = None  # assume all modules are homogeneous
         self._idx = 0
         self.device = device
-        self._interaction_type = InteractionType.RANDOM
+        self._interaction_type = InteractionType.MODE
 
         self.policy_sets: list[_policy_t | int] = []
         # if it's a module, we save it on disk
@@ -104,6 +104,7 @@ class Population:
             self._module.load_state_dict(
                 torch.load(os.path.join(self.dir, f"{self.policy_sets[index]}.pt"))
             )
+            self._module.eval()
             self._func = self._module
 
     def sample(self, meta_policy: np.ndarray | None = None):

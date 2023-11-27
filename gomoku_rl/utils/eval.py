@@ -5,7 +5,7 @@ import torch
 
 
 def eval_win_rate(
-    env: GomokuEnv, player_black: _policy_t, player_white: _policy_t, n: int = 1
+    env: GomokuEnv, player_black: _policy_t, player_white: _policy_t, n: int = 2
 ):
     tmp = [_eval_win_rate(env, player_black, player_white) for _ in range(n)]
     return sum(tmp) / len(tmp)

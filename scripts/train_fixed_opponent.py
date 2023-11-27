@@ -52,7 +52,7 @@ def main(cfg: DictConfig):
             device=env.device,
         )
         opponent.load_state_dict(torch.load(opponent_checkpoint_path))
-
+        opponent.eval()
         logging.info(f"Opponent: {opponent_checkpoint_path}.")
     else:
         opponent = uniform_policy
@@ -70,7 +70,7 @@ def main(cfg: DictConfig):
             device=env.device,
         )
         baseline.load_state_dict(torch.load(baseline_path))
-
+        baseline.eval()
         logging.info(f"Baseline: {baseline_path}.")
     else:
         baseline = uniform_policy
