@@ -147,7 +147,8 @@ def main(cfg: DictConfig):
     os.makedirs(run_dir, exist_ok=True)
     logging.info(f"run_dir:{run_dir}")
 
-    learning_player_id = 1
+    _FIRST_ID = 1
+    learning_player_id = _FIRST_ID
     converged_indicator = ConvergedIndicator(
         mean_threshold=cfg.get("mean_threshold", 0.99),
         std_threshold=cfg.get("std_threshold", 0.005),
@@ -233,7 +234,7 @@ def main(cfg: DictConfig):
 
             learning_player_id = (learning_player_id + 1) % 2
             logging.info(f"learning_player_id:{learning_player_id}")
-            if learning_player_id == 0:
+            if learning_player_id == _FIRST_ID:
                 player_0.add_current_policy()
                 player_1.add_current_policy()
                 payoffs = get_new_payoffs(

@@ -281,7 +281,7 @@ def get_new_payoffs(
     return new_payoffs
 
 
-def solve_nash(payoffs: np.ndarray) -> np.ndarray:
+def solve_nash(payoffs: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
     game = nashpy.Game(payoffs)
     # print(game)
     eqs = game.support_enumeration()
@@ -293,6 +293,13 @@ def solve_nash(payoffs: np.ndarray) -> np.ndarray:
             np.ones(shape=payoffs.shape[0]) / payoffs.shape[0],
             np.ones(shape=payoffs.shape[1]) / payoffs.shape[1],
         )
+
+
+def solve_fictitious_play(payoffs: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    return (
+        np.ones(shape=payoffs.shape[0]) / payoffs.shape[0],
+        np.ones(shape=payoffs.shape[1]) / payoffs.shape[1],
+    )
 
 
 def calculate_jpc(payoffs: np.ndarray):
