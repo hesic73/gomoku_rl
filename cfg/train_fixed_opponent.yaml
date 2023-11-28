@@ -13,10 +13,10 @@ rounds: 120
 log_interval: 5
 save_interval: -1
 
-checkpoint: pretrained_models/${board_size}_${board_size}/baseline.pt
+checkpoint: pretrained_models/${board_size}_${board_size}/0.pt
 color: white
 
-opponent_checkpoint: pretrained_models/${board_size}_${board_size}/baseline.pt
+opponent_checkpoint: pretrained_models/${board_size}_${board_size}/0.pt
 
 wandb:
   group: fixed_opponent_${board_size}_${board_size}

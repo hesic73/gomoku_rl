@@ -77,7 +77,7 @@ def main(cfg: DictConfig):
     )
 
     baseline_path = os.path.join(
-        "pretrained_models", f"{cfg.board_size}_{cfg.board_size}", "baseline.pt"
+        "pretrained_models", f"{cfg.board_size}_{cfg.board_size}", "0.pt"
     )
     if os.path.isfile(baseline_path):
         baseline = get_policy(

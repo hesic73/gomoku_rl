@@ -281,7 +281,7 @@ def main(cfg: DictConfig):
     run.log(
         {
             "payoff": payoff_headmap(
-                payoffs,
+                (payoffs + 1) / 2,
             )
         }
     )

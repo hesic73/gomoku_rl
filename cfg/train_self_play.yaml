@@ -4,14 +4,14 @@ board_size: 15
 device: cuda
 run_dir: 
 
-augment: true
+augment: false
 
 epochs: 60
 steps: 128
 save_interval: 10
 log_interval: 5
 
-checkpoint: pretrained_models/${board_size}_${board_size}/baseline.pt
+checkpoint: pretrained_models/${board_size}_${board_size}/0.pt
 
 wandb:
   group: self_play_${board_size}_${board_size}
