@@ -11,6 +11,7 @@ def main():
         player_black=uniform_policy,
         player_white=uniform_policy,
         buffer_batch_size=256,
+        augment=False,
     )
     for data in transitions_black:
         print(data)
