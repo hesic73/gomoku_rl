@@ -2,9 +2,9 @@
 
 ## Introduction
 
-*gomoku_rl* is an open-sourced project that trains agents to play the game of Gomoku through deep reinforcement learning. Previous works often rely on variants of AlphaGo/AlphaZero and inefficiently use GPU resources. Notably, many existing projects are limited to small boards, with only a few exceptions. [[1]](#refer-anchor-1) incorporates curriculum learning and other enhancements;  [[2]](#refer-anchor-2)  and  [[3]](#refer-anchor-3)  collect transitions from multiple environments and also parallelize MCTS execution. In contrast, *gomoku_rl* features GPU-parallelized simulation and leverages recent advancements in **MARL**. Starting from random play, an model with fewer than 1M parameters can achieve human-level performance on a $15\times15$ board after a few hours of training on a 3090.
+*gomoku_rl* is an open-sourced project that trains agents to play the game of Gomoku through deep reinforcement learning. Previous works often rely on variants of AlphaGo/AlphaZero and inefficiently use GPU resources. Notably, many existing projects are limited to small boards, with only a few exceptions. [[1]](#refer-anchor-1) incorporates curriculum learning and other enhancements;  [[2]](#refer-anchor-2)  and  [[3]](#refer-anchor-3)  collect transitions from multiple environments and also parallelize MCTS execution. In contrast, *gomoku_rl* features GPU-parallelized simulation and leverages recent advancements in **MARL**. Starting from random play, an model can achieve human-level performance on a $15\times15$ board.
 
-## Getting Started
+## Installation
 
 To get started, install *gomoku_rl* with the following command:
 
@@ -14,7 +14,9 @@ conda activate gomoku
 pip install -e .
 ```
 
-I use `python 3.11.5`, `torch 2.1.0` and `torchrl 0.2.1`, but lower versions of python and torch 1.x should be compatible as well. 
+I use python 3.11.5, torch 2.1.0 and **torchrl 0.2.1**. Lower versions of python and torch 1.x should be compatible as well. 
+
+## Getting Started
 
 *gomoku_rl* uses `hydra` to configure training hyperparameters. You can modify the settings in `cfg/train.yaml` or override them via the command line:
 
@@ -25,7 +27,7 @@ python scripts/train.py board_size=15 num_env=1024 device=cuda algo=ppo epochs=1
 python scripts/train.py
 ```
 
-The default location for saving checkpoints is `wandb/*/files` or `tempfile.gettempdir()` if `wandb.mode` is disabled. Modify the output directory by specifying the `run_dir` parameter.
+The default location for saving checkpoints is `wandb/*/files` or `tempfile.gettempdir()` if `wandb.mode=='disabled'`. Modify the output directory by specifying the `run_dir` parameter.
 
 After training, play Gomoku with your model using the `scripts/demo.py` script:
 
@@ -37,29 +39,44 @@ python scripts/demo.py human_black=True board_size=15 checkpoint=/path/to/your/m
 python scripts/demo.py
 ```
 
-A pretrained model for a $15\times15$ board is available at `pretrained_models/15_15/baseline.pt`, serving as the default checkpoint. Be aware that using the wrong model  for the board size will lead to loading errors due to mismatches in AI architectures.
+Pretrained models for a $15\times15$ board are available under  `pretrained_models/15_15/`. Be aware that using the wrong model  for the board size will lead to loading errors due to mismatches in AI architectures.
 
 ## API Usage
 
+```python
+from gomoku_rl import GomokuEnv
+from gomoku_rl.utils.policy import uniform_policy
+from pprint import pprint
 
 
-## Details
+def main():
+    env = GomokuEnv(num_envs=128, board_size=10, device="cuda")
 
-### General
+    transitions_black, transitions_white, info = env.rollout(
+        rounds=50,
+        player_black=uniform_policy,
+        player_white=uniform_policy,
+        buffer_batch_size=256,
+    )
+    for data in transitions_black:
+        print(data)
+        break
 
-Free-style Gomoku is a two-player zero-sum extensive-form game. Two players alternatively place black and white stones on a board and the first who forms an unbroken line of five or more stones of his color wins. In the context of Multi-Agent Reinforcement Learning (**MARL**), two agents learn in the environment competitively. During each agent's turn, its observation is the (encoded) current board state, and its action is the selection of a position on the board to place a stone. We use action masking to prevent illegal moves. Winning rewards the agent with +1, while losing incurs a penalty of -1. 
-
-The simplest form is *independent reinforcement learning* (InRL), where each agen treats its opponent as part of the environment. 
-
-### Neural Networks
+    pprint(dict(info))
 
 
+if __name__ == "__main__":
+    main()
 
+```
 
+## Notes
+
+Free-style Gomoku is a two-player zero-sum extensive-form game. Two players alternatively place black and white stones on a board and the first who forms an unbroken line of five or more stones of his color wins. In the context of Multi-Agent Reinforcement Learning (MARL), two agents learn in the environment competitively. During each agent's turn, its observation is the (encoded) current board state, and its action is the selection of a position on the board to place a stone. We use action masking to prevent illegal moves. Winning rewards the agent with +1, while losing incurs a penalty of -1. 
 
 ## Limitations
 
-- Limited to Free-style Gomoku support only.
+- Constrained to Free-style Gomoku support only.
 - The internal use of `vmap` in `torchrl.objectives.value.GAE` clashes with `torch.nn.BatchNorm2d(track_running_stats=True)`. Consequently, for batch normalization modules in the critic, `track_running_stats` is set to False, rendering it unusable in evaluation mode.
 
 ## References
