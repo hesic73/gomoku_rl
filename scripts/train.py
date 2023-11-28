@@ -279,7 +279,6 @@ def main(cfg: DictConfig):
     run.log(
         {
             "payoff": payoff_headmap(
-                env,
                 payoffs,
             )
         }

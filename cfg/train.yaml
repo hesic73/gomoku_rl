@@ -8,10 +8,10 @@ run_dir:
 
 augment: false
 
-epochs: 1000
-rounds: 80
+epochs: 200
+rounds: 120
 save_interval: -1
-log_interval: 10
+log_interval: 5
 
 # psro
 mean_threshold: 0.99
