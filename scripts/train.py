@@ -12,7 +12,7 @@ from gomoku_rl.utils.psro import (
     ConvergedIndicator,
     PSROPolicyWrapper,
     get_new_payoffs,
-    solve_nash,
+    get_meta_solver,
     payoffs_append_col,
     payoffs_append_row,
     calculate_jpc,
@@ -169,6 +169,7 @@ def main(cfg: DictConfig):
         population_1=player_1.population,
         old_payoffs=None,
     )
+    meta_solver = get_meta_solver(cfg.get("meta_solver", "uniform"))
 
     pbar = tqdm(range(epochs))
 
@@ -243,7 +244,7 @@ def main(cfg: DictConfig):
                     population_1=player_1.population,
                     old_payoffs=payoffs,
                 )
-                meta_policy_0, meta_policy_1 = solve_nash(payoffs=payoffs)
+                meta_policy_0, meta_policy_1 = meta_solver(payoffs=payoffs)
                 logging.info(
                     f"Meta Policy: Black {meta_policy_0}, White {meta_policy_1}"
                 )

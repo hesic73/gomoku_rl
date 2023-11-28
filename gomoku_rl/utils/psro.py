@@ -19,7 +19,7 @@ class ConvergedIndicator:
         max_size: int = 10,
         mean_threshold: float = 0.99,
         std_threshold: float = 0.005,
-        min_iter_steps: int = 25,
+        min_iter_steps: int = 20,
         max_iter_steps: int = 300,
     ) -> None:
         self.win_rates = []
@@ -295,11 +295,21 @@ def solve_nash(payoffs: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
         )
 
 
-def solve_fictitious_play(payoffs: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+def solve_uniform(payoffs: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
     return (
         np.ones(shape=payoffs.shape[0]) / payoffs.shape[0],
         np.ones(shape=payoffs.shape[1]) / payoffs.shape[1],
     )
+
+
+def get_meta_solver(name: str):
+    tmp = {
+        "uniform": solve_uniform,
+        "nash": solve_nash,
+    }
+    name = name.lower()
+    assert name in tmp
+    return tmp[name]
 
 
 def calculate_jpc(payoffs: np.ndarray):
