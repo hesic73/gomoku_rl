@@ -145,20 +145,20 @@ class PSRORunner(Runner):
             if self.learning_player_id == self.cfg.get("first_id", 0):
                 self.player_0.add_current_policy()
                 self.player_1.add_current_policy()
-                payoffs = get_new_payoffs(
+                self.payoffs = get_new_payoffs(
                     env=self.env,
                     population_0=self.player_0.population,
                     population_1=self.player_1.population,
-                    old_payoffs=payoffs,
+                    old_payoffs=self.payoffs,
                 )
-                meta_policy_0, meta_policy_1 = self.meta_solver(payoffs=payoffs)
+                meta_policy_0, meta_policy_1 = self.meta_solver(payoffs=self.payoffs)
                 logging.info(
                     f"Meta Policy: Black {meta_policy_0}, White {meta_policy_1}"
                 )
                 self.player_0.set_meta_policy(meta_policy=meta_policy_0)
                 self.player_1.set_meta_policy(meta_policy=meta_policy_1)
 
-                logging.info(f"JPC:{calculate_jpc(payoffs+1)/2}")
+                logging.info(f"JPC:{calculate_jpc(self.payoffs+1)/2}")
 
         return info
 
