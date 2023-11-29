@@ -5,6 +5,7 @@ from typing import Optional, Dict
 import random
 import numpy as np
 from tensordict import TensorDict
+from omegaconf import DictConfig
 
 
 def add_prefix(d: Dict, prefix: str):
@@ -25,3 +26,15 @@ def set_seed(seed):
     random.seed(seed)
     np.random.seed(seed)
 
+
+def get_kwargs(cfg: DictConfig, *names):
+    kwargs = {}
+    for name in names:
+        if param := cfg.get(name, None):
+            kwargs.update(
+                {
+                    name: param,
+                }
+            )
+
+    return kwargs

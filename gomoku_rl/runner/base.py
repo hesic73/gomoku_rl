@@ -1,0 +1,109 @@
+import abc
+from omegaconf import DictConfig
+from gomoku_rl.env import GomokuEnv
+from gomoku_rl.utils.misc import set_seed
+from gomoku_rl.utils.policy import _policy_t, uniform_policy
+from gomoku_rl.policy import get_policy
+from tqdm import tqdm
+import torch
+import logging
+import os
+import wandb
+from typing import Any
+
+
+class Runner(abc.ABC):
+    def __init__(self, cfg: DictConfig) -> None:
+        self.cfg = cfg
+
+        self.env = GomokuEnv(
+            num_envs=cfg.num_envs,
+            board_size=cfg.board_size,
+            device=cfg.device,
+        )
+        seed = cfg.get("seed", None)
+        set_seed(seed)
+
+        self.epochs: int = cfg.get("epochs")
+        self.rounds: int = cfg.get("rounds")
+        self.save_interval: int = cfg.get("save_interval", -1)
+
+        self.policy_black = get_policy(
+            name=cfg.algo.name,
+            cfg=cfg.algo,
+            action_spec=self.env.action_spec,
+            observation_spec=self.env.observation_spec,
+            device=self.env.device,
+        )
+        self.policy_white = get_policy(
+            name=cfg.algo.name,
+            cfg=cfg.algo,
+            action_spec=self.env.action_spec,
+            observation_spec=self.env.observation_spec,
+            device=self.env.device,
+        )
+
+        if black_checkpoint := cfg.get("black_checkpoint", None):
+            self.policy_black.load_state_dict(torch.load(black_checkpoint))
+            logging.info(f"black_checkpoint:{black_checkpoint}")
+        if white_checkpoint := cfg.get("white_checkpoint", None):
+            self.policy_white.load_state_dict(torch.load(white_checkpoint))
+            logging.info(f"white_checkpoint:{white_checkpoint}")
+
+        self.baseline = self._get_baseline()
+
+        run_dir = cfg.get("run_dir", None)
+        if run_dir is None:
+            run_dir = wandb.run.dir
+        os.makedirs(run_dir, exist_ok=True)
+        logging.info(f"run_dir:{run_dir}")
+        self.run_dir = run_dir
+
+    def _get_baseline(self) -> _policy_t:
+        return uniform_policy
+
+    @abc.abstractmethod
+    def _epoch(self, epoch: int) -> dict[str, Any]:
+        ...
+
+    # @abc.abstractmethod
+    def _post_run(self):
+        pass
+
+    def run(self, disable_tqdm: bool = False):
+        pbar = tqdm(range(self.epochs), disable=disable_tqdm)
+        for i in pbar:
+            info = {}
+            info.update(self._epoch(epoch=i))
+
+            if wandb.run is not None:
+                wandb.run.log(info)
+            else:
+                pass
+
+            if i % self.save_interval == 0 and self.save_interval > 0:
+                torch.save(
+                    self.policy_black.state_dict(),
+                    os.path.join(self.run_dir, f"black_{i:04d}.pt"),
+                )
+                torch.save(
+                    self.policy_white.state_dict(),
+                    os.path.join(self.run_dir, f"white_{i:04d}.pt"),
+                )
+
+            pbar.set_postfix(
+                {
+                    "fps": self.env._fps,
+                }
+            )
+
+        torch.save(
+            self.policy_black.state_dict(),
+            os.path.join(self.run_dir, f"black_final.pt"),
+        )
+        torch.save(
+            self.policy_white.state_dict(),
+            os.path.join(self.run_dir, f"white_final.pt"),
+        )
+
+        self._post_run()
