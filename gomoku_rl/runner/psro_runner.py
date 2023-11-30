@@ -15,6 +15,7 @@ from gomoku_rl.utils.psro import (
     get_new_payoffs,
     get_meta_solver,
     calculate_jpc,
+    print_payoffs,
 )
 from gomoku_rl.utils.eval import eval_win_rate
 import wandb
@@ -151,6 +152,7 @@ class PSRORunner(Runner):
                     population_1=self.player_1.population,
                     old_payoffs=self.payoffs,
                 )
+                print_payoffs(self.payoffs)
                 meta_policy_0, meta_policy_1 = self.meta_solver(payoffs=self.payoffs)
                 logging.info(
                     f"Meta Policy: Black {meta_policy_0}, White {meta_policy_1}"

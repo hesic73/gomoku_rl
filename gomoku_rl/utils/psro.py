@@ -275,9 +275,14 @@ def get_new_payoffs(
                     n=2,
                 )
         new_payoffs[i, -1] = 2 * wr - 1
-
-    print(new_payoffs)
     return new_payoffs
+
+
+def print_payoffs(payoffs: np.ndarray):
+    print(
+        "payoffs:\n"
+        + "\n".join(["\t".join([f"{item:+.3f}" for item in line]) for line in payoffs])
+    )
 
 
 def solve_nash(payoffs: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
