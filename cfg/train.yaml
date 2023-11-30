@@ -14,12 +14,12 @@ save_interval: -1
 log_interval: 5
 
 # psro
-meta_solver: uniform
+meta_solver: nash
 mean_threshold: 0.99
 std_threshold: 0.005
 
-black_checkpoint: pretrained_models/${board_size}_${board_size}/0.pt
-white_checkpoint: pretrained_models/${board_size}_${board_size}/0.pt
+# black_checkpoint: pretrained_models/${board_size}_${board_size}/0.pt
+# white_checkpoint: pretrained_models/${board_size}_${board_size}/0.pt
 
 wandb:
   group: ${board_size}_${board_size}

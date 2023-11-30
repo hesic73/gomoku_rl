@@ -170,3 +170,14 @@ class PSRORunner(Runner):
                 )
             }
         )
+
+    def _log(self, info: dict[str, Any], epoch: int):
+        if epoch % 5 == 0:
+            print(
+                "Black vs White:{:.2f}%\tBlack vs baseline:{:.2f}%\tWhite vs baseline:{:.2f}%".format(
+                    info["eval/black_vs_white"] * 100,
+                    info["eval/black_vs_baseline"] * 100,
+                    info["eval/white_vs_baseline"] * 100,
+                )
+            )
+        return super()._log(info, epoch)

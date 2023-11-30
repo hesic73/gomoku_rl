@@ -70,16 +70,18 @@ class Runner(abc.ABC):
     def _post_run(self):
         pass
 
+    def _log(self, info: dict[str, Any], epoch: int):
+        if wandb.run is not None:
+            wandb.run.log(info)
+        else:
+            pass
+
     def run(self, disable_tqdm: bool = False):
         pbar = tqdm(range(self.epochs), disable=disable_tqdm)
         for i in pbar:
             info = {}
             info.update(self._epoch(epoch=i))
-
-            if wandb.run is not None:
-                wandb.run.log(info)
-            else:
-                pass
+            self._log(info=info, epoch=i)
 
             if i % self.save_interval == 0 and self.save_interval > 0:
                 torch.save(
