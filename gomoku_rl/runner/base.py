@@ -73,8 +73,6 @@ class Runner(abc.ABC):
     def _log(self, info: dict[str, Any], epoch: int):
         if wandb.run is not None:
             wandb.run.log(info)
-        else:
-            pass
 
     def run(self, disable_tqdm: bool = False):
         pbar = tqdm(range(self.epochs), disable=disable_tqdm)
@@ -106,6 +104,85 @@ class Runner(abc.ABC):
         torch.save(
             self.policy_white.state_dict(),
             os.path.join(self.run_dir, f"white_final.pt"),
+        )
+
+        self._post_run()
+
+
+class SPRunner(abc.ABC):
+    def __init__(self, cfg: DictConfig) -> None:
+        self.cfg = cfg
+
+        self.env = GomokuEnv(
+            num_envs=cfg.num_envs,
+            board_size=cfg.board_size,
+            device=cfg.device,
+        )
+        seed = cfg.get("seed", None)
+        set_seed(seed)
+
+        self.epochs: int = cfg.get("epochs")
+        self.rounds: int = cfg.get("rounds")
+        self.save_interval: int = cfg.get("save_interval", -1)
+
+        self.policy = get_policy(
+            name=cfg.algo.name,
+            cfg=cfg.algo,
+            action_spec=self.env.action_spec,
+            observation_spec=self.env.observation_spec,
+            device=self.env.device,
+        )
+
+        if checkpoint := cfg.get("checkpoint", None):
+            self.policy.load_state_dict(torch.load(checkpoint))
+            logging.info(f"load from {checkpoint}")
+
+        self.baseline = self._get_baseline()
+
+        run_dir = cfg.get("run_dir", None)
+        if run_dir is None:
+            run_dir = wandb.run.dir
+        os.makedirs(run_dir, exist_ok=True)
+        logging.info(f"run_dir:{run_dir}")
+        self.run_dir = run_dir
+
+    def _get_baseline(self) -> _policy_t:
+        return uniform_policy
+
+    @abc.abstractmethod
+    def _epoch(self, epoch: int) -> dict[str, Any]:
+        ...
+
+    # @abc.abstractmethod
+    def _post_run(self):
+        pass
+
+    def _log(self, info: dict[str, Any], epoch: int):
+        if wandb.run is not None:
+            wandb.run.log(info)
+
+    def run(self, disable_tqdm: bool = False):
+        pbar = tqdm(range(self.epochs), disable=disable_tqdm)
+        for i in pbar:
+            info = {}
+            info.update(self._epoch(epoch=i))
+            self._log(info=info, epoch=i)
+
+            if i % self.save_interval == 0 and self.save_interval > 0:
+                torch.save(
+                    self.policy.state_dict(),
+                    os.path.join(self.run_dir, f"{i:04d}.pt"),
+                )
+
+            pbar.set_postfix(
+                {
+                    "fps": self.env._fps,
+                }
+            )
+
+        torch.save(
+            self.policy.state_dict(),
+            os.path.join(self.run_dir, f"final.pt"),
         )
 
         self._post_run()
