@@ -230,6 +230,5 @@ def augment_transition(transition: TensorDict, n_augment: int) -> TensorDict:
     transforms = random.sample(_TRANSFORMS[1:], k=n_augment - 1)
     for t in transforms:
         tmp.append(get_augmented_transition(transition, t))
-
     transition = torch.stack(tmp).reshape(-1)
     return transition

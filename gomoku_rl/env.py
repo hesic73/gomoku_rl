@@ -4,7 +4,6 @@ from tensordict.nn import TensorDictModule, set_interaction_type, InteractionTyp
 from tensordict.tensordict import TensorDictBase
 import torch
 from torchrl.data import LazyTensorStorage, TensorDictReplayBuffer
-from torchrl.data.replay_buffers import SamplerWithoutReplacement
 from torchrl.envs import EnvBase
 from torchrl.data.tensor_specs import (
     CompositeSpec,
@@ -17,6 +16,7 @@ import time
 from gomoku_rl.utils.policy import _policy_t
 from gomoku_rl.utils.augment import augment_transition
 from gomoku_rl.utils.misc import add_prefix
+from gomoku_rl.utils.sampler import SequentialSampler
 from .core import Gomoku
 
 
@@ -31,7 +31,7 @@ def make_transition(
 ) -> TensorDict:
     # if a player wins at time t, its opponent cannot win immediately after reset
     reward: torch.Tensor = (
-        tensordict_t.get("done").float() - tensordict_t_plus_1.get("done").float()
+        tensordict_t.get("win").float() - tensordict_t_plus_1.get("win").float()
     ).unsqueeze(-1)
     transition: TensorDict = tensordict_t_minus_1.select(
         "observation",
@@ -130,7 +130,11 @@ class GomokuEnv:
         )
         return tensordict
 
-    def _step(self, tensordict: TensorDict) -> TensorDict:
+    def _step(
+        self,
+        tensordict: TensorDict,
+        is_last: bool,
+    ) -> TensorDict:
         """_summary_
 
         Args:
@@ -146,7 +150,7 @@ class GomokuEnv:
 
         assert not illegal.any()
 
-        done = win
+        done = win | is_last
         black_win = win & (episode_len % 2 == 1)
         white_win = win & (episode_len % 2 == 0)
         tensordict = TensorDict({}, self.batch_size, device=self.device)
@@ -155,6 +159,7 @@ class GomokuEnv:
                 "observation": self.gomoku.get_encoded_board(),
                 "action_mask": self.gomoku.get_action_mask(),
                 "done": done,
+                "win": win,
                 # reward is calculated later
                 "stats": {
                     "episode_len": episode_len,
@@ -168,7 +173,10 @@ class GomokuEnv:
         return tensordict
 
     def _step_and_maybe_reset(
-        self, tensordict: TensorDict, env_indices: Optional[torch.Tensor] = None
+        self,
+        tensordict: TensorDict,
+        env_indices: Optional[torch.Tensor] = None,
+        is_last: bool = False,
     ) -> TensorDict:
         """_summary_
 
@@ -181,7 +189,7 @@ class GomokuEnv:
         """
         if env_indices is not None:
             tensordict.set("env_indices", env_indices)
-        next_tensordict = self._step(tensordict=tensordict)
+        next_tensordict = self._step(tensordict=tensordict, is_last=is_last)
         tensordict.exclude("env_indices", inplace=True)
 
         done: torch.Tensor = next_tensordict.get("done")  # (E,)
@@ -198,6 +206,7 @@ class GomokuEnv:
         player_white: _policy_t,
         return_black_transitions: bool = True,
         return_white_transitions: bool = True,
+        is_last: bool = False,
     ) -> tuple[TensorDict | None, TensorDict | None, TensorDict, TensorDict]:
         with set_interaction_type(type=InteractionType.RANDOM):
             tensordict_t = player_black(tensordict_t)
@@ -219,7 +228,9 @@ class GomokuEnv:
         # this makes no difference to player_black's transition from t to t+2
         # but player_white's transition from t-1 to t+1 is invalid where tensordict_t_minus_1['done']==True
         tensordict_t_plus_2 = self._step_and_maybe_reset(
-            tensordict_t_plus_1, env_indices=~tensordict_t_plus_1.get("done")
+            tensordict_t_plus_1,
+            env_indices=~tensordict_t_plus_1.get("done"),
+            is_last=is_last,
         )
 
         if return_black_transitions:
@@ -254,10 +265,18 @@ class GomokuEnv:
         tensordict_t = self.reset()
 
         tensordict_t_minus_1.update(
-            {"done": torch.ones(self.num_envs, dtype=torch.bool, device=self.device)}
+            {
+                "done": torch.ones(self.num_envs, dtype=torch.bool, device=self.device),
+                "win": torch.zeros(self.num_envs, dtype=torch.bool, device=self.device),
+            }
         )  # here we set it to True
         tensordict_t.update(
-            {"done": torch.zeros(self.num_envs, dtype=torch.bool, device=self.device)}
+            {
+                "done": torch.zeros(
+                    self.num_envs, dtype=torch.bool, device=self.device
+                ),
+                "win": torch.zeros(self.num_envs, dtype=torch.bool, device=self.device),
+            }
         )
 
         buffer_size = rounds * self.num_envs
@@ -266,7 +285,7 @@ class GomokuEnv:
         if return_black_transitions:
             buffer_black = TensorDictReplayBuffer(
                 storage=LazyTensorStorage(max_size=buffer_size, device=buffer_device),
-                sampler=SamplerWithoutReplacement(drop_last=True),
+                sampler=SequentialSampler(drop_last=True),
                 batch_size=buffer_batch_size,
             )
         else:
@@ -274,7 +293,7 @@ class GomokuEnv:
         if return_white_transitions:
             buffer_white = TensorDictReplayBuffer(
                 storage=LazyTensorStorage(max_size=buffer_size, device=buffer_device),
-                sampler=SamplerWithoutReplacement(drop_last=True),
+                sampler=SequentialSampler(drop_last=True),
                 batch_size=buffer_batch_size,
             )
         else:
@@ -293,6 +312,7 @@ class GomokuEnv:
                 player_white,
                 return_black_transitions,
                 return_white_transitions,
+                is_last=i == rounds - 1,
             )
 
             if augment:
@@ -362,10 +382,18 @@ class GomokuEnv:
         tensordict_t = self.reset()
 
         tensordict_t_minus_1.update(
-            {"done": torch.ones(self.num_envs, dtype=torch.bool, device=self.device)}
+            {
+                "done": torch.ones(self.num_envs, dtype=torch.bool, device=self.device),
+                "win": torch.zeros(self.num_envs, dtype=torch.bool, device=self.device),
+            }
         )  # here we set it to True
         tensordict_t.update(
-            {"done": torch.zeros(self.num_envs, dtype=torch.bool, device=self.device)}
+            {
+                "done": torch.zeros(
+                    self.num_envs, dtype=torch.bool, device=self.device
+                ),
+                "win": torch.zeros(self.num_envs, dtype=torch.bool, device=self.device),
+            }
         )
 
         for i in range(rounds):
@@ -381,6 +409,7 @@ class GomokuEnv:
                 player_white,
                 return_black_transitions,
                 not return_black_transitions,
+                is_last=i == rounds - 1,
             )
 
             if augment:
@@ -414,7 +443,7 @@ class GomokuEnv:
             buffer_size *= n_augment
         buffer = TensorDictReplayBuffer(
             storage=LazyTensorStorage(max_size=buffer_size, device=buffer_device),
-            sampler=SamplerWithoutReplacement(drop_last=True),
+            sampler=SequentialSampler(drop_last=True),
             batch_size=buffer_batch_size,
         )
 
