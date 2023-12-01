@@ -107,7 +107,7 @@ class PPOPolicy(Policy):
         losses = []
         for _ in range(self.ppo_epoch):
             for minibatch in data:
-                minibatch = minibatch.to(self.device)
+                minibatch: TensorDict = minibatch.to(self.device)
                 with torch.no_grad():
                     self.advantage_module(minibatch)
                 loss_vals = self.loss_module(minibatch)

@@ -21,6 +21,11 @@ class Runner(abc.ABC):
             board_size=cfg.board_size,
             device=cfg.device,
         )
+        self.eval_env = GomokuEnv(
+            num_envs=4096,
+            board_size=cfg.board_size,
+            device=cfg.device,
+        )
         seed = cfg.get("seed", None)
         set_seed(seed)
 
@@ -115,6 +120,11 @@ class SPRunner(abc.ABC):
 
         self.env = GomokuEnv(
             num_envs=cfg.num_envs,
+            board_size=cfg.board_size,
+            device=cfg.device,
+        )
+        self.eval_env = GomokuEnv(
+            num_envs=4096,
             board_size=cfg.board_size,
             device=cfg.device,
         )

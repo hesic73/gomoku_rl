@@ -1,5 +1,7 @@
 # Gomoku RL
 
+**Note: The project is currently under development and I am addressing issues with the implementation of PPO.**
+
 **Note: although AI has learned complex strategies, it is still difficult to defeat humans at present.  In the first screenshot, humans defeated AI, while in the second screenshot, humans lost to AI.**
 
 ![](/images/lose1.gif)

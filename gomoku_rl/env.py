@@ -38,16 +38,14 @@ def make_transition(
         "action_mask",
         "action",
         "sample_log_prob",
+        "state_value",
         strict=False,
     )
-    next_observation: torch.Tensor = tensordict_t_plus_1["observation"]  # .clone()
-    next_action_mask: torch.Tensor = tensordict_t_plus_1["action_mask"]  # .clone()
     transition.set(
         "next",
-        {
-            "observation": next_observation,
-            "action_mask": next_action_mask,
-        },
+        tensordict_t_plus_1.select(
+            "observation", "action_mask", "state_value", strict=False
+        ),
     )
     transition.set(("next", "reward"), reward)
     done = tensordict_t_plus_1["done"] | tensordict_t["done"]
@@ -411,7 +409,6 @@ class GomokuEnv:
                 not return_black_transitions,
                 is_last=i == rounds - 1,
             )
-
             if augment:
                 if return_black_transitions:
                     transition_black = augment_transition(

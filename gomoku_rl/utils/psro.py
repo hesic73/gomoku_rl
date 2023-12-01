@@ -279,28 +279,6 @@ def get_new_payoffs_sp(
         new_payoffs[i, -1] = wr_1 + wr_2 - 1
         new_payoffs[-1, i] = -new_payoffs[i, -1]
 
-    # for i in range(n):
-    #     with population.fixed_behavioural_strategy(index=n - 1):
-    #         player_i = population.make_behavioural_strategy(index=i)
-    #         wr = eval_win_rate(
-    #             env=env,
-    #             player_black=player_i,
-    #             player_white=population,
-    #             n=2,
-    #         )
-    #     new_payoffs[i, -1] = 2 * wr - 1
-
-    # for i in range(n - 1):
-    #     with population.fixed_behavioural_strategy(index=n - 1):
-    #         player_i = population.make_behavioural_strategy(index=i)
-    #         wr = eval_win_rate(
-    #             env=env,
-    #             player_black=population,
-    #             player_white=player_i,
-    #             n=2,
-    #         )
-    #     new_payoffs[-1, i] = 2 * wr - 1
-
     return new_payoffs
 
 
