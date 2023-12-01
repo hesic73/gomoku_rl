@@ -250,8 +250,7 @@ class PSROSPRunner(SPRunner):
 
     def _epoch(self, epoch: int) -> dict[str, Any]:
         self.population.sample(self.meta_policy)
-        info:dict[str,Any]={}
-        data, _info = self.env.rollout_fixed_opponent(
+        data, info = self.env.rollout_fixed_opponent(
             rounds=self.rounds,
             player=self.policy,
             opponent=self.population,
