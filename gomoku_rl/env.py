@@ -430,7 +430,13 @@ class GomokuEnv:
             augment=augment,
             n_augment=n_augment,
         )
-        info.update(add_prefix(info_buffer, "train/player_black_"))
+
+        info.update(
+            {
+                "train/player_black_win": info_buffer["black_win"],
+                "train/player_black_episode_len": info_buffer["episode_len"],
+            }
+        )
         info_buffer.clear()
         self._post_step = get_log_func(info_buffer)
         self._rollout_fixed_opponent(
@@ -444,6 +450,11 @@ class GomokuEnv:
         )
         end = time.perf_counter()
         self._fps = (2 * rounds * 2 * self.num_envs) / (end - start)
-        info.update(add_prefix(info_buffer, "train/player_white_"))
+        info.update(
+            {
+                "train/player_white_win": info_buffer["white_win"],
+                "train/player_white_episode_len": info_buffer["episode_len"],
+            }
+        )
         self._post_step = None
         return buffer, info
