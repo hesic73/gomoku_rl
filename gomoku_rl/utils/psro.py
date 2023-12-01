@@ -16,10 +16,10 @@ import logging
 class ConvergedIndicator:
     def __init__(
         self,
-        max_size: int = 10,
+        max_size: int = 15,
         mean_threshold: float = 0.99,
         std_threshold: float = 0.005,
-        min_iter_steps: int = 20,
+        min_iter_steps: int = 25,
         max_iter_steps: int = 300,
     ) -> None:
         self.win_rates = []
@@ -67,6 +67,8 @@ class Population:
         os.makedirs(self.dir, exist_ok=True)
         self._module_cnt = 0
         self._module = None  # assume all modules are homogeneous
+        # used in `make_behavioural_strategy` to avoid calling 'copy.deepcopy' multiple times
+        self._module_backup = None
         self._idx = -1
         self.device = device
         # this should be deterministic, as PSRO requires pure strategies. But it seems it easily overfits
@@ -134,22 +136,28 @@ class Population:
 
     def make_behavioural_strategy(self, index: int) -> _policy_t:
         """
-        clone the module, load the strategy's `state_dict` and return it, which can be expensive
+        **share _module_backup!!!**
+        ```
+        s1=population.make_behavioural_strategy(0)
+        s2=population.make_behavioural_strategy(1)
+        then s1 and s2 are the same strategy!!!
+        ```
         """
         if not isinstance(self.policy_sets[index], int):
             return self.policy_sets[index]
 
-        assert self._module is not None
-        _module = copy.deepcopy(self._module)
-        _module.load_state_dict(
+        if self._module_backup is None:
+            self._module_backup = copy.deepcopy(self._module)
+
+        self._module_backup.load_state_dict(
             torch.load(os.path.join(self.dir, f"{self.policy_sets[index]}.pt"))
         )
-        _module.eval()
+        self._module_backup.eval()
 
         def _strategy(tensordict: TensorDict) -> TensorDict:
             tensordict = tensordict.to(self.device)
             with set_interaction_type(type=InteractionType.RANDOM):
-                return _module(tensordict)
+                return self._module_backup(tensordict)
 
         return _strategy
 
@@ -257,15 +265,25 @@ def get_new_payoffs_sp(
 
     for i in range(n):
         with population.fixed_behavioural_strategy(index=n - 1):
-            player_white = population.make_behavioural_strategy(index=i)
+            player_i = population.make_behavioural_strategy(index=i)
+            wr = eval_win_rate(
+                env=env,
+                player_black=player_i,
+                player_white=population,
+                n=2,
+            )
+        new_payoffs[i, -1] = 2 * wr - 1
+
+    for i in range(n - 1):
+        with population.fixed_behavioural_strategy(index=n - 1):
+            player_i = population.make_behavioural_strategy(index=i)
             wr = eval_win_rate(
                 env=env,
                 player_black=population,
-                player_white=player_white,
+                player_white=player_i,
                 n=2,
             )
         new_payoffs[-1, i] = 2 * wr - 1
-        new_payoffs[i, -1] = 1 - 2 * wr
 
     return new_payoffs
 
@@ -284,11 +302,7 @@ def solve_nash(payoffs: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
     try:
         return list(eqs)[0]
     except IndexError:
-        logging.warning("solve_nash failed. Return uniform meta strategies.")
-        return (
-            np.ones(shape=payoffs.shape[0]) / payoffs.shape[0],
-            np.ones(shape=payoffs.shape[1]) / payoffs.shape[1],
-        )
+        logging.error("solve_nash failed.")
 
 
 def solve_uniform(payoffs: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
