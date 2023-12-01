@@ -22,11 +22,11 @@ def get_log_func(info: Dict):
     meters = defaultdict(lambda: Mean())
 
     def _fun(tensordict: TensorDict) -> None:
-        done: torch.Tensor = tensordict.get("done")
-        if not done.any():
+        win: torch.Tensor = tensordict.get("win")
+        if not win.any():
             return
 
-        stats_td: TensorDict = tensordict.get("stats")[done]
+        stats_td: TensorDict = tensordict.get("stats")[win]
         for key in stats_td.keys():
             meters[key].update(stats_td[key])
             info[key] = meters[key].value
