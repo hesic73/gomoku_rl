@@ -6,6 +6,14 @@ import torch
 import random
 import numpy as np
 from tqdm import tqdm
+import enum
+
+
+class Type(enum.Enum):
+    black = enum.auto()
+    white = enum.auto()
+    mixed = enum.auto()
+
 
 EPS: float = 1e-8
 
@@ -19,22 +27,17 @@ def assert_tensor_1d_all(t: torch.Tensor):
         raise e
 
 
-def assert_observation(observation: torch.Tensor, black: bool = True):
+def assert_observation(observation: torch.Tensor, type: Type):
     assert not ((observation[:, 0] > EPS) & (observation[:, 1] > EPS)).any()
-    if black:
-        assert_tensor_1d_all(
-            (
-                (observation[:, 0] > EPS).long().sum(-1).sum(-1)
-                == (observation[:, 1] > EPS).long().sum(-1).sum(-1)
-            )
-        )
-    else:
-        assert_tensor_1d_all(
-            (
-                (observation[:, 0] > EPS).long().sum(-1).sum(-1) + 1
-                == (observation[:, 1] > EPS).long().sum(-1).sum(-1)
-            )
-        )
+    tmp = (observation[:, 0] > EPS).long().sum(-1).sum(-1) - (
+        observation[:, 1] > EPS
+    ).long().sum(-1).sum(-1)
+    if type == Type.black:
+        assert_tensor_1d_all(tmp == 0)
+    elif type == Type.white:
+        assert_tensor_1d_all(tmp == -1)
+    elif type == Type.mixed:
+        assert_tensor_1d_all((tmp == 0) | (tmp == -1))
 
 
 def assert_layer_transition(
@@ -47,15 +50,15 @@ def assert_layer_transition(
     )
 
 
-def assert_transition(tensordict: TensorDict, black: bool = True):
+def assert_transition(tensordict: TensorDict, type: Type):
     assert no_nan_in_tensordict(tensordict)
     done: torch.Tensor = tensordict["next", "done"]
     action: torch.Tensor = tensordict["action"]
     observation: torch.Tensor = tensordict["observation"]  # (E,3,B,B)
     next_observation: torch.Tensor = tensordict["next", "observation"]
 
-    assert_observation(observation, black=black)
-    assert_observation(next_observation[~done], black=black)
+    assert_observation(observation, type=type)
+    assert_observation(next_observation[~done], type=type)
 
     assert_layer_transition(observation[:, 0], next_observation[:, 0], done)
     assert_layer_transition(observation[:, 1], next_observation[:, 1], done)
@@ -86,14 +89,24 @@ def main():
         100,
         player_black=uniform_policy,
         player_white=uniform_policy,
+        buffer_batch_size=num_envs,
         augment=False,
     )
     print(f"FPS:{env._fps:.2e}")
     for transition in tqdm(transitions_black, total=len(transitions_black) // num_envs):
-        assert_transition(transition, black=True)
+        assert_transition(transition, type=Type.black)
 
     for transition in tqdm(transitions_white, total=len(transitions_white) // num_envs):
-        assert_transition(transition, black=False)
+        assert_transition(transition, type=Type.white)
+
+    transitions, info = env.rollout_fixed_opponent(
+        100,
+        player=uniform_policy,
+        opponent=uniform_policy,
+        buffer_batch_size=num_envs,
+    )
+    for transition in tqdm(transitions, total=len(transitions) // num_envs):
+        assert_transition(transition, type=Type.mixed)
 
 
 if __name__ == "__main__":

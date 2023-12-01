@@ -16,7 +16,7 @@ from torchrl.data.tensor_specs import (
 import time
 from gomoku_rl.utils.policy import _policy_t
 from gomoku_rl.utils.augment import augment_transition
-from gomoku_rl.utils.misc import no_nan_in_tensordict
+from gomoku_rl.utils.misc import add_prefix
 from .core import Gomoku
 
 
@@ -236,27 +236,7 @@ class GomokuEnv:
             tensordict_t_plus_2,
         )
 
-    def _self_play_step(
-        self,
-        tensordict_t_minus_1: TensorDict,
-        tensordict_t: TensorDict,
-        player: _policy_t,
-    ):
-        with set_interaction_type(type=InteractionType.RANDOM):
-            tensordict_t = player(tensordict_t)
-        tensordict_t_plus_1 = self._step_and_maybe_reset(tensordict=tensordict_t)
-
-        transition = make_transition(
-            tensordict_t_minus_1, tensordict_t, tensordict_t_plus_1
-        )
-
-        return (
-            transition,
-            tensordict_t,
-            tensordict_t_plus_1,
-        )
-
-    @torch.no_grad
+    @torch.no_grad()
     def _rollout(
         self,
         rounds: int,
@@ -264,10 +244,12 @@ class GomokuEnv:
         player_white: _policy_t,
         buffer_batch_size: int,
         augment: bool = False,
+        n_augment: int = 8,
         return_black_transitions: bool = True,
         return_white_transitions: bool = True,
         buffer_device="cpu",
     ):
+        assert 1 < n_augment <= 8
         tensordict_t_minus_1 = self.reset()
         tensordict_t = self.reset()
 
@@ -280,7 +262,7 @@ class GomokuEnv:
 
         buffer_size = rounds * self.num_envs
         if augment:
-            buffer_size *= 8
+            buffer_size *= n_augment
         if return_black_transitions:
             buffer_black = TensorDictReplayBuffer(
                 storage=LazyTensorStorage(max_size=buffer_size, device=buffer_device),
@@ -315,12 +297,12 @@ class GomokuEnv:
 
             if augment:
                 transition_black = (
-                    augment_transition(transition_black)
+                    augment_transition(transition_black, n_augment=n_augment)
                     if return_black_transitions
                     else transition_black
                 )
                 transition_white = (
-                    augment_transition(transition_white)
+                    augment_transition(transition_white, n_augment=n_augment)
                     if return_white_transitions and len(transition_white) > 0
                     else transition_white
                 )
@@ -338,6 +320,7 @@ class GomokuEnv:
         player_white: _policy_t,
         buffer_batch_size: int,
         augment: bool = False,
+        n_augment: int = 8,
         return_black_transitions: bool = True,
         return_white_transitions: bool = True,
         buffer_device="cpu",
@@ -352,6 +335,7 @@ class GomokuEnv:
             player_white=player_white,
             buffer_batch_size=buffer_batch_size,
             augment=augment,
+            n_augment=n_augment,
             return_black_transitions=return_black_transitions,
             return_white_transitions=return_white_transitions,
             buffer_device=buffer_device,
@@ -362,63 +346,103 @@ class GomokuEnv:
         self._post_step = None
         return buffer_black, buffer_white, info
 
-    @torch.no_grad
-    def _self_play_rollout(
+    @torch.no_grad()
+    def _rollout_fixed_opponent(
         self,
-        steps: int,
-        player: _policy_t,
+        buffer: TensorDictReplayBuffer,
+        rounds: int,
+        player_black: _policy_t,
+        player_white: _policy_t,
+        return_black_transitions: bool,
         augment: bool = False,
-    ) -> TensorDictReplayBuffer:
+        n_augment: int = 8,
+    ):
         tensordict_t_minus_1 = self.reset()
-        with set_interaction_type(type=InteractionType.RANDOM):
-            tensordict_t_minus_1 = player(tensordict_t_minus_1)
-        tensordict_t = self._step(tensordict_t_minus_1)
+        tensordict_t = self.reset()
 
-        buffer_size = steps * self.num_envs
-        if augment:
-            buffer_size *= 8
-
-        buffer = TensorDictReplayBuffer(
-            storage=LazyTensorStorage(max_size=buffer_size),
-            sampler=SamplerWithoutReplacement(drop_last=True),
-            batch_size=self.num_envs,
+        tensordict_t_minus_1.update(
+            {"done": torch.ones(self.num_envs, dtype=torch.bool, device=self.device)}
+        )  # here we set it to True
+        tensordict_t.update(
+            {"done": torch.zeros(self.num_envs, dtype=torch.bool, device=self.device)}
         )
 
-        for i in range(steps - 1):
+        for i in range(rounds):
             (
-                transition,
+                transition_black,
+                transition_white,
                 tensordict_t_minus_1,
                 tensordict_t,
-            ) = self._self_play_step(
+            ) = self._round(
                 tensordict_t_minus_1,
                 tensordict_t,
-                player,
+                player_black,
+                player_white,
+                return_black_transitions,
+                not return_black_transitions,
             )
 
             if augment:
-                transition = augment_transition(transition)
+                if return_black_transitions:
+                    transition_black = augment_transition(
+                        transition_black, n_augment=n_augment
+                    )
+                elif len(transition_white) > 0:
+                    transition_white = augment_transition(
+                        transition_white, n_augment=n_augment
+                    )
+            if return_black_transitions:
+                buffer.extend(transition_black.to(buffer._storage.device))
+            elif len(transition_white) > 0:
+                buffer.extend(transition_white.to(buffer._storage.device))
 
-            buffer.extend(transition.cpu())
-
-        return buffer
-
-    def self_play_rollout(
+    def rollout_fixed_opponent(
         self,
-        steps: int,
+        rounds: int,
         player: _policy_t,
+        opponent: _policy_t,
+        buffer_batch_size: int,
         augment: bool = False,
-    ) -> tuple[TensorDictReplayBuffer, defaultdict[str, float]]:
+        n_augment: int = 8,
+        buffer_device="cpu",
+    ):
         info: defaultdict[str, float] = defaultdict(float)
-        self._post_step = get_log_func(info)
+
+        buffer_size = 2 * rounds * self.num_envs
+        if augment:
+            buffer_size *= n_augment
+        buffer = TensorDictReplayBuffer(
+            storage=LazyTensorStorage(max_size=buffer_size, device=buffer_device),
+            sampler=SamplerWithoutReplacement(drop_last=True),
+            batch_size=buffer_batch_size,
+        )
 
         start = time.perf_counter()
-        r = self._self_play_rollout(
-            steps=steps,
-            player=player,
+        info_buffer = defaultdict(float)
+        self._post_step = get_log_func(info_buffer)
+        self._rollout_fixed_opponent(
+            buffer=buffer,
+            rounds=rounds,
+            player_black=player,
+            player_white=opponent,
+            return_black_transitions=True,
             augment=augment,
+            n_augment=n_augment,
+        )
+        info.update(add_prefix(info_buffer, "player_black_"))
+        info_buffer.clear()
+        self._post_step = get_log_func(info_buffer)
+        self._rollout_fixed_opponent(
+            buffer=buffer,
+            rounds=rounds,
+            player_black=opponent,
+            player_white=player,
+            return_black_transitions=False,
+            augment=augment,
+            n_augment=n_augment,
         )
         end = time.perf_counter()
-        self._fps = (steps * self.num_envs) / (end - start)
-
+        self._fps = (2 * rounds * 2 * self.num_envs) / (end - start)
+        info.update(add_prefix(info_buffer, "player_white_"))
         self._post_step = None
-        return r, info
+        return buffer, info

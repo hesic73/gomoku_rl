@@ -86,6 +86,11 @@ class PSRORunner(Runner):
             return super()._get_baseline()
 
     def _epoch(self, epoch: int) -> dict[str, Any]:
+        if self.learning_player_id == 0:
+            self.player_1.sample()
+        else:
+            self.player_0.sample()
+
         data_0, data_1, info = self.env.rollout(
             rounds=self.rounds,
             player_black=self.player_0,
@@ -96,6 +101,18 @@ class PSRORunner(Runner):
             return_white_transitions=self.learning_player_id != 0,
             buffer_device=self.cfg.get("buffer_device", "cpu"),
         )
+
+        info.update(
+            {
+                "pure_strategy_0": self.player_0.population._idx
+                if self.learning_player_id == 1
+                else -1,
+                "pure_strategy_1": self.player_1.population._idx
+                if self.learning_player_id == 0
+                else -1,
+            }
+        )
+
         if self.learning_player_id == 0:
             info.update(add_prefix(self.policy_black.learn(data_0), "black/"))
             del data_0
@@ -240,7 +257,78 @@ class PSROSPRunner(SPRunner):
             return super()._get_baseline()
 
     def _epoch(self, epoch: int) -> dict[str, Any]:
-        raise NotImplementedError()
+        data, info = self.env.rollout_fixed_opponent(
+            rounds=self.rounds,
+            player=self.policy,
+            opponent=self.population,
+            buffer_batch_size=self.cfg.get("buffer_batch_size", self.cfg.num_envs),
+            augment=self.cfg.get("augment", False),
+            n_augment=self.cfg.get("n_augment", 8),
+            buffer_device=self.cfg.get("buffer_device", "cpu"),
+        )
+        info.update(self.policy.learn(data))
+        del data
+
+        info.update(
+            {
+                "eval/player_vs_opponent": eval_win_rate(
+                    self.env, player_black=self.policy, player_white=self.population
+                ),
+                "eval/black_vs_baseline": eval_win_rate(
+                    self.env, player_black=self.policy_black, player_white=self.baseline
+                ),
+                "eval/white_vs_baseline": 1
+                - eval_win_rate(
+                    self.env, player_black=self.baseline, player_white=self.policy_white
+                ),
+            }
+        )
+
+        if epoch % 5:
+            print(
+                "Black vs White:{:.2f}%\tBlack vs baseline:{:.2f}%\tWhite vs baseline:{:.2f}%".format(
+                    info["eval/black_vs_white"] * 100,
+                    info["eval/black_vs_baseline"] * 100,
+                    info["eval/white_vs_baseline"] * 100,
+                )
+            )
+
+        self.converged_indicator.update(
+            info["eval/black_vs_white"]
+            if self.learning_player_id == 0
+            else (1 - info["eval/black_vs_white"])
+        )
+        if self.converged_indicator.converged():
+            self.converged_indicator.reset()
+            if self.learning_player_id == 0:
+                self.player_0.set_oracle_mode(False)
+                self.player_1.set_oracle_mode(True)
+            else:
+                self.player_1.set_oracle_mode(False)
+                self.player_0.set_oracle_mode(True)
+
+            self.learning_player_id = (self.learning_player_id + 1) % 2
+            logging.info(f"learning_player_id:{self.learning_player_id}")
+            if self.learning_player_id == self.cfg.get("first_id", 0):
+                self.player_0.add_current_policy()
+                self.player_1.add_current_policy()
+                self.payoffs = get_new_payoffs(
+                    env=self.env,
+                    population_0=self.player_0.population,
+                    population_1=self.player_1.population,
+                    old_payoffs=self.payoffs,
+                )
+                print_payoffs(self.payoffs)
+                meta_policy_0, meta_policy_1 = self.meta_solver(payoffs=self.payoffs)
+                logging.info(
+                    f"Meta Policy: Black {meta_policy_0}, White {meta_policy_1}"
+                )
+                self.player_0.set_meta_policy(meta_policy=meta_policy_0)
+                self.player_1.set_meta_policy(meta_policy=meta_policy_1)
+
+                logging.info(f"JPC:{calculate_jpc(self.payoffs+1)/2}")
+
+        return info
 
     def _post_run(self):
         wandb.log(

@@ -21,11 +21,10 @@ std_threshold: 0.005
 min_iter_steps: 20
 max_iter_steps: 300
 
-# black_checkpoint: pretrained_models/${board_size}_${board_size}/0.pt
-# white_checkpoint: pretrained_models/${board_size}_${board_size}/0.pt
+# checkpoint: pretrained_models/${board_size}_${board_size}/0.pt
 
 wandb:
-  group: ${board_size}_${board_size}
+  group: sp_${board_size}_${board_size}
   project: gomoku_rl
   mode: online # set to 'disabled' when debugging locally
 

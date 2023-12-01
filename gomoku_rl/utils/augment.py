@@ -1,6 +1,7 @@
 import torch
 import abc
 from tensordict import TensorDict
+import random
 
 
 class Transform(abc.ABC):
@@ -224,9 +225,10 @@ def get_augmented_transition(
         return tmp
 
 
-def augment_transition(transition: TensorDict) -> TensorDict:
+def augment_transition(transition: TensorDict, n_augment: int) -> TensorDict:
     tmp = [transition]
-    for t in _TRANSFORMS[1:]:
+    transforms = random.sample(_TRANSFORMS[1:], k=n_augment - 1)
+    for t in transforms:
         tmp.append(get_augmented_transition(transition, t))
 
     transition = torch.stack(tmp).reshape(-1)

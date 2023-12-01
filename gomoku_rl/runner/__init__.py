@@ -1,1 +1,1 @@
-from .psro_runner import PSRORunner
+from .psro_runner import PSRORunner,PSROSPRunner
