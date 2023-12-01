@@ -13,6 +13,7 @@ from gomoku_rl.utils.psro import (
     Population,
     PSROPolicyWrapper,
     get_new_payoffs,
+    get_new_payoffs_sp,
     get_meta_solver,
     calculate_jpc,
     print_payoffs,
@@ -90,7 +91,6 @@ class PSRORunner(Runner):
             self.player_1.sample()
         else:
             self.player_0.sample()
-
         data_0, data_1, info = self.env.rollout(
             rounds=self.rounds,
             player_black=self.player_0,
@@ -134,15 +134,6 @@ class PSRORunner(Runner):
                 ),
             }
         )
-
-        if epoch % 5:
-            print(
-                "Black vs White:{:.2f}%\tBlack vs baseline:{:.2f}%\tWhite vs baseline:{:.2f}%".format(
-                    info["eval/black_vs_white"] * 100,
-                    info["eval/black_vs_baseline"] * 100,
-                    info["eval/white_vs_baseline"] * 100,
-                )
-            )
 
         self.converged_indicator.update(
             info["eval/black_vs_white"]
@@ -228,6 +219,7 @@ class PSROSPRunner(SPRunner):
             old_payoffs=None,
         )
         self.meta_solver = get_meta_solver(cfg.get("meta_solver", "uniform"))
+        self.meta_policy = None
 
     def _get_baseline(self) -> _policy_t:
         pretrained_dir = os.path.join(
@@ -257,7 +249,9 @@ class PSROSPRunner(SPRunner):
             return super()._get_baseline()
 
     def _epoch(self, epoch: int) -> dict[str, Any]:
-        data, info = self.env.rollout_fixed_opponent(
+        self.population.sample(self.meta_policy)
+        info:dict[str,Any]={}
+        data, _info = self.env.rollout_fixed_opponent(
             rounds=self.rounds,
             player=self.policy,
             opponent=self.population,
@@ -274,59 +268,43 @@ class PSROSPRunner(SPRunner):
                 "eval/player_vs_opponent": eval_win_rate(
                     self.env, player_black=self.policy, player_white=self.population
                 ),
-                "eval/black_vs_baseline": eval_win_rate(
-                    self.env, player_black=self.policy_black, player_white=self.baseline
+                "eval/opponent_vs_player": eval_win_rate(
+                    self.env, player_black=self.population, player_white=self.policy
                 ),
-                "eval/white_vs_baseline": 1
-                - eval_win_rate(
-                    self.env, player_black=self.baseline, player_white=self.policy_white
+                "eval/player_vs_baseline": eval_win_rate(
+                    self.env, player_black=self.policy, player_white=self.baseline
+                ),
+                "eval/baseline_vs_player": eval_win_rate(
+                    self.env, player_black=self.baseline, player_white=self.policy
                 ),
             }
         )
 
-        if epoch % 5:
-            print(
-                "Black vs White:{:.2f}%\tBlack vs baseline:{:.2f}%\tWhite vs baseline:{:.2f}%".format(
-                    info["eval/black_vs_white"] * 100,
-                    info["eval/black_vs_baseline"] * 100,
-                    info["eval/white_vs_baseline"] * 100,
-                )
-            )
-
-        self.converged_indicator.update(
-            info["eval/black_vs_white"]
-            if self.learning_player_id == 0
-            else (1 - info["eval/black_vs_white"])
+        alpha = 0.5
+        weighted_wr = alpha * info["eval/player_vs_opponent"] + (1 - alpha) * (
+            1 - info["eval/opponent_vs_player"]
         )
+        info.update(
+            {"weighted_win_rate": weighted_wr, "pure_strategy": self.population._idx}
+        )
+
+        self.converged_indicator.update(weighted_wr)
         if self.converged_indicator.converged():
             self.converged_indicator.reset()
-            if self.learning_player_id == 0:
-                self.player_0.set_oracle_mode(False)
-                self.player_1.set_oracle_mode(True)
-            else:
-                self.player_1.set_oracle_mode(False)
-                self.player_0.set_oracle_mode(True)
+            _policy = copy.deepcopy(self.policy)
+            _policy.eval()
+            self.population.add(_policy)
 
-            self.learning_player_id = (self.learning_player_id + 1) % 2
-            logging.info(f"learning_player_id:{self.learning_player_id}")
-            if self.learning_player_id == self.cfg.get("first_id", 0):
-                self.player_0.add_current_policy()
-                self.player_1.add_current_policy()
-                self.payoffs = get_new_payoffs(
-                    env=self.env,
-                    population_0=self.player_0.population,
-                    population_1=self.player_1.population,
-                    old_payoffs=self.payoffs,
-                )
-                print_payoffs(self.payoffs)
-                meta_policy_0, meta_policy_1 = self.meta_solver(payoffs=self.payoffs)
-                logging.info(
-                    f"Meta Policy: Black {meta_policy_0}, White {meta_policy_1}"
-                )
-                self.player_0.set_meta_policy(meta_policy=meta_policy_0)
-                self.player_1.set_meta_policy(meta_policy=meta_policy_1)
-
-                logging.info(f"JPC:{calculate_jpc(self.payoffs+1)/2}")
+            self.payoffs = get_new_payoffs_sp(
+                env=self.env,
+                population=self.population,
+                old_payoffs=self.payoffs,
+            )
+            print_payoffs(self.payoffs)
+            meta_policy_0, meta_policy_1 = self.meta_solver(payoffs=self.payoffs)
+            logging.info(f"Meta Policy: {meta_policy_0}, {meta_policy_1}")
+            self.meta_policy = meta_policy_0
+            logging.info(f"JPC:{calculate_jpc(self.payoffs+1)/2}")
 
         return info
 
@@ -342,10 +320,11 @@ class PSROSPRunner(SPRunner):
     def _log(self, info: dict[str, Any], epoch: int):
         if epoch % 5 == 0:
             print(
-                "Black vs White:{:.2f}%\tBlack vs baseline:{:.2f}%\tWhite vs baseline:{:.2f}%".format(
-                    info["eval/black_vs_white"] * 100,
-                    info["eval/black_vs_baseline"] * 100,
-                    info["eval/white_vs_baseline"] * 100,
+                "Player vs Opponent:{:.2f}%\tOpponent vs Player:{:.2f}%\tPlayer vs Baseline:{:.2f}%\tBaseline vs Player:{:.2f}%".format(
+                    info["eval/player_vs_opponent"] * 100,
+                    info["eval/opponent_vs_player"] * 100,
+                    info["eval/player_vs_baseline"] * 100,
+                    info["eval/baseline_vs_player"] * 100,
                 )
             )
         return super()._log(info, epoch)

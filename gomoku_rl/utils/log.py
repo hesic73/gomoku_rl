@@ -29,6 +29,6 @@ def get_log_func(info: Dict):
         stats_td: TensorDict = tensordict.get("stats")[done]
         for key in stats_td.keys():
             meters[key].update(stats_td[key])
-            info[f"train/{key}"] = meters[key].value
+            info[key] = meters[key].value
 
     return _fun

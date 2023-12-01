@@ -67,7 +67,7 @@ class Population:
         os.makedirs(self.dir, exist_ok=True)
         self._module_cnt = 0
         self._module = None  # assume all modules are homogeneous
-        self._idx = 0
+        self._idx = -1
         self.device = device
         # this should be deterministic, as PSRO requires pure strategies. But it seems it easily overfits
         self._interaction_type = InteractionType.MODE
@@ -98,6 +98,10 @@ class Population:
         self._module_cnt += 1
 
     def _set_policy(self, index: int):
+        if self._idx == index:
+            return
+
+        self._idx = index
         if not isinstance(self.policy_sets[index], int):
             self._func = self.policy_sets[index]
         else:
@@ -109,8 +113,7 @@ class Population:
             self._func = self._module
 
     def sample(self, meta_policy: np.ndarray | None = None):
-        self._idx = np.random.choice(len(self.policy_sets), p=meta_policy)
-        self._set_policy(self._idx)
+        self._set_policy(np.random.choice(len(self.policy_sets), p=meta_policy))
 
     def __call__(self, tensordict: TensorDict) -> TensorDict:
         tensordict = tensordict.to(self.device)
@@ -128,6 +131,27 @@ class Population:
         self._idx = _idx
         self._set_policy(self._idx)
         self._interaction_type = _interaction_type
+
+    def make_behavioural_strategy(self, index: int) -> _policy_t:
+        """
+        clone the module, load the strategy's `state_dict` and return it, which can be expensive
+        """
+        if not isinstance(self.policy_sets[index], int):
+            return self.policy_sets[index]
+
+        assert self._module is not None
+        _module = copy.deepcopy(self._module)
+        _module.load_state_dict(
+            torch.load(os.path.join(self.dir, f"{self.policy_sets[index]}.pt"))
+        )
+        _module.eval()
+
+        def _strategy(tensordict: TensorDict) -> TensorDict:
+            tensordict = tensordict.to(self.device)
+            with set_interaction_type(type=InteractionType.RANDOM):
+                return _module(tensordict)
+
+        return _strategy
 
 
 class PSROPolicyWrapper:
@@ -173,70 +197,6 @@ class PSROPolicyWrapper:
             self.policy.train()
 
 
-def payoffs_append_row(
-    env,
-    population_0: Population,
-    population_1: Population,
-    old_payoffs: np.ndarray | None,
-):
-    assert len(population_0) == len(population_1) + 1
-    if old_payoffs is not None:
-        assert (
-            len(old_payoffs.shape) == 2
-            and old_payoffs.shape[0] == old_payoffs.shape[1]
-            and old_payoffs.shape[0] == len(population_1)
-        )
-    new_payoffs = np.zeros(shape=(len(population_0), len(population_1)))
-    if old_payoffs is not None:
-        new_payoffs[:-1, :] = old_payoffs
-
-    with population_0.fixed_behavioural_strategy(index=-1):
-        for i in range(len(population_1)):
-            with population_1.fixed_behavioural_strategy(index=i):
-                wr = eval_win_rate(
-                    env=env,
-                    player_black=population_0,
-                    player_white=population_1,
-                    n=2,
-                )
-        new_payoffs[-1, i] = 2 * wr - 1
-
-    print(new_payoffs)
-    return new_payoffs
-
-
-def payoffs_append_col(
-    env,
-    population_0: Population,
-    population_1: Population,
-    old_payoffs: np.ndarray | None,
-):
-    assert len(population_0) == len(population_1)
-    if old_payoffs is not None:
-        assert (
-            len(old_payoffs.shape) == 2
-            and old_payoffs.shape[0] == old_payoffs.shape[1] + 1
-            and old_payoffs.shape[0] == len(population_0)
-        )
-    new_payoffs = np.zeros(shape=(len(population_0), len(population_0)))
-    if old_payoffs is not None:
-        new_payoffs[:, :-1] = old_payoffs
-
-    with population_1.fixed_behavioural_strategy(index=-1):
-        for i in range(len(population_0)):
-            with population_0.fixed_behavioural_strategy(index=i):
-                wr = eval_win_rate(
-                    env=env,
-                    player_black=population_0,
-                    player_white=population_1,
-                    n=2,
-                )
-        new_payoffs[i, -1] = 2 * wr - 1
-
-    print(new_payoffs)
-    return new_payoffs
-
-
 def get_new_payoffs(
     env,
     population_0: Population,
@@ -254,6 +214,7 @@ def get_new_payoffs(
     new_payoffs = np.zeros(shape=(n, n))
     if old_payoffs is not None:
         new_payoffs[:-1, :-1] = old_payoffs
+
     for i in range(n):
         with population_0.fixed_behavioural_strategy(index=n - 1):
             with population_1.fixed_behavioural_strategy(index=i):
@@ -275,6 +236,37 @@ def get_new_payoffs(
                     n=2,
                 )
         new_payoffs[i, -1] = 2 * wr - 1
+    return new_payoffs
+
+
+def get_new_payoffs_sp(
+    env,
+    population: Population,
+    old_payoffs: np.ndarray | None,
+):
+    n = len(population)
+    if old_payoffs is not None:
+        assert (
+            len(old_payoffs.shape) == 2
+            and old_payoffs.shape[0] == old_payoffs.shape[1]
+            and old_payoffs.shape[0] + 1 == n
+        )
+    new_payoffs = np.zeros(shape=(n, n))
+    if old_payoffs is not None:
+        new_payoffs[:-1, :-1] = old_payoffs
+
+    for i in range(n):
+        with population.fixed_behavioural_strategy(index=n - 1):
+            player_white = population.make_behavioural_strategy(index=i)
+            wr = eval_win_rate(
+                env=env,
+                player_black=population,
+                player_white=player_white,
+                n=2,
+            )
+        new_payoffs[-1, i] = 2 * wr - 1
+        new_payoffs[i, -1] = 1 - 2 * wr
+
     return new_payoffs
 
 

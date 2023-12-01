@@ -326,7 +326,8 @@ class GomokuEnv:
         buffer_device="cpu",
     ):
         info: defaultdict[str, float] = defaultdict(float)
-        self._post_step = get_log_func(info)
+        info_buffer = defaultdict(float)
+        self._post_step = get_log_func(info_buffer)
 
         start = time.perf_counter()
         buffer_black, buffer_white = self._rollout(
@@ -342,7 +343,7 @@ class GomokuEnv:
         )
         end = time.perf_counter()
         self._fps = (rounds * 2 * self.num_envs) / (end - start)
-
+        info.update(add_prefix(info_buffer, "train/"))
         self._post_step = None
         return buffer_black, buffer_white, info
 
@@ -429,7 +430,7 @@ class GomokuEnv:
             augment=augment,
             n_augment=n_augment,
         )
-        info.update(add_prefix(info_buffer, "player_black_"))
+        info.update(add_prefix(info_buffer, "train/player_black_"))
         info_buffer.clear()
         self._post_step = get_log_func(info_buffer)
         self._rollout_fixed_opponent(
@@ -443,6 +444,6 @@ class GomokuEnv:
         )
         end = time.perf_counter()
         self._fps = (2 * rounds * 2 * self.num_envs) / (end - start)
-        info.update(add_prefix(info_buffer, "player_white_"))
+        info.update(add_prefix(info_buffer, "train/player_white_"))
         self._post_step = None
         return buffer, info
