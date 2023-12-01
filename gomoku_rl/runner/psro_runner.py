@@ -2,7 +2,7 @@ import logging
 from typing import Any
 from omegaconf import DictConfig
 
-from gomoku_rl.utils.policy import _policy_t
+from gomoku_rl.utils.policy import _policy_t, uniform_policy
 from .base import Runner, SPRunner
 from gomoku_rl.utils.misc import get_kwargs, add_prefix
 from gomoku_rl.utils.visual import payoff_headmap
@@ -204,18 +204,20 @@ class PSROSPRunner(SPRunner):
             "max_iter_steps",
         )
         self.converged_indicator = ConvergedIndicator(**ci_kwargs)
-        _policy = copy.deepcopy(self.policy)
-        _policy.eval()
+        if self.cfg.get("checkpoint", None):
+            _policy = copy.deepcopy(self.policy)
+            _policy.eval()
+        else:
+            _policy = uniform_policy
         self.population = Population(
             initial_policy=_policy,
             dir=os.path.join(self.run_dir, "population"),
             device=cfg.device,
         )
 
-        self.payoffs = get_new_payoffs(
+        self.payoffs = get_new_payoffs_sp(
             env=self.env,
-            population_0=self.population,
-            population_1=self.population,
+            population=self.population,
             old_payoffs=None,
         )
         self.meta_solver = get_meta_solver(cfg.get("meta_solver", "uniform"))

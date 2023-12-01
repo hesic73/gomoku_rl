@@ -19,7 +19,7 @@ class ConvergedIndicator:
         max_size: int = 15,
         mean_threshold: float = 0.99,
         std_threshold: float = 0.005,
-        min_iter_steps: int = 25,
+        min_iter_steps: int = 20,
         max_iter_steps: int = 300,
     ) -> None:
         self.win_rates = []
@@ -263,27 +263,49 @@ def get_new_payoffs_sp(
     if old_payoffs is not None:
         new_payoffs[:-1, :-1] = old_payoffs
 
-    for i in range(n):
+    for i in range(n - 1):
         with population.fixed_behavioural_strategy(index=n - 1):
             player_i = population.make_behavioural_strategy(index=i)
-            wr = eval_win_rate(
+            wr_1 = eval_win_rate(
                 env=env,
                 player_black=player_i,
                 player_white=population,
                 n=2,
             )
-        new_payoffs[i, -1] = 2 * wr - 1
-
-    for i in range(n - 1):
-        with population.fixed_behavioural_strategy(index=n - 1):
-            player_i = population.make_behavioural_strategy(index=i)
-            wr = eval_win_rate(
+            wr_2 = 1 - eval_win_rate(
                 env=env,
                 player_black=population,
                 player_white=player_i,
                 n=2,
             )
-        new_payoffs[-1, i] = 2 * wr - 1
+
+        # the policy has 50% chance to play black and 50% chance to play white
+        # so the utility for it is 0.5*(win_rate_black+ win_rate_white)
+        # we transform it so that it's zero-sum
+        new_payoffs[i, -1] = wr_1 + wr_2 - 1
+        new_payoffs[-1, i] = -new_payoffs[i, -1]
+
+    # for i in range(n):
+    #     with population.fixed_behavioural_strategy(index=n - 1):
+    #         player_i = population.make_behavioural_strategy(index=i)
+    #         wr = eval_win_rate(
+    #             env=env,
+    #             player_black=player_i,
+    #             player_white=population,
+    #             n=2,
+    #         )
+    #     new_payoffs[i, -1] = 2 * wr - 1
+
+    # for i in range(n - 1):
+    #     with population.fixed_behavioural_strategy(index=n - 1):
+    #         player_i = population.make_behavioural_strategy(index=i)
+    #         wr = eval_win_rate(
+    #             env=env,
+    #             player_black=population,
+    #             player_white=player_i,
+    #             n=2,
+    #         )
+    #     new_payoffs[-1, i] = 2 * wr - 1
 
     return new_payoffs
 
