@@ -125,13 +125,11 @@ class Population:
     @contextlib.contextmanager
     def fixed_behavioural_strategy(self, index: int):
         _idx = self._idx
-        self._idx = index
-        self._set_policy(self._idx)
+        self._set_policy(index)
         _interaction_type = self._interaction_type
         self._interaction_type = InteractionType.RANDOM
         yield
-        self._idx = _idx
-        self._set_policy(self._idx)
+        self._set_policy(_idx)
         self._interaction_type = _interaction_type
 
     def make_behavioural_strategy(self, index: int) -> _policy_t:
@@ -230,7 +228,6 @@ def get_new_payoffs(
                     env=env,
                     player_black=population_0,
                     player_white=population_1,
-                    n=2,
                 )
         new_payoffs[-1, i] = 2 * wr - 1
 
@@ -241,7 +238,6 @@ def get_new_payoffs(
                     env=env,
                     player_black=population_0,
                     player_white=population_1,
-                    n=2,
                 )
         new_payoffs[i, -1] = 2 * wr - 1
     return new_payoffs
@@ -270,13 +266,11 @@ def get_new_payoffs_sp(
                 env=env,
                 player_black=player_i,
                 player_white=population,
-                n=2,
             )
             wr_2 = 1 - eval_win_rate(
                 env=env,
                 player_black=population,
                 player_white=player_i,
-                n=2,
             )
 
         # the policy has 50% chance to play black and 50% chance to play white
