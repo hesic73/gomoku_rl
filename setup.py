@@ -10,7 +10,7 @@ setup(
     install_requires=[
         "torch",
         "torchrl==0.2.1",
-        "nashpy",
+        "scipy",
         "omegaconf",
         "hydra-core",
         "tqdm",

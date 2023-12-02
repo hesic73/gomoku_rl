@@ -7,7 +7,7 @@ from torch.cuda import _device_t
 from gomoku_rl.policy import Policy
 import copy
 import contextlib
-import nashpy
+from scipy.optimize import linprog
 import os
 import torch
 import logging
@@ -28,7 +28,7 @@ class ConvergedIndicator:
         max_size: int = 15,
         mean_threshold: float = 0.99,
         std_threshold: float = 0.005,
-        min_iter_steps: int = 40,
+        min_iter_steps: int = 50,
         max_iter_steps: int = 300,
     ) -> None:
         self.win_rates = []
@@ -299,13 +299,26 @@ def print_payoffs(payoffs: np.ndarray):
 
 
 def solve_nash(payoffs: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
-    game = nashpy.Game(payoffs)
-    # print(game)
-    eqs = game.support_enumeration()
-    try:
-        return list(eqs)[0]
-    except IndexError:
-        logging.error("solve_nash failed.")
+    num_row, num_col = payoffs.shape
+    payoffs_row = payoffs - np.min(payoffs)
+    result_row = linprog(
+        c=np.ones(num_row),
+        A_ub=-payoffs_row.T,
+        b_ub=-np.ones(num_col),
+        bounds=[(0, None)] * num_row,
+    )
+    meta_strategy_row = result_row.x / np.sum(result_row.x)
+
+    payoffs_col = -payoffs - np.min(-payoffs)
+    result_col = linprog(
+        c=np.ones(num_col),
+        A_ub=-payoffs_col,
+        b_ub=-np.ones(num_row),
+        bounds=[(0, None)] * num_col,
+    )
+    meta_strategy_col = result_col.x / np.sum(result_col.x)
+
+    return meta_strategy_row, meta_strategy_col
 
 
 def solve_uniform(payoffs: np.ndarray) -> tuple[np.ndarray, np.ndarray]:

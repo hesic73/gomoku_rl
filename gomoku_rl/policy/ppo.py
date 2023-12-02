@@ -87,9 +87,9 @@ class PPOPolicy(Policy):
                 terminated=done,
                 time_dim=data.ndim - 1,
             )
+            loc = adv.mean()
+            scale = adv.std().clamp_min(1e-4)
             if self.average_gae:
-                loc = adv.mean()
-                scale = adv.std().clamp_min(1e-4)
                 adv = adv - loc
                 adv = adv / scale
 
@@ -106,8 +106,9 @@ class PPOPolicy(Policy):
         loss_critics = []
         loss_entropies = []
         losses = []
+        grad_norms = []
         for _ in range(self.ppo_epoch):
-            for minibatch in make_dataset_naive(data, num_minibatches=8):
+            for minibatch in make_dataset_naive(data, num_minibatches=16):
                 minibatch: TensorDict = minibatch.to(self.device)
                 loss_vals = self.loss_module(minibatch)
                 loss_value = (
@@ -121,16 +122,19 @@ class PPOPolicy(Policy):
                 losses.append(loss_value.clone().detach())
                 # Optimization: backward, grad clipping and optim step
                 loss_value.backward()
-                # this is not strictly mandatory but it's good practice to keep
-                # your gradient norm bounded
-                torch.nn.utils.clip_grad_norm_(
+
+                grad_norm = torch.nn.utils.clip_grad_norm_(
                     self.loss_module.parameters(), self.max_grad_norm
                 )
+                grad_norms.append(grad_norm.clone().detach())
                 self.optim.step()
                 self.optim.zero_grad()
 
         self.eval()
         return {
+            "advantage_meam": loc.item(),
+            "advantage_std": scale.item(),
+            "grad_norm": torch.stack(grad_norms).mean().item(),
             "loss": torch.stack(losses).mean().item(),
             "loss_objective": torch.stack(loss_objectives).mean().item(),
             "loss_critic": torch.stack(loss_critics).mean().item(),
