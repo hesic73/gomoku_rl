@@ -13,9 +13,8 @@ def main():
         batch_size=256,
         augment=False,
     )
-    for data in transitions_black:
-        print(data)
-        break
+
+    print(transitions_black)
 
     pprint(dict(info))
 

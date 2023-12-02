@@ -7,6 +7,7 @@ import random
 import numpy as np
 from tqdm import tqdm
 import enum
+from gomoku_rl.policy.common import make_dataset_naive
 
 
 class Type(enum.Enum):
@@ -57,7 +58,7 @@ def assert_transition(tensordict: TensorDict, type: Type):
     observation: torch.Tensor = tensordict["observation"]  # (E,3,B,B)
     next_observation: torch.Tensor = tensordict["next", "observation"]
 
-    assert_observation(observation, type=type)
+    assert_observation(observation[~done], type=type)
     assert_observation(next_observation[~done], type=type)
 
     assert_layer_transition(observation[:, 0], next_observation[:, 0], done)
@@ -77,35 +78,52 @@ def assert_transition(tensordict: TensorDict, type: Type):
     )
 
 
+def _debug_print(transition: TensorDict):
+    observation = transition["observation"]
+    next_observation = transition["next", "observation"]
+    done = transition["next", "done"]
+    print(observation)
+    print(next_observation)
+    print(done.item())
+    exit()
+
+
 def main():
     device = "cuda:0"
-    num_envs = 2048
-    board_size = 15
+    num_envs = 256
+    board_size = 10
     seed = 1234
     set_seed(seed)
-    # torch.use_deterministic_algorithms(True)
     env = GomokuEnv(num_envs=num_envs, board_size=board_size, device=device)
     transitions_black, transitions_white, info = env.rollout(
-        100,
+        50,
         player_black=uniform_policy,
         player_white=uniform_policy,
-        batch_size=num_envs,
         augment=False,
     )
-    print(f"FPS:{env._fps:.2e}")
-    for transition in tqdm(transitions_black, total=len(transitions_black) // num_envs):
-        assert_transition(transition, type=Type.black)
 
-    for transition in tqdm(transitions_white, total=len(transitions_white) // num_envs):
+    for transition in tqdm(
+        make_dataset_naive(transitions_white, num_minibatches=16),
+        total=16,
+    ):
+        # _debug_print(transition[59])
         assert_transition(transition, type=Type.white)
 
+    for transition in tqdm(
+        make_dataset_naive(transitions_black, num_minibatches=16),
+        total=16,
+    ):
+        assert_transition(transition, type=Type.black)
+
     transitions, info = env.rollout_fixed_opponent(
-        100,
+        50,
         player=uniform_policy,
         opponent=uniform_policy,
-        batch_size=num_envs,
     )
-    for transition in tqdm(transitions, total=len(transitions) // num_envs):
+    for transition in tqdm(
+        make_dataset_naive(transitions, num_minibatches=16),
+        total=16,
+    ):
         assert_transition(transition, type=Type.mixed)
 
 

@@ -1,10 +1,8 @@
 from typing import Optional, Union, Callable
 from tensordict import TensorDict
 from tensordict.nn import TensorDictModule, set_interaction_type, InteractionType
-from tensordict.tensordict import TensorDictBase
 import torch
-from torchrl.data import LazyTensorStorage, TensorDictReplayBuffer
-from torchrl.envs import EnvBase
+
 from torchrl.data.tensor_specs import (
     CompositeSpec,
     DiscreteTensorSpec,
@@ -16,7 +14,6 @@ import time
 from gomoku_rl.utils.policy import _policy_t
 from gomoku_rl.utils.augment import augment_transition
 from gomoku_rl.utils.misc import add_prefix
-from gomoku_rl.utils.sampler import SequentialSampler
 from .core import Gomoku
 
 
@@ -217,8 +214,21 @@ class GomokuEnv:
             )
             # for player_white, if the env is reset at t-1, he won't make a move at t
             # this is different from player_black
-            # first attempt: use these invalid transitions to train and see what will happen
+
             # transition_white = transition_white[~tensordict_t_minus_1["done"]]
+            # the trick is that we set done=True for computing gae
+            # after that we just discard these invalid transition
+            invalid: torch.Tensor = tensordict_t_minus_1["done"]
+            transition_white["observation"] = (
+                -invalid.float().unsqueeze(-1).unsqueeze(-1).unsqueeze(-1)
+                + (1 - invalid.float()).unsqueeze(-1).unsqueeze(-1).unsqueeze(-1)
+                * transition_white["observation"]
+            )
+            transition_white["next", "done"] = (
+                invalid | transition_white["next", "done"]
+            )
+            transition_white.set("invalid", invalid)
+
         else:
             transition_white = None
 
@@ -237,6 +247,10 @@ class GomokuEnv:
         if return_black_transitions:
             transition_black = make_transition(
                 tensordict_t, tensordict_t_plus_1, tensordict_t_plus_2
+            )
+            transition_black.set(
+                "invalid",
+                torch.zeros(self.num_envs, device=self.device, dtype=torch.bool),
             )
         else:
             transition_black = None
@@ -258,7 +272,6 @@ class GomokuEnv:
         return_black_transitions: bool = True,
         return_white_transitions: bool = True,
     ):
-
         tensordict_t_minus_1 = self.reset()
         tensordict_t = self.reset()
 
@@ -397,13 +410,9 @@ class GomokuEnv:
             )
             if augment:
                 if return_black_transitions:
-                    transition_black = augment_transition(
-                        transition_black
-                    )
+                    transition_black = augment_transition(transition_black)
                 elif len(transition_white) > 0:
-                    transition_white = augment_transition(
-                        transition_white
-                    )
+                    transition_white = augment_transition(transition_white)
             if return_black_transitions:
                 tensordicts.append(transition_black)
             elif len(transition_white) > 0 and i != 0:
@@ -432,7 +441,6 @@ class GomokuEnv:
                 player_white=opponent,
                 return_black_transitions=True,
                 augment=augment,
-
             )
         )
 

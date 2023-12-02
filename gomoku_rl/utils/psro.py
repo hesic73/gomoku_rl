@@ -28,7 +28,7 @@ class ConvergedIndicator:
         max_size: int = 15,
         mean_threshold: float = 0.99,
         std_threshold: float = 0.005,
-        min_iter_steps: int = 20,
+        min_iter_steps: int = 40,
         max_iter_steps: int = 300,
     ) -> None:
         self.win_rates = []
@@ -335,12 +335,17 @@ def get_meta_solver(name: str) -> _meta_solver_t:
     tmp = {
         "uniform": solve_uniform,  # fictitious play
         "nash": solve_nash,  # double oracle
-        "last_5": functools.partial(solve_last_n, n=5),
         "iterated_best_response": functools.partial(solve_last_n, n=1),
     }
     name = name.lower()
-    assert name in tmp
-    return tmp[name]
+
+    if name in tmp:
+        return tmp[name]
+    elif name.startswith("last_"):
+        n = int(name.split("_")[-1])
+        return functools.partial(solve_last_n, n=n)
+    else:
+        raise NotImplementedError()
 
 
 def calculate_jpc(payoffs: np.ndarray):

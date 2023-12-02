@@ -96,6 +96,11 @@ class PPOPolicy(Policy):
             data.set("advantage", adv)
             data.set("value_target", value_target)
 
+        # filter out invalid white transitions
+        invalid = data.get("invalid", None)
+        if invalid is not None:
+            data = data[~invalid]
+
         self.train()
         loss_objectives = []
         loss_critics = []

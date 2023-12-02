@@ -120,7 +120,7 @@ def make_critic(
     return value_module
 
 
-def make_dataset_naive(tensordict: TensorDict, num_minibatches: int = 4):
+def make_dataset_naive(tensordict: TensorDict, num_minibatches: int = 8):
     tensordict = tensordict.reshape(-1)
     perm = torch.randperm(
         (tensordict.shape[0] // num_minibatches) * num_minibatches,
