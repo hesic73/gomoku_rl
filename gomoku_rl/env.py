@@ -122,6 +122,12 @@ class GomokuEnv:
             {
                 "observation": self.gomoku.get_encoded_board(),
                 "action_mask": self.gomoku.get_action_mask(),
+                "action": torch.ones(
+                    self.num_envs, dtype=torch.long, device=self.device
+                ),
+                "sample_log_prob": torch.zeros(
+                    self.num_envs, dtype=torch.long, device=self.device
+                ),
             },
             self.batch_size,
             device=self.device,
@@ -216,7 +222,8 @@ class GomokuEnv:
             )
             # for player_white, if the env is reset at t-1, he won't make a move at t
             # this is different from player_black
-            transition_white = transition_white[~tensordict_t_minus_1["done"]]
+            # first attempt: use these invalid transitions to train and see what will happen
+            # transition_white = transition_white[~tensordict_t_minus_1["done"]]
         else:
             transition_white = None
 
@@ -368,14 +375,14 @@ class GomokuEnv:
     @torch.no_grad()
     def _rollout_fixed_opponent(
         self,
-        buffer: TensorDictReplayBuffer,
         rounds: int,
         player_black: _policy_t,
         player_white: _policy_t,
         return_black_transitions: bool,
         augment: bool = False,
         n_augment: int = 8,
-    ):
+    ) -> list[TensorDict]:
+        tensordicts = []
         tensordict_t_minus_1 = self.reset()
         tensordict_t = self.reset()
 
@@ -419,42 +426,36 @@ class GomokuEnv:
                         transition_white, n_augment=n_augment
                     )
             if return_black_transitions:
-                buffer.extend(transition_black.to(buffer._storage.device))
+                tensordicts.append(transition_black)
             elif len(transition_white) > 0:
-                buffer.extend(transition_white.to(buffer._storage.device))
+                tensordicts.append(transition_white)
+
+        return tensordicts
 
     def rollout_fixed_opponent(
         self,
         rounds: int,
         player: _policy_t,
         opponent: _policy_t,
-        batch_size: int,
         augment: bool = False,
         n_augment: int = 8,
-        buffer_device="cpu",
-    ):
+    ) -> tuple[TensorDict, dict[str, float]]:
         info: defaultdict[str, float] = defaultdict(float)
 
-        buffer_size = 2 * rounds * self.num_envs
-        if augment:
-            buffer_size *= n_augment
-        buffer = TensorDictReplayBuffer(
-            storage=LazyTensorStorage(max_size=buffer_size, device=buffer_device),
-            sampler=SequentialSampler(drop_last=True),
-            batch_size=batch_size,
-        )
+        tensordicts: list[TensorDict] = []
 
         start = time.perf_counter()
         info_buffer = defaultdict(float)
         self._post_step = get_log_func(info_buffer)
-        self._rollout_fixed_opponent(
-            buffer=buffer,
-            rounds=rounds,
-            player_black=player,
-            player_white=opponent,
-            return_black_transitions=True,
-            augment=augment,
-            n_augment=n_augment,
+        tensordicts.extend(
+            self._rollout_fixed_opponent(
+                rounds=rounds,
+                player_black=player,
+                player_white=opponent,
+                return_black_transitions=True,
+                augment=augment,
+                n_augment=n_augment,
+            )
         )
 
         info.update(
@@ -465,14 +466,15 @@ class GomokuEnv:
         )
         info_buffer.clear()
         self._post_step = get_log_func(info_buffer)
-        self._rollout_fixed_opponent(
-            buffer=buffer,
-            rounds=rounds,
-            player_black=opponent,
-            player_white=player,
-            return_black_transitions=False,
-            augment=augment,
-            n_augment=n_augment,
+        tensordicts.extend(
+            self._rollout_fixed_opponent(
+                rounds=rounds,
+                player_black=opponent,
+                player_white=player,
+                return_black_transitions=False,
+                augment=augment,
+                n_augment=n_augment,
+            )
         )
         end = time.perf_counter()
         self._fps = (2 * rounds * 2 * self.num_envs) / (end - start)
@@ -483,4 +485,7 @@ class GomokuEnv:
             }
         )
         self._post_step = None
-        return buffer, info
+
+        out = torch.stack(tensordicts, dim=-1)
+
+        return out, info

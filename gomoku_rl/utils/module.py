@@ -149,8 +149,13 @@ class ActorNet(nn.Module):
     def forward(
         self, x: torch.Tensor, mask: torch.Tensor | None = None
     ) -> torch.Tensor:
+        batch_shape = x.shape[:-3]
+        x = x.reshape(-1, *x.shape[-3:])
+        if mask is not None:
+            mask = mask.reshape(-1, *mask.shape[-1:])
         embedding = self.residual_tower(x)
         probs: torch.Tensor = self.policy_head(embedding, mask)
+        probs = probs.reshape(*batch_shape, *probs.shape[1:])
         return probs
 
 
@@ -175,6 +180,9 @@ class ValueNet(nn.Module):
         )
 
     def forward(self, x: torch.Tensor):
+        batch_shape = x.shape[:-3]
+        x = x.reshape(-1, *x.shape[-3:])
         x = self.residual_tower(x)
         x = self.value_head(x)
+        x = x.reshape(*batch_shape, *x.shape[1:])
         return x

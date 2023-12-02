@@ -182,7 +182,7 @@ class PSRORunner(Runner):
         wandb.log(
             {
                 "payoff": payoff_headmap(
-                    (self.payoffs + 1) / 2,
+                    (self.payoffs + 1) / 2 * 100,
                 )
             }
         )
@@ -263,12 +263,10 @@ class PSROSPRunner(SPRunner):
             rounds=self.rounds,
             player=self.policy,
             opponent=self.population,
-            batch_size=self.cfg.get("batch_size", self.cfg.num_envs),
             augment=self.cfg.get("augment", False),
             n_augment=self.cfg.get("n_augment", 8),
-            buffer_device=self.cfg.get("buffer_device", "cpu"),
         )
-        info.update(add_prefix(self.policy.learn(data), "policy/"))
+        info.update(add_prefix(self.policy.learn(data.to_tensordict()), "policy/"))
         del data
 
         info.update(
@@ -324,7 +322,7 @@ class PSROSPRunner(SPRunner):
         wandb.log(
             {
                 "payoff": payoff_headmap(
-                    (self.payoffs + 1) / 2,
+                    (self.payoffs + 1) / 2 * 100,
                 )
             }
         )

@@ -118,3 +118,13 @@ def make_critic(
     )
 
     return value_module
+
+
+def make_dataset_naive(tensordict: TensorDict, num_minibatches: int = 4):
+    tensordict = tensordict.reshape(-1)
+    perm = torch.randperm(
+        (tensordict.shape[0] // num_minibatches) * num_minibatches,
+        device=tensordict.device,
+    ).reshape(num_minibatches, -1)
+    for indices in perm:
+        yield tensordict[indices]

@@ -23,7 +23,7 @@ class Policy(abc.ABC):
         ...
 
     @abc.abstractmethod
-    def learn(self, data: ReplayBuffer) -> Dict:
+    def learn(self, data: TensorDict) -> Dict:
         ...
 
     @abc.abstractmethod

@@ -1,16 +1,14 @@
 seed: 0
-num_envs: 2048
+num_envs: 256
 board_size: 15
 device: cuda
-buffer_device: cpu # If transitions are stored on GPU, at the moment the memory cannot be properly released.
-batch_size: 8192
 run_dir:
 
 augment: false
 n_augment: 8
 
 epochs: 500
-rounds: 120
+rounds: 113 # This is a design flaw, if rounds*2<board_size^2, later states can never be explored
 save_interval: -1
 log_interval: 5
 

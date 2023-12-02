@@ -6,16 +6,13 @@ from pprint import pprint
 def main():
     env = GomokuEnv(num_envs=128, board_size=10, device="cuda")
 
-    transitions, info = env.rollout_fixed_opponent(
+    data, info = env.rollout_fixed_opponent(
         rounds=50,
         player=uniform_policy,
         opponent=uniform_policy,
-        batch_size=256,
         augment=False,
     )
-    for data in transitions:
-        print(data)
-        break
+    print(data)
 
     pprint(dict(info))
 

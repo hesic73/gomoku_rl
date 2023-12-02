@@ -83,8 +83,8 @@ class GomokuBoard(QWidget):
     ):
         super().__init__()
         self.board_size = board_size
-        self.grid_size = 56
-        self.piece_radius = 24
+        self.grid_size = 28
+        self.piece_radius = 12
         assert 5 <= self.board_size < 20
 
         self.board: list[list[Piece]] = [
@@ -339,7 +339,7 @@ def main(cfg: DictConfig):
         model=model,
     )
     window = QMainWindow()
-    window.setFixedSize(1200, 1600)
+    window.setFixedSize(600, 800)
     window.setCentralWidget(board)
     window.setWindowTitle("demo")
     window.show()

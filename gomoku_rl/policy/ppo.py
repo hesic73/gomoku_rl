@@ -7,9 +7,8 @@ from omegaconf import DictConfig, OmegaConf
 import logging
 from torchrl.objectives import ClipPPOLoss
 from torchrl.objectives.value import GAE
-from torchrl.data.replay_buffers import TensorDictReplayBuffer
 from .base import Policy
-from .common import make_ppo_actor, make_critic
+from .common import make_ppo_actor, make_critic, make_dataset_naive
 from gomoku_rl.utils.module import count_parameters
 
 
@@ -79,17 +78,22 @@ class PPOPolicy(Policy):
 
         return tensordict
 
-    def learn(self, data: TensorDictReplayBuffer):
+    def learn(self, data: TensorDict):
+        # 其他部分done用的比較多，暫且只在這裏改
+        data["next", "done"] = data["next", "done"].unsqueeze(-1)
+        # 这里也有问题，一起算内存直接爆掉了，目前num_envs改得很小
+        # 而rounds如果改小后面探索不到，这是我目前设计的缺陷，姑且这样吧
+        with torch.no_grad():
+            self.advantage_module(data)
+
         self.train()
         loss_objectives = []
         loss_critics = []
         loss_entropies = []
         losses = []
         for _ in range(self.ppo_epoch):
-            for minibatch in data:
+            for minibatch in make_dataset_naive(data):
                 minibatch: TensorDict = minibatch.to(self.device)
-                with torch.no_grad():
-                    self.advantage_module(minibatch)
                 loss_vals = self.loss_module(minibatch)
                 loss_value = (
                     loss_vals["loss_objective"]
