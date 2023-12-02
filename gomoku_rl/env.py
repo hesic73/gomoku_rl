@@ -122,12 +122,6 @@ class GomokuEnv:
             {
                 "observation": self.gomoku.get_encoded_board(),
                 "action_mask": self.gomoku.get_action_mask(),
-                "action": torch.ones(
-                    self.num_envs, dtype=torch.long, device=self.device
-                ),
-                "sample_log_prob": torch.zeros(
-                    self.num_envs, dtype=torch.long, device=self.device
-                ),
             },
             self.batch_size,
             device=self.device,
@@ -427,7 +421,7 @@ class GomokuEnv:
                     )
             if return_black_transitions:
                 tensordicts.append(transition_black)
-            elif len(transition_white) > 0:
+            elif len(transition_white) > 0 and i != 0:
                 tensordicts.append(transition_white)
 
         return tensordicts
