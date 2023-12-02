@@ -11,6 +11,15 @@ import nashpy
 import os
 import torch
 import logging
+import functools
+from typing import Callable
+
+_meta_solver_t = Callable[
+    [
+        np.ndarray,
+    ],
+    tuple[np.ndarray, np.ndarray],
+]
 
 
 class ConvergedIndicator:
@@ -306,10 +315,27 @@ def solve_uniform(payoffs: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
     )
 
 
-def get_meta_solver(name: str):
+def _solve_last_n(l: int, n: int) -> np.ndarray:
+    if l < n:
+        return np.ones(shape=l) / l
+
+    tmp = np.zeros(shape=l)
+    tmp[-n:] = 1 / n
+    return tmp
+
+
+def solve_last_n(payoffs: np.ndarray, n: int) -> tuple[np.ndarray, np.ndarray]:
+    return (
+        _solve_last_n(payoffs.shape[0], n),
+        _solve_last_n(payoffs.shape[1], n),
+    )
+
+
+def get_meta_solver(name: str) -> _meta_solver_t:
     tmp = {
         "uniform": solve_uniform,
         "nash": solve_nash,
+        "last_5": functools.partial(solve_last_n, n=5),
     }
     name = name.lower()
     assert name in tmp

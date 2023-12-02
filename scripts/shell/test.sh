@@ -1,6 +1,6 @@
 python scripts/train_sp.py \
-    num_envs=512 \
-    board_size=10 \
-    rounds=50 \
-    epochs=1000 \
+    num_envs=64 \
+    board_size=8 \
+    rounds=32 \
+    epochs=100 \
     wandb.mode=disabled

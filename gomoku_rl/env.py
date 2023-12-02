@@ -206,9 +206,10 @@ class GomokuEnv:
         return_white_transitions: bool = True,
         is_last: bool = False,
     ) -> tuple[TensorDict | None, TensorDict | None, TensorDict, TensorDict]:
-        with set_interaction_type(type=InteractionType.RANDOM):
-            tensordict_t = player_black(tensordict_t)
         tensordict_t_plus_1 = self._step_and_maybe_reset(tensordict=tensordict_t)
+
+        with set_interaction_type(type=InteractionType.RANDOM):
+            tensordict_t_plus_1 = player_white(tensordict_t_plus_1)
 
         if return_white_transitions:
             transition_white = make_transition(
@@ -221,8 +222,6 @@ class GomokuEnv:
         else:
             transition_white = None
 
-        with set_interaction_type(type=InteractionType.RANDOM):
-            tensordict_t_plus_1 = player_white(tensordict_t_plus_1)
         # if player_black wins at t (and the env is reset), the env doesn't take a step at t+1
         # this makes no difference to player_black's transition from t to t+2
         # but player_white's transition from t-1 to t+1 is invalid where tensordict_t_minus_1['done']==True
@@ -231,6 +230,9 @@ class GomokuEnv:
             env_indices=~tensordict_t_plus_1.get("done"),
             is_last=is_last,
         )
+
+        with set_interaction_type(type=InteractionType.RANDOM):
+            tensordict_t_plus_2 = player_black(tensordict_t_plus_2)
 
         if return_black_transitions:
             transition_black = make_transition(
@@ -386,6 +388,10 @@ class GomokuEnv:
                 "win": torch.zeros(self.num_envs, dtype=torch.bool, device=self.device),
             }
         )  # here we set it to True
+
+        with set_interaction_type(type=InteractionType.RANDOM):
+            tensordict_t = player_black(tensordict_t)
+
         tensordict_t.update(
             {
                 "done": torch.zeros(

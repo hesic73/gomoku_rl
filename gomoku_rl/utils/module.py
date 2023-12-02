@@ -173,10 +173,10 @@ class ValueNet(nn.Module):
             in_channels=in_channels,
             num_channels=num_channels,
             num_residual_blocks=num_residual_blocks,
-            track_running_stats=False,
+            track_running_stats=True,
         )
         self.value_head = ValueHead(
-            num_channels=num_channels, track_running_stats=False
+            num_channels=num_channels, track_running_stats=True
         )
 
     def forward(self, x: torch.Tensor):

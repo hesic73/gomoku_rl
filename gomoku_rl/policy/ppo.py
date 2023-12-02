@@ -48,7 +48,7 @@ class PPOPolicy(Policy):
         self.advantage_module = GAE(
             gamma=self.gae_gamma,
             lmbda=self.gae_lambda,
-            value_network=self.critic,
+            value_network=None,
             average_gae=True,
         )
 
@@ -72,9 +72,9 @@ class PPOPolicy(Policy):
         actor_output = actor_output.exclude("probs")
         tensordict.update(actor_output)
 
-        # critic_input = tensordict.select("observation")
-        # critic_output = self.critic(critic_input)
-        # tensordict.update(critic_output)
+        critic_input = tensordict.select("observation")
+        critic_output = self.critic(critic_input)
+        tensordict.update(critic_output)
 
         return tensordict
 
@@ -92,7 +92,7 @@ class PPOPolicy(Policy):
         loss_entropies = []
         losses = []
         for _ in range(self.ppo_epoch):
-            for minibatch in make_dataset_naive(data):
+            for minibatch in make_dataset_naive(data, num_minibatches=8):
                 minibatch: TensorDict = minibatch.to(self.device)
                 loss_vals = self.loss_module(minibatch)
                 loss_value = (
@@ -134,7 +134,7 @@ class PPOPolicy(Policy):
         self.advantage_module = GAE(
             gamma=self.gae_gamma,
             lmbda=self.gae_lambda,
-            value_network=self.critic,
+            value_network=None,
             average_gae=True,
         )
 

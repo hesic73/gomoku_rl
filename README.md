@@ -86,7 +86,6 @@ Free-style Gomoku is a two-player zero-sum extensive-form game. Two players alte
 
 - Constrained to Free-style Gomoku support only.
 - The GUI is very rudimentary and cannot adapt to different resolutions.
-- The internal use of `vmap` in `torchrl.objectives.value.GAE` clashes with `torch.nn.BatchNorm2d(track_running_stats=True)`. Consequently, for batch normalization modules in the critic, `track_running_stats` is set to False, rendering it unusable in evaluation mode.
 
 ## References
 
