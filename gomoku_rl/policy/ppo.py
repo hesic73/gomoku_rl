@@ -6,7 +6,7 @@ from torch.cuda import _device_t
 from omegaconf import DictConfig, OmegaConf
 import logging
 from torchrl.objectives import ClipPPOLoss
-from torchrl.objectives.value import GAE
+from torchrl.objectives.value.functional import vec_generalized_advantage_estimate
 from .base import Policy
 from .common import make_ppo_actor, make_critic, make_dataset_naive
 from gomoku_rl.utils.module import count_parameters
@@ -30,6 +30,7 @@ class PPOPolicy(Policy):
         self.entropy_coef: float = cfg.entropy_coef
         self.gae_gamma: float = cfg.gamma
         self.gae_lambda: float = cfg.gae_lambda
+        self.average_gae: float = cfg.average_gae
 
         self.max_grad_norm: float = cfg.max_grad_norm
 
@@ -45,21 +46,12 @@ class PPOPolicy(Policy):
         # print(f"actor params:{count_parameters(self.actor)}")
         # print(f"critic params:{count_parameters(self.critic)}")
 
-        self.advantage_module = GAE(
-            gamma=self.gae_gamma,
-            lmbda=self.gae_lambda,
-            value_network=None,
-            average_gae=True,
-        )
-
         self.loss_module = ClipPPOLoss(
             actor=self.actor,
             critic=self.critic,
             clip_epsilon=self.clip_param,
             entropy_bonus=bool(self.entropy_coef),
             entropy_coef=self.entropy_coef,
-            # these keys match by default but we set this for completeness
-            value_target_key=self.advantage_module.value_target_key,
             normalize_advantage=self.cfg.get("normalize_advantage", True),
             loss_critic_type="smooth_l1",
         )
@@ -79,12 +71,31 @@ class PPOPolicy(Policy):
         return tensordict
 
     def learn(self, data: TensorDict):
-        # 其他部分done用的比較多，暫且只在這裏改
-        data["next", "done"] = data["next", "done"].unsqueeze(-1)
-        # 这里也有问题，一起算内存直接爆掉了，目前num_envs改得很小
-        # 而rounds如果改小后面探索不到，这是我目前设计的缺陷，姑且这样吧
+        
+        # to do: compute the gae for each batch
+        value = data["state_value"]
+        next_value = data["next", "state_value"]
+        done = data["next", "done"].unsqueeze(-1)
+        reward = data["next", "reward"]
         with torch.no_grad():
-            self.advantage_module(data)
+            adv, value_target = vec_generalized_advantage_estimate(
+                self.gae_gamma,
+                self.gae_lambda,
+                value,
+                next_value,
+                reward,
+                done=done,
+                terminated=done,
+                time_dim=data.ndim - 1,
+            )
+            if self.average_gae:
+                loc = adv.mean()
+                scale = adv.std().clamp_min(1e-4)
+                adv = adv - loc
+                adv = adv / scale
+
+            data.set("advantage", adv)
+            data.set("value_target", value_target)
 
         self.train()
         loss_objectives = []
@@ -131,12 +142,6 @@ class PPOPolicy(Policy):
     def load_state_dict(self, state_dict: Dict):
         self.actor.load_state_dict(state_dict["actor"])
         self.critic.load_state_dict(state_dict["critic"])
-        self.advantage_module = GAE(
-            gamma=self.gae_gamma,
-            lmbda=self.gae_lambda,
-            value_network=None,
-            average_gae=True,
-        )
 
         self.loss_module = ClipPPOLoss(
             actor=self.actor,
@@ -144,8 +149,6 @@ class PPOPolicy(Policy):
             clip_epsilon=self.clip_param,
             entropy_bonus=bool(self.entropy_coef),
             entropy_coef=self.entropy_coef,
-            # these keys match by default but we set this for completeness
-            value_target_key=self.advantage_module.value_target_key,
             normalize_advantage=self.cfg.get("normalize_advantage", True),
             loss_critic_type="smooth_l1",
         )

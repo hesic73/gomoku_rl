@@ -9,6 +9,7 @@ gamma: 0.99 # 0.99
 max_grad_norm: 1.0
 
 normalize_advantage: true
+average_gae: True
 
 lr: 5e-4
 
