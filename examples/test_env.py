@@ -89,7 +89,7 @@ def main():
         100,
         player_black=uniform_policy,
         player_white=uniform_policy,
-        buffer_batch_size=num_envs,
+        batch_size=num_envs,
         augment=False,
     )
     print(f"FPS:{env._fps:.2e}")
@@ -103,7 +103,7 @@ def main():
         100,
         player=uniform_policy,
         opponent=uniform_policy,
-        buffer_batch_size=num_envs,
+        batch_size=num_envs,
     )
     for transition in tqdm(transitions, total=len(transitions) // num_envs):
         assert_transition(transition, type=Type.mixed)

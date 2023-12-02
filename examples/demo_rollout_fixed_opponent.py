@@ -10,7 +10,7 @@ def main():
         rounds=50,
         player=uniform_policy,
         opponent=uniform_policy,
-        buffer_batch_size=256,
+        batch_size=256,
         augment=False,
     )
     for data in transitions:

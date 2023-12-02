@@ -1,33 +1,13 @@
 from typing import Callable, Dict, List, Any, Union, Iterable
 from tensordict import TensorDict
-from tensordict.utils import NestedKey
 import torch
-import torch.nn as nn
-
-from tensordict.nn import TensorDictModule, make_functional
-
 from torchrl.data import TensorSpec, DiscreteTensorSpec
 from torch.cuda import _device_t
-
-
 from omegaconf import DictConfig, OmegaConf
-
-from tqdm import tqdm
-
 import logging
-
-from torchrl.modules import ProbabilisticActor
-
-from torch.distributions.categorical import Categorical
-
-from torchrl.modules.models import ConvNet, MLP
-from torchrl.modules import ValueOperator
-
 from torchrl.objectives import ClipPPOLoss
 from torchrl.objectives.value import GAE
-
-from torchrl.data.replay_buffers import ReplayBuffer
-
+from torchrl.data.replay_buffers import TensorDictReplayBuffer
 from .base import Policy
 from .common import make_ppo_actor, make_critic
 from gomoku_rl.utils.module import count_parameters
@@ -99,7 +79,7 @@ class PPOPolicy(Policy):
 
         return tensordict
 
-    def learn(self, data: ReplayBuffer):
+    def learn(self, data: TensorDictReplayBuffer):
         self.train()
         loss_objectives = []
         loss_critics = []

@@ -95,7 +95,7 @@ class PSRORunner(Runner):
             rounds=self.rounds,
             player_black=self.player_0,
             player_white=self.player_1,
-            buffer_batch_size=self.cfg.get("buffer_batch_size", self.cfg.num_envs),
+            batch_size=self.cfg.get("batch_size", self.cfg.num_envs),
             augment=self.cfg.get("augment", False),
             return_black_transitions=self.learning_player_id == 0,
             return_white_transitions=self.learning_player_id != 0,
@@ -123,14 +123,20 @@ class PSRORunner(Runner):
         info.update(
             {
                 "eval/black_vs_white": eval_win_rate(
-                    self.eval_env, player_black=self.player_0, player_white=self.player_1
+                    self.eval_env,
+                    player_black=self.player_0,
+                    player_white=self.player_1,
                 ),
                 "eval/black_vs_baseline": eval_win_rate(
-                    self.eval_env, player_black=self.policy_black, player_white=self.baseline
+                    self.eval_env,
+                    player_black=self.policy_black,
+                    player_white=self.baseline,
                 ),
                 "eval/white_vs_baseline": 1
                 - eval_win_rate(
-                    self.eval_env, player_black=self.baseline, player_white=self.policy_white
+                    self.eval_env,
+                    player_black=self.baseline,
+                    player_white=self.policy_white,
                 ),
             }
         )
@@ -228,14 +234,15 @@ class PSROSPRunner(SPRunner):
             "pretrained_models",
             f"{self.cfg.board_size}_{self.cfg.board_size}",
         )
-        ckpts = [
-            p
-            for f in os.listdir(pretrained_dir)
-            if os.path.isfile(p := os.path.join(pretrained_dir, f))
-            and p.endswith(".pt")
-        ]
 
-        if ckpts:
+        if os.path.isdir(pretrained_dir) and (
+            ckpts := [
+                p
+                for f in os.listdir(pretrained_dir)
+                if os.path.isfile(p := os.path.join(pretrained_dir, f))
+                and p.endswith(".pt")
+            ]
+        ):
             baseline = get_policy(
                 name=self.cfg.algo.name,
                 cfg=self.cfg.algo,
@@ -256,21 +263,25 @@ class PSROSPRunner(SPRunner):
             rounds=self.rounds,
             player=self.policy,
             opponent=self.population,
-            buffer_batch_size=self.cfg.get("buffer_batch_size", self.cfg.num_envs),
+            batch_size=self.cfg.get("batch_size", self.cfg.num_envs),
             augment=self.cfg.get("augment", False),
             n_augment=self.cfg.get("n_augment", 8),
             buffer_device=self.cfg.get("buffer_device", "cpu"),
         )
-        info.update(self.policy.learn(data))
+        info.update(add_prefix(self.policy.learn(data), "policy/"))
         del data
 
         info.update(
             {
                 "eval/player_vs_opponent": eval_win_rate(
-                    self.eval_env, player_black=self.policy, player_white=self.population
+                    self.eval_env,
+                    player_black=self.policy,
+                    player_white=self.population,
                 ),
                 "eval/opponent_vs_player": eval_win_rate(
-                    self.eval_env, player_black=self.population, player_white=self.policy
+                    self.eval_env,
+                    player_black=self.population,
+                    player_white=self.policy,
                 ),
                 "eval/player_vs_baseline": eval_win_rate(
                     self.eval_env, player_black=self.policy, player_white=self.baseline

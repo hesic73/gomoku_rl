@@ -3,7 +3,7 @@ num_envs: 2048
 board_size: 15
 device: cuda
 buffer_device: cpu # If transitions are stored on GPU, at the moment the memory cannot be properly released.
-buffer_batch_size: 512
+batch_size: 512
 run_dir:
 
 augment: false

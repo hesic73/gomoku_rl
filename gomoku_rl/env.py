@@ -251,7 +251,7 @@ class GomokuEnv:
         rounds: int,
         player_black: _policy_t,
         player_white: _policy_t,
-        buffer_batch_size: int,
+        batch_size: int,
         augment: bool = False,
         n_augment: int = 8,
         return_black_transitions: bool = True,
@@ -284,7 +284,7 @@ class GomokuEnv:
             buffer_black = TensorDictReplayBuffer(
                 storage=LazyTensorStorage(max_size=buffer_size, device=buffer_device),
                 sampler=SequentialSampler(drop_last=True),
-                batch_size=buffer_batch_size,
+                batch_size=batch_size,
             )
         else:
             buffer_black = None
@@ -292,7 +292,7 @@ class GomokuEnv:
             buffer_white = TensorDictReplayBuffer(
                 storage=LazyTensorStorage(max_size=buffer_size, device=buffer_device),
                 sampler=SequentialSampler(drop_last=True),
-                batch_size=buffer_batch_size,
+                batch_size=batch_size,
             )
         else:
             buffer_white = None
@@ -336,7 +336,7 @@ class GomokuEnv:
         rounds: int,
         player_black: _policy_t,
         player_white: _policy_t,
-        buffer_batch_size: int,
+        batch_size: int,
         augment: bool = False,
         n_augment: int = 8,
         return_black_transitions: bool = True,
@@ -352,7 +352,7 @@ class GomokuEnv:
             rounds=rounds,
             player_black=player_black,
             player_white=player_white,
-            buffer_batch_size=buffer_batch_size,
+            batch_size=batch_size,
             augment=augment,
             n_augment=n_augment,
             return_black_transitions=return_black_transitions,
@@ -428,7 +428,7 @@ class GomokuEnv:
         rounds: int,
         player: _policy_t,
         opponent: _policy_t,
-        buffer_batch_size: int,
+        batch_size: int,
         augment: bool = False,
         n_augment: int = 8,
         buffer_device="cpu",
@@ -441,7 +441,7 @@ class GomokuEnv:
         buffer = TensorDictReplayBuffer(
             storage=LazyTensorStorage(max_size=buffer_size, device=buffer_device),
             sampler=SequentialSampler(drop_last=True),
-            batch_size=buffer_batch_size,
+            batch_size=batch_size,
         )
 
         start = time.perf_counter()

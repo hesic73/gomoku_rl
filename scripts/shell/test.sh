@@ -1,6 +1,6 @@
-python scripts/train.py \
+python scripts/train_sp.py \
     board_size=10 \
     rounds=50 \
     epochs=1000 \
-    black_checkpoint= \
-    white_checkpoint= \
+    buffer_device=cuda \
+    wandb.mode=disabled
