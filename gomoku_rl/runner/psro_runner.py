@@ -64,14 +64,14 @@ class PSRORunner(Runner):
             "pretrained_models",
             f"{self.cfg.board_size}_{self.cfg.board_size}",
         )
-        ckpts = [
-            p
-            for f in os.listdir(pretrained_dir)
-            if os.path.isfile(p := os.path.join(pretrained_dir, f))
-            and p.endswith(".pt")
-        ]
-
-        if ckpts:
+        if os.path.isdir(pretrained_dir) and (
+            ckpts := [
+                p
+                for f in os.listdir(pretrained_dir)
+                if os.path.isfile(p := os.path.join(pretrained_dir, f))
+                and p.endswith(".pt")
+            ]
+        ):
             baseline = get_policy(
                 name=self.cfg.algo.name,
                 cfg=self.cfg.algo,
@@ -95,11 +95,9 @@ class PSRORunner(Runner):
             rounds=self.rounds,
             player_black=self.player_0,
             player_white=self.player_1,
-            batch_size=self.cfg.get("batch_size", self.cfg.num_envs),
             augment=self.cfg.get("augment", False),
             return_black_transitions=self.learning_player_id == 0,
             return_white_transitions=self.learning_player_id != 0,
-            buffer_device=self.cfg.get("buffer_device", "cpu"),
         )
 
         info.update(
@@ -264,7 +262,6 @@ class PSROSPRunner(SPRunner):
             player=self.policy,
             opponent=self.population,
             augment=self.cfg.get("augment", False),
-            n_augment=self.cfg.get("n_augment", 8),
         )
         info.update(add_prefix(self.policy.learn(data.to_tensordict()), "policy/"))
         del data

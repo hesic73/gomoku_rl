@@ -71,7 +71,6 @@ class PPOPolicy(Policy):
         return tensordict
 
     def learn(self, data: TensorDict):
-        
         # to do: compute the gae for each batch
         value = data["state_value"]
         next_value = data["next", "state_value"]
@@ -141,7 +140,18 @@ class PPOPolicy(Policy):
 
     def load_state_dict(self, state_dict: Dict):
         self.actor.load_state_dict(state_dict["actor"])
-        self.critic.load_state_dict(state_dict["critic"])
+        # 因为最开始tacking_running_stats=False，现在改过来了
+        # 用于evaluation的时候critic有问题无所谓
+        incompatible_keys = self.critic.load_state_dict(
+            state_dict["critic"], strict=False
+        )
+        if not (
+            len(incompatible_keys.missing_keys) == 0
+            and len(incompatible_keys.unexpected_keys) == 0
+        ):
+            logging.warn(
+                f"Missing Keys:{incompatible_keys.missing_keys}\nUnexpected Keys:{incompatible_keys.unexpected_keys}"
+            )
 
         self.loss_module = ClipPPOLoss(
             actor=self.actor,

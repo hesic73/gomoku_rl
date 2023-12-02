@@ -1,21 +1,18 @@
 seed: 0
-num_envs: 2048
-board_size: 15
+num_envs: 256
+board_size: 10
 device: cuda
-buffer_device: cpu # If transitions are stored on GPU, at the moment the memory cannot be properly released.
-batch_size: 512
 run_dir:
 
 augment: false
-n_augment: 8
 
 epochs: 1000
-rounds: 120
+rounds: 50
 save_interval: -1
 log_interval: 5
 
 # psro
-meta_solver: nash
+meta_solver: iterated_best_response
 mean_threshold: 0.99
 std_threshold: 0.005
 min_iter_steps: 20

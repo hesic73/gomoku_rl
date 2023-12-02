@@ -254,14 +254,11 @@ class GomokuEnv:
         rounds: int,
         player_black: _policy_t,
         player_white: _policy_t,
-        batch_size: int,
         augment: bool = False,
-        n_augment: int = 8,
         return_black_transitions: bool = True,
         return_white_transitions: bool = True,
-        buffer_device="cpu",
     ):
-        assert 1 < n_augment <= 8
+
         tensordict_t_minus_1 = self.reset()
         tensordict_t = self.reset()
 
@@ -271,6 +268,9 @@ class GomokuEnv:
                 "win": torch.zeros(self.num_envs, dtype=torch.bool, device=self.device),
             }
         )  # here we set it to True
+        with set_interaction_type(type=InteractionType.RANDOM):
+            tensordict_t = player_black(tensordict_t)
+
         tensordict_t.update(
             {
                 "done": torch.zeros(
@@ -280,25 +280,8 @@ class GomokuEnv:
             }
         )
 
-        buffer_size = rounds * self.num_envs
-        if augment:
-            buffer_size *= n_augment
-        if return_black_transitions:
-            buffer_black = TensorDictReplayBuffer(
-                storage=LazyTensorStorage(max_size=buffer_size, device=buffer_device),
-                sampler=SequentialSampler(drop_last=True),
-                batch_size=batch_size,
-            )
-        else:
-            buffer_black = None
-        if return_white_transitions:
-            buffer_white = TensorDictReplayBuffer(
-                storage=LazyTensorStorage(max_size=buffer_size, device=buffer_device),
-                sampler=SequentialSampler(drop_last=True),
-                batch_size=batch_size,
-            )
-        else:
-            buffer_white = None
+        blacks: list[TensorDict] = []
+        whites: list[TensorDict] = []
 
         for i in range(rounds):
             (
@@ -318,55 +301,52 @@ class GomokuEnv:
 
             if augment:
                 transition_black = (
-                    augment_transition(transition_black, n_augment=n_augment)
+                    augment_transition(transition_black)
                     if return_black_transitions
                     else transition_black
                 )
                 transition_white = (
-                    augment_transition(transition_white, n_augment=n_augment)
-                    if return_white_transitions and len(transition_white) > 0
+                    augment_transition(transition_white)
+                    if return_white_transitions
                     else transition_white
                 )
             if return_black_transitions:
-                buffer_black.extend(transition_black.to(buffer_device))
-            if return_white_transitions and len(transition_white) > 0:
-                buffer_white.extend(transition_white.to(buffer_device))
+                blacks.append(transition_black)
+            if return_white_transitions and i != 0:
+                whites.append(transition_white)
 
-        return buffer_black, buffer_white
+        return blacks, whites
 
     def rollout(
         self,
         rounds: int,
         player_black: _policy_t,
         player_white: _policy_t,
-        batch_size: int,
         augment: bool = False,
-        n_augment: int = 8,
         return_black_transitions: bool = True,
         return_white_transitions: bool = True,
-        buffer_device="cpu",
     ):
         info: defaultdict[str, float] = defaultdict(float)
         info_buffer = defaultdict(float)
         self._post_step = get_log_func(info_buffer)
 
         start = time.perf_counter()
-        buffer_black, buffer_white = self._rollout(
+        blacks, whites = self._rollout(
             rounds=rounds,
             player_black=player_black,
             player_white=player_white,
-            batch_size=batch_size,
             augment=augment,
-            n_augment=n_augment,
             return_black_transitions=return_black_transitions,
             return_white_transitions=return_white_transitions,
-            buffer_device=buffer_device,
         )
         end = time.perf_counter()
         self._fps = (rounds * 2 * self.num_envs) / (end - start)
         info.update(add_prefix(info_buffer, "train/"))
         self._post_step = None
-        return buffer_black, buffer_white, info
+
+        blacks = torch.stack(blacks, dim=-1) if blacks else None
+        whites = torch.stack(whites, dim=-1) if whites else None
+        return blacks, whites, info
 
     @torch.no_grad()
     def _rollout_fixed_opponent(
@@ -376,7 +356,6 @@ class GomokuEnv:
         player_white: _policy_t,
         return_black_transitions: bool,
         augment: bool = False,
-        n_augment: int = 8,
     ) -> list[TensorDict]:
         tensordicts = []
         tensordict_t_minus_1 = self.reset()
@@ -419,11 +398,11 @@ class GomokuEnv:
             if augment:
                 if return_black_transitions:
                     transition_black = augment_transition(
-                        transition_black, n_augment=n_augment
+                        transition_black
                     )
                 elif len(transition_white) > 0:
                     transition_white = augment_transition(
-                        transition_white, n_augment=n_augment
+                        transition_white
                     )
             if return_black_transitions:
                 tensordicts.append(transition_black)
@@ -438,7 +417,6 @@ class GomokuEnv:
         player: _policy_t,
         opponent: _policy_t,
         augment: bool = False,
-        n_augment: int = 8,
     ) -> tuple[TensorDict, dict[str, float]]:
         info: defaultdict[str, float] = defaultdict(float)
 
@@ -454,7 +432,7 @@ class GomokuEnv:
                 player_white=opponent,
                 return_black_transitions=True,
                 augment=augment,
-                n_augment=n_augment,
+
             )
         )
 
@@ -473,7 +451,6 @@ class GomokuEnv:
                 player_white=player,
                 return_black_transitions=False,
                 augment=augment,
-                n_augment=n_augment,
             )
         )
         end = time.perf_counter()

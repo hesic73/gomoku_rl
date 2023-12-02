@@ -333,9 +333,10 @@ def solve_last_n(payoffs: np.ndarray, n: int) -> tuple[np.ndarray, np.ndarray]:
 
 def get_meta_solver(name: str) -> _meta_solver_t:
     tmp = {
-        "uniform": solve_uniform,
-        "nash": solve_nash,
+        "uniform": solve_uniform,  # fictitious play
+        "nash": solve_nash,  # double oracle
         "last_5": functools.partial(solve_last_n, n=5),
+        "iterated_best_response": functools.partial(solve_last_n, n=1),
     }
     name = name.lower()
     assert name in tmp
