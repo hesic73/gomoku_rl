@@ -14,6 +14,7 @@ from gomoku_rl.utils.psro import (
     PSROPolicyWrapper,
     get_new_payoffs,
     get_new_payoffs_sp,
+    get_initial_payoffs_sp,
     get_meta_solver,
     calculate_jpc,
     print_payoffs,
@@ -209,7 +210,16 @@ class PSROSPRunner(SPRunner):
             "max_iter_steps",
         )
         self.converged_indicator = ConvergedIndicator(**ci_kwargs)
-        if self.cfg.get("checkpoint", None):
+        if (population_dir := cfg.get("population_dir", None)) and os.path.isdir(
+            population_dir
+        ):
+            _policy = []
+            for p in os.listdir(population_dir):
+                tmp = copy.deepcopy(self.policy)
+                tmp.load_state_dict(torch.load(os.path.join(population_dir, p)))
+                tmp.eval()
+                _policy.append(tmp)
+        elif self.cfg.get("checkpoint", None):
             _policy = copy.deepcopy(self.policy)
             _policy.eval()
         else:
@@ -220,13 +230,16 @@ class PSROSPRunner(SPRunner):
             device=cfg.device,
         )
 
-        self.payoffs = get_new_payoffs_sp(
+        self.payoffs = get_initial_payoffs_sp(
             env=self.env,
             population=self.population,
-            old_payoffs=None,
         )
+        print(repr(self.payoffs))
         self.meta_solver = get_meta_solver(cfg.get("meta_solver", "uniform"))
-        self.meta_policy = None
+
+        meta_policy_0, meta_policy_1 = self.meta_solver(payoffs=self.payoffs)
+        logging.info(f"Meta Policy: {meta_policy_0}, {meta_policy_1}")
+        self.meta_policy = meta_policy_0
 
     def _get_baseline(self) -> _policy_t:
         pretrained_dir = os.path.join(
@@ -313,7 +326,7 @@ class PSROSPRunner(SPRunner):
             meta_policy_0, meta_policy_1 = self.meta_solver(payoffs=self.payoffs)
             logging.info(f"Meta Policy: {meta_policy_0}, {meta_policy_1}")
             self.meta_policy = meta_policy_0
-            logging.info(f"JPC:{calculate_jpc(self.payoffs+1)/2}")
+            # logging.info(f"JPC:{calculate_jpc(self.payoffs+1)/2}")
 
         return info
 

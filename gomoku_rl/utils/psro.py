@@ -69,7 +69,7 @@ class Population:
     def __init__(
         self,
         dir: str,
-        initial_policy: _policy_t = uniform_policy,
+        initial_policy: _policy_t | list[_policy_t] = uniform_policy,
         device: _device_t = "cuda",
     ):
         self.dir = dir
@@ -88,6 +88,10 @@ class Population:
         # if it's a module, we save it on disk
         if isinstance(initial_policy, (TensorDictModule, Policy)):
             self.add(initial_policy)
+        elif isinstance(initial_policy, list):
+            for _ip in initial_policy:
+                assert isinstance(_ip, (TensorDictModule, Policy))
+                self.add(_ip)
         else:
             self.policy_sets.append(initial_policy)
 
@@ -98,7 +102,7 @@ class Population:
     def __len__(self) -> int:
         return len(self.policy_sets)
 
-    def add(self, policy: TensorDictModule):
+    def add(self, policy: Policy):
         if self._module is None:
             self._module = policy  # assume `policy` is a copy
         torch.save(
@@ -287,6 +291,40 @@ def get_new_payoffs_sp(
         # we transform it so that it's zero-sum
         new_payoffs[i, -1] = wr_1 + wr_2 - 1
         new_payoffs[-1, i] = -new_payoffs[i, -1]
+
+    return new_payoffs
+
+
+def get_initial_payoffs_sp(
+    env,
+    population: Population,
+):
+    n = len(population)
+
+    new_payoffs = np.zeros(shape=(n, n))
+
+    for i in range(n):
+        for j in range(n):
+            if i == j:
+                continue
+            with population.fixed_behavioural_strategy(index=j):
+                player_i = population.make_behavioural_strategy(index=i)
+                wr_1 = eval_win_rate(
+                    env=env,
+                    player_black=player_i,
+                    player_white=population,
+                )
+                wr_2 = 1 - eval_win_rate(
+                    env=env,
+                    player_black=population,
+                    player_white=player_i,
+                )
+
+            # the policy has 50% chance to play black and 50% chance to play white
+            # so the utility for it is 0.5*(win_rate_black+ win_rate_white)
+            # we transform it so that it's zero-sum
+            new_payoffs[i, j] = wr_1 + wr_2 - 1
+            new_payoffs[j, i] = -new_payoffs[i, j]
 
     return new_payoffs
 

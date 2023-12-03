@@ -20,10 +20,12 @@ max_iter_steps: 300
 
 # checkpoint: pretrained_models/${board_size}_${board_size}/0.pt
 
+population_dir: ./population
+
 wandb:
   group: ${board_size}_${board_size}_sp
   project: gomoku_rl
-  mode: online # set to 'disabled' when debugging locally
+#  mode: online # set to 'disabled' when debugging locally
 
 defaults:
   - _self_
