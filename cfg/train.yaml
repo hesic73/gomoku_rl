@@ -6,7 +6,7 @@ run_dir:
 
 augment: false
 
-epochs: 1000
+epochs: 500
 rounds: 50
 save_interval: -1
 log_interval: 5

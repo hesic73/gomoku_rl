@@ -28,7 +28,7 @@ class ConvergedIndicator:
         max_size: int = 15,
         mean_threshold: float = 0.99,
         std_threshold: float = 0.005,
-        min_iter_steps: int = 50,
+        min_iter_steps: int = 40,
         max_iter_steps: int = 300,
     ) -> None:
         self.win_rates = []
@@ -81,8 +81,8 @@ class Population:
         self._idx = -1
         self.device = device
         # this should be deterministic, as PSRO requires pure strategies. But it seems it easily overfits
-        self._interaction_type = InteractionType.MODE
-        # self._interaction_type = InteractionType.RANDOM
+        # self._interaction_type = InteractionType.MODE
+        self._interaction_type = InteractionType.RANDOM
 
         self.policy_sets: list[_policy_t | int] = []
         # if it's a module, we save it on disk

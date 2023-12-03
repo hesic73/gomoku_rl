@@ -165,6 +165,7 @@ class PSRORunner(Runner):
                     old_payoffs=self.payoffs,
                 )
                 print_payoffs(self.payoffs)
+                print(repr(self.payoffs))
                 meta_policy_0, meta_policy_1 = self.meta_solver(payoffs=self.payoffs)
                 logging.info(
                     f"Meta Policy: Black {meta_policy_0}, White {meta_policy_1}"
@@ -307,7 +308,8 @@ class PSROSPRunner(SPRunner):
                 population=self.population,
                 old_payoffs=self.payoffs,
             )
-            print_payoffs(self.payoffs)
+            # print_payoffs(self.payoffs)
+            print(repr(self.payoffs))
             meta_policy_0, meta_policy_1 = self.meta_solver(payoffs=self.payoffs)
             logging.info(f"Meta Policy: {meta_policy_0}, {meta_policy_1}")
             self.meta_policy = meta_policy_0
