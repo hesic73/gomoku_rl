@@ -130,17 +130,12 @@ class ValueHead(nn.Module):
 class ActorNet(nn.Module):
     def __init__(
         self,
-        in_channels: int,
+        residual_tower: ResidualTower,
         out_features: int,
         num_channels: int = 32,
-        num_residual_blocks: int = 3,
     ) -> None:
         super().__init__()
-        self.residual_tower = ResidualTower(
-            in_channels=in_channels,
-            num_channels=num_channels,
-            num_residual_blocks=num_residual_blocks,
-        )
+        self.residual_tower = residual_tower
         self.policy_head = PolicyHead(
             out_features=out_features,
             num_channels=num_channels,
@@ -161,23 +156,14 @@ class ActorNet(nn.Module):
 
 class ValueNet(nn.Module):
     def __init__(
-        self, in_channels: int, num_channels: int = 32, num_residual_blocks: int = 3
+        self,
+        residual_tower: ResidualTower,
+        num_channels: int = 32,
     ) -> None:
         super().__init__()
-        # vmap is incompatible with bn, so we had to set track_running_stats=False
-        # And we cannot eval the value net
-        # vamp is used in torchrl.module.l=PPOLoss
-        # maybe we could replace it
 
-        self.residual_tower = ResidualTower(
-            in_channels=in_channels,
-            num_channels=num_channels,
-            num_residual_blocks=num_residual_blocks,
-            track_running_stats=True,
-        )
-        self.value_head = ValueHead(
-            num_channels=num_channels, track_running_stats=True
-        )
+        self.residual_tower = residual_tower
+        self.value_head = ValueHead(num_channels=num_channels)
 
     def forward(self, x: torch.Tensor):
         batch_shape = x.shape[:-3]

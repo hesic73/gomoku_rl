@@ -15,7 +15,7 @@ from tensordict import TensorDict
 from omegaconf import DictConfig, OmegaConf
 from typing import Callable
 
-from gomoku_rl.utils.module import ValueNet, ActorNet
+from gomoku_rl.utils.module import ValueNet, ActorNet, ResidualTower
 
 
 def _get_cnn_mlp_kwargs(cfg: DictConfig):
@@ -81,10 +81,13 @@ def make_ppo_actor(
     device: _device_t,
 ):
     actor_net = ActorNet(
-        in_channels=3,
+        residual_tower=ResidualTower(
+            in_channels=3,
+            num_channels=cfg.num_channels,
+            num_residual_blocks=cfg.num_residual_blocks,
+        ),
         out_features=action_spec.space.n,
         num_channels=cfg.num_channels,
-        num_residual_blocks=cfg.num_residual_blocks,
     ).to(device)
 
     policy_module = TensorDictModule(
@@ -107,9 +110,12 @@ def make_critic(
     device: _device_t,
 ):
     value_net = ValueNet(
-        in_channels=3,
+        residual_tower=ResidualTower(
+            in_channels=3,
+            num_channels=cfg.num_channels,
+            num_residual_blocks=cfg.num_residual_blocks,
+        ),
         num_channels=cfg.num_channels,
-        num_residual_blocks=cfg.num_residual_blocks,
     ).to(device)
 
     value_module = ValueOperator(
@@ -118,6 +124,48 @@ def make_critic(
     )
 
     return value_module
+
+
+def make_ppo_ac(
+    cfg: DictConfig,
+    action_spec: TensorSpec,
+    device: _device_t,
+):
+    residual_tower = ResidualTower(
+        in_channels=3,
+        num_channels=cfg.num_channels,
+        num_residual_blocks=cfg.num_residual_blocks,
+    )
+
+    actor_net = ActorNet(
+        residual_tower=residual_tower,
+        out_features=action_spec.space.n,
+        num_channels=cfg.num_channels,
+    ).to(device)
+
+    policy_module = TensorDictModule(
+        module=actor_net, in_keys=["observation", "action_mask"], out_keys=["probs"]
+    )
+
+    policy_module = ProbabilisticActor(
+        module=policy_module,
+        spec=action_spec,
+        in_keys=["probs"],
+        distribution_class=Categorical,
+        return_log_prob=True,
+    )
+
+    value_net = ValueNet(
+        residual_tower=residual_tower,
+        num_channels=cfg.num_channels,
+    ).to(device)
+
+    value_module = ValueOperator(
+        module=value_net,
+        in_keys=["observation"],
+    )
+
+    return policy_module, value_module
 
 
 def make_dataset_naive(tensordict: TensorDict, num_minibatches: int = 8):

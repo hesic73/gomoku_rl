@@ -236,10 +236,12 @@ class PSROSPRunner(SPRunner):
         )
         print(repr(self.payoffs))
         self.meta_solver = get_meta_solver(cfg.get("meta_solver", "uniform"))
-
-        meta_policy_0, meta_policy_1 = self.meta_solver(payoffs=self.payoffs)
-        logging.info(f"Meta Policy: {meta_policy_0}, {meta_policy_1}")
-        self.meta_policy = meta_policy_0
+        if len(self.population) > 1:
+            meta_policy_0, meta_policy_1 = self.meta_solver(payoffs=self.payoffs)
+            logging.info(f"Meta Policy: {meta_policy_0}, {meta_policy_1}")
+            self.meta_policy = meta_policy_0
+        else:
+            self.meta_policy = None
 
     def _get_baseline(self) -> _policy_t:
         pretrained_dir = os.path.join(

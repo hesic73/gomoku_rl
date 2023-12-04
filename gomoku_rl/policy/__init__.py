@@ -1,7 +1,7 @@
 from .base import Policy
 from .ppo import PPOPolicy
+from .ppo_share import PPOSharePolicy
 
-from torchrl.data.replay_buffers import ReplayBuffer
 from torchrl.data.tensor_specs import DiscreteTensorSpec, TensorSpec
 from omegaconf import DictConfig
 from torch.cuda import _device_t
@@ -17,6 +17,7 @@ def get_policy(
 ) -> Policy:
     policies = {
         "ppo": PPOPolicy,
+        "ppo_share": PPOSharePolicy,
     }
     assert name.lower() in policies
     cls = policies[name.lower()]
