@@ -1,14 +1,13 @@
 seed: 0
-num_envs: 1024
+num_envs: 2048
 board_size: 15
 device: cuda
 
 checkpoints:
-  - pretrained_models/15_15/0.pt
-  - pretrained_models/15_15/1.pt
-  - pretrained_models/15_15/2.pt
-  - wandb/latest-run/files/final.pt
+  - pretrained_models/${board_size}_${board_size}/${algo.name}/0.pt
+  - pretrained_models/${board_size}_${board_size}/${algo.name}/1.pt
+  - pretrained_models/${board_size}_${board_size}/${algo.name}/2.pt
 
 defaults:
   - _self_
-  - algo: ppo
+  - algo: ppo_share
