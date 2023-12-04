@@ -176,3 +176,17 @@ def make_dataset_naive(tensordict: TensorDict, num_minibatches: int = 8):
     ).reshape(num_minibatches, -1)
     for indices in perm:
         yield tensordict[indices]
+
+
+from torch.optim import Optimizer, Adam, AdamW
+
+
+def get_optimizer(cfg: DictConfig, params) -> Optimizer:
+    dict_cls: dict[str, Optimizer] = {
+        "adam": Adam,
+        "adamw": AdamW,
+    }
+    name: str = cfg.name.lower()
+    assert name in dict_cls
+
+    return dict_cls[name](params=params, **cfg.kwargs)

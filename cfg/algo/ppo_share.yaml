@@ -11,7 +11,11 @@ max_grad_norm: 1.0
 normalize_advantage: true
 average_gae: True
 
-lr: 5e-4
+optimizer:
+  name: adamW
+  kwargs:
+    lr: 1e-3
+    weight_decay: 1e-4
 
 
 num_channels: 32

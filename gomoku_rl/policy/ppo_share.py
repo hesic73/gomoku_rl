@@ -8,7 +8,7 @@ import logging
 from torchrl.objectives import ClipPPOLoss
 from torchrl.objectives.value.functional import vec_generalized_advantage_estimate
 from .base import Policy
-from .common import make_dataset_naive, make_ppo_ac
+from .common import make_dataset_naive, make_ppo_ac, get_optimizer
 from gomoku_rl.utils.module import (
     count_parameters,
 )
@@ -56,7 +56,7 @@ class PPOSharePolicy(Policy):
             loss_critic_type="smooth_l1",
         )
 
-        self.optim = torch.optim.Adam(self.loss_module.parameters(), cfg.lr)
+        self.optim = get_optimizer(self.cfg.optimizer, self.loss_module.parameters())
 
     def __call__(self, tensordict: TensorDict):
         actor_input = tensordict.select("observation", "action_mask", strict=False)
@@ -161,7 +161,7 @@ class PPOSharePolicy(Policy):
             loss_critic_type="smooth_l1",
         )
 
-        self.optim = torch.optim.Adam(self.loss_module.parameters(), self.cfg.lr)
+        self.optim = get_optimizer(self.cfg.optimizer, self.loss_module.parameters())
 
     def train(self):
         self.actor.train()
