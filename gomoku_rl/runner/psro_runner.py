@@ -247,6 +247,7 @@ class PSROSPRunner(SPRunner):
         pretrained_dir = os.path.join(
             "pretrained_models",
             f"{self.cfg.board_size}_{self.cfg.board_size}",
+            f"{self.cfg.algo.name}",
         )
 
         if os.path.isdir(pretrained_dir) and (
