@@ -219,11 +219,11 @@ class GomokuEnv:
             # the trick is that we set done=True for computing gae
             # after that we just discard these invalid transition
             invalid: torch.Tensor = tensordict_t_minus_1["done"]
-            transition_white["observation"] = (
-                -invalid.float().unsqueeze(-1).unsqueeze(-1).unsqueeze(-1)
-                + (1 - invalid.float()).unsqueeze(-1).unsqueeze(-1).unsqueeze(-1)
-                * transition_white["observation"]
-            )
+            # transition_white["observation"] = (
+            #     -invalid.float().unsqueeze(-1).unsqueeze(-1).unsqueeze(-1)
+            #     + (1 - invalid.float()).unsqueeze(-1).unsqueeze(-1).unsqueeze(-1)
+            #     * transition_white["observation"]
+            # )
             transition_white["next", "done"] = (
                 invalid | transition_white["next", "done"]
             )
@@ -381,6 +381,9 @@ class GomokuEnv:
             {
                 "done": torch.ones(self.num_envs, dtype=torch.bool, device=self.device),
                 "win": torch.zeros(self.num_envs, dtype=torch.bool, device=self.device),
+                "action": torch.zeros(
+                    self.num_envs, dtype=torch.long, device=self.device
+                ), # placeholder
             }
         )  # here we set it to True
 

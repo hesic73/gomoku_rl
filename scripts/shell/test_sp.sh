@@ -6,3 +6,4 @@ python scripts/train_sp.py \
     epochs=100 \
     checkpoint= \
     algo=ppo \
+#    augment=true \

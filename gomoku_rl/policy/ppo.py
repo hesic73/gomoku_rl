@@ -84,10 +84,10 @@ class PPOPolicy(Policy):
 
     def learn(self, data: TensorDict):
         # to do: compute the gae for each batch
-        value = data["state_value"]
-        next_value = data["next", "state_value"]
-        done = data["next", "done"].unsqueeze(-1)
-        reward = data["next", "reward"]
+        value = data["state_value"].to(self.device)
+        next_value = data["next", "state_value"].to(self.device)
+        done = data["next", "done"].unsqueeze(-1).to(self.device)
+        reward = data["next", "reward"].to(self.device)
         with torch.no_grad():
             adv, value_target = vec_generalized_advantage_estimate(
                 self.gae_gamma,
