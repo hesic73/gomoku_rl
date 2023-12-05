@@ -1,6 +1,5 @@
 from .base import Policy
 from .ppo import PPOPolicy
-from .ppo_share import PPOSharePolicy
 
 from torchrl.data.tensor_specs import DiscreteTensorSpec, TensorSpec
 from omegaconf import DictConfig
@@ -17,7 +16,6 @@ def get_policy(
 ) -> Policy:
     policies = {
         "ppo": PPOPolicy,
-        "ppo_share": PPOSharePolicy,
     }
     assert name.lower() in policies
     cls = policies[name.lower()]

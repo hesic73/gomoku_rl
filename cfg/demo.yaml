@@ -6,4 +6,4 @@ device: cuda
 human_black: true
 
 defaults:
-  - algo: ppo_share
+  - algo: ppo

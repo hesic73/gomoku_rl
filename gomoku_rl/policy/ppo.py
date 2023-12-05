@@ -8,8 +8,16 @@ import logging
 from torchrl.objectives import ClipPPOLoss
 from torchrl.objectives.value.functional import vec_generalized_advantage_estimate
 from .base import Policy
-from .common import make_ppo_actor, make_critic, make_dataset_naive
-from gomoku_rl.utils.module import count_parameters
+from .common import (
+    make_dataset_naive,
+    make_ppo_ac,
+    get_optimizer,
+    make_critic,
+    make_ppo_actor,
+)
+from gomoku_rl.utils.module import (
+    count_parameters,
+)
 
 
 class PPOPolicy(Policy):
@@ -33,11 +41,15 @@ class PPOPolicy(Policy):
         self.average_gae: float = cfg.average_gae
 
         self.max_grad_norm: float = cfg.max_grad_norm
-
-        self.actor = make_ppo_actor(
-            cfg=cfg.actor, action_spec=action_spec, device=self.device
-        )
-        self.critic = make_critic(cfg=cfg.critic, device=self.device)
+        if self.cfg.get("share_network"):
+            self.actor, self.critic = make_ppo_ac(
+                cfg, action_spec=action_spec, device=self.device
+            )
+        else:
+            self.actor = make_ppo_actor(
+                cfg=cfg.actor, action_spec=action_spec, device=self.device
+            )
+            self.critic = make_critic(cfg=cfg.critic, device=self.device)
 
         fake_input = observation_spec.zero()
         fake_input["action_mask"] = ~fake_input["action_mask"]
@@ -56,7 +68,7 @@ class PPOPolicy(Policy):
             loss_critic_type="smooth_l1",
         )
 
-        self.optim = torch.optim.Adam(self.loss_module.parameters(), cfg.lr)
+        self.optim = get_optimizer(self.cfg.optimizer, self.loss_module.parameters())
 
     def __call__(self, tensordict: TensorDict):
         actor_input = tensordict.select("observation", "action_mask", strict=False)
@@ -148,19 +160,8 @@ class PPOPolicy(Policy):
         }
 
     def load_state_dict(self, state_dict: Dict):
+        self.critic.load_state_dict(state_dict["critic"], strict=False)
         self.actor.load_state_dict(state_dict["actor"])
-        # 因为最开始tacking_running_stats=False，现在改过来了
-        # 用于evaluation的时候critic有问题无所谓
-        incompatible_keys = self.critic.load_state_dict(
-            state_dict["critic"], strict=False
-        )
-        if not (
-            len(incompatible_keys.missing_keys) == 0
-            and len(incompatible_keys.unexpected_keys) == 0
-        ):
-            logging.warn(
-                f"Missing Keys:{incompatible_keys.missing_keys}\nUnexpected Keys:{incompatible_keys.unexpected_keys}"
-            )
 
         self.loss_module = ClipPPOLoss(
             actor=self.actor,
@@ -172,7 +173,7 @@ class PPOPolicy(Policy):
             loss_critic_type="smooth_l1",
         )
 
-        self.optim = torch.optim.Adam(self.loss_module.parameters(), self.cfg.lr)
+        self.optim = get_optimizer(self.cfg.optimizer, self.loss_module.parameters())
 
     def train(self):
         self.actor.train()

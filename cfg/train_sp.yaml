@@ -2,6 +2,7 @@ seed: 0
 num_envs: 512
 board_size: 15
 device: cuda
+out_device: cpu
 run_dir:
 
 augment: false
@@ -29,4 +30,4 @@ wandb:
 
 defaults:
   - _self_
-  - algo: ppo_share
+  - algo: ppo

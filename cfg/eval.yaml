@@ -10,4 +10,4 @@ checkpoints:
 
 defaults:
   - _self_
-  - algo: ppo_share
+  - algo: ppo

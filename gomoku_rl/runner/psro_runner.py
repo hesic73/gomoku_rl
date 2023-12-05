@@ -279,6 +279,7 @@ class PSROSPRunner(SPRunner):
             player=self.policy,
             opponent=self.population,
             augment=self.cfg.get("augment", False),
+            out_device=self.cfg.get("out_device", None),
         )
         info.update(add_prefix(self.policy.learn(data.to_tensordict()), "policy/"))
         del data

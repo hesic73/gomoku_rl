@@ -11,12 +11,16 @@ max_grad_norm: 1.0
 normalize_advantage: true
 average_gae: True
 
-lr: 5e-4
+share_network: true
 
-actor:
-  num_channels: 32
-  num_residual_blocks: 3
+optimizer:
+  name: adamW
+  kwargs:
+    lr: 1e-3
+    weight_decay: 1e-4
 
-critic:
-  num_channels: 32
-  num_residual_blocks: 3
+
+num_channels: 32
+num_residual_blocks: 3
+
+

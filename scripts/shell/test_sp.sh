@@ -5,4 +5,4 @@ python scripts/train_sp.py \
     rounds=32 \
     epochs=100 \
     checkpoint= \
-    algo=ppo_share \
+    algo=ppo \

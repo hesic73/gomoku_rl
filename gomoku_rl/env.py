@@ -368,8 +368,11 @@ class GomokuEnv:
         player_black: _policy_t,
         player_white: _policy_t,
         return_black_transitions: bool,
+        out_device,
         augment: bool = False,
     ) -> list[TensorDict]:
+        if out_device is None:
+            out_device = self.device
         tensordicts = []
         tensordict_t_minus_1 = self.reset()
         tensordict_t = self.reset()
@@ -414,9 +417,9 @@ class GomokuEnv:
                 elif len(transition_white) > 0:
                     transition_white = augment_transition(transition_white)
             if return_black_transitions:
-                tensordicts.append(transition_black)
+                tensordicts.append(transition_black.to(out_device))
             elif len(transition_white) > 0 and i != 0:
-                tensordicts.append(transition_white)
+                tensordicts.append(transition_white.to(out_device))
 
         return tensordicts
 
@@ -425,6 +428,7 @@ class GomokuEnv:
         rounds: int,
         player: _policy_t,
         opponent: _policy_t,
+        out_device=None,
         augment: bool = False,
     ) -> tuple[TensorDict, dict[str, float]]:
         info: defaultdict[str, float] = defaultdict(float)
@@ -440,6 +444,7 @@ class GomokuEnv:
                 player_black=player,
                 player_white=opponent,
                 return_black_transitions=True,
+                out_device=out_device,
                 augment=augment,
             )
         )
@@ -458,6 +463,7 @@ class GomokuEnv:
                 player_black=opponent,
                 player_white=player,
                 return_black_transitions=False,
+                out_device=out_device,
                 augment=augment,
             )
         )
