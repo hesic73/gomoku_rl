@@ -6,7 +6,6 @@ device: cuda
 checkpoints:
   - pretrained_models/${board_size}_${board_size}/${algo.name}/0.pt
   - pretrained_models/${board_size}_${board_size}/${algo.name}/1.pt
-  - pretrained_models/${board_size}_${board_size}/${algo.name}/2.pt
 
 defaults:
   - _self_
