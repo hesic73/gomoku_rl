@@ -145,7 +145,6 @@ def payoff_headmap(
         col_labels=col_labels,
     )
     annotate_heatmap(im, valfmt="{x:.2f}%")
-    plt.tight_layout()
     # https://stackoverflow.com/questions/8598673/how-to-save-a-pylab-figure-into-in-memory-file-which-can-be-read-into-pil-image/8598881
     buf = io.BytesIO()
     plt.savefig(buf, format="png")

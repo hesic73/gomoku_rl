@@ -383,7 +383,7 @@ class GomokuEnv:
                 "win": torch.zeros(self.num_envs, dtype=torch.bool, device=self.device),
                 "action": torch.zeros(
                     self.num_envs, dtype=torch.long, device=self.device
-                ), # placeholder
+                ),  # placeholder
             }
         )  # here we set it to True
 
@@ -459,6 +459,47 @@ class GomokuEnv:
             }
         )
         info_buffer.clear()
+
+        self._post_step = get_log_func(info_buffer)
+        tensordicts.extend(
+            self._rollout_fixed_opponent(
+                rounds=rounds,
+                player_black=opponent,
+                player_white=player,
+                return_black_transitions=False,
+                out_device=out_device,
+                augment=augment,
+            )
+        )
+        end = time.perf_counter()
+        self._fps = (2 * rounds * 2 * self.num_envs) / (end - start)
+        info.update(
+            {
+                "train/player_white_win": info_buffer["white_win"],
+                "train/player_white_episode_len": info_buffer["episode_len"],
+            }
+        )
+        self._post_step = None
+
+        out = torch.stack(tensordicts, dim=-1)
+
+        return out, info
+
+    def rollout_player_white(
+        self,
+        rounds: int,
+        player: _policy_t,
+        opponent: _policy_t,
+        out_device=None,
+        augment: bool = False,
+    ):
+        info: defaultdict[str, float] = defaultdict(float)
+
+        tensordicts: list[TensorDict] = []
+
+        start = time.perf_counter()
+        info_buffer = defaultdict(float)
+
         self._post_step = get_log_func(info_buffer)
         tensordicts.extend(
             self._rollout_fixed_opponent(
