@@ -14,10 +14,9 @@ from gomoku_rl.utils.psro import (
     PSROPolicyWrapper,
     get_new_payoffs,
     get_new_payoffs_sp,
-    get_initial_payoffs_sp,
     get_meta_solver,
     calculate_jpc,
-    print_payoffs,
+    PayoffType,
 )
 from gomoku_rl.utils.eval import eval_win_rate
 import wandb
@@ -165,7 +164,6 @@ class PSRORunner(Runner):
                     population_1=self.player_1.population,
                     old_payoffs=self.payoffs,
                 )
-                print_payoffs(self.payoffs)
                 print(repr(self.payoffs))
                 meta_policy_0, meta_policy_1 = self.meta_solver(payoffs=self.payoffs)
                 logging.info(
@@ -230,18 +228,23 @@ class PSROSPRunner(SPRunner):
             device=cfg.device,
         )
 
-        self.payoffs = get_initial_payoffs_sp(
+        self.payoffs = get_new_payoffs_sp(
             env=self.env,
             population=self.population,
+            old_payoffs=None,
+            type=PayoffType.black_vs_white,
         )
         print(repr(self.payoffs))
         self.meta_solver = get_meta_solver(cfg.get("meta_solver", "uniform"))
         if len(self.population) > 1:
-            meta_policy_0, meta_policy_1 = self.meta_solver(payoffs=self.payoffs)
-            logging.info(f"Meta Policy: {meta_policy_0}, {meta_policy_1}")
-            self.meta_policy = meta_policy_0
+            self.meta_policy_black, self.meta_policy_white = self.meta_solver(
+                payoffs=self.payoffs
+            )
+            logging.info(
+                f"Meta Policy: {self.meta_policy_black}, {self.meta_policy_white}"
+            )
         else:
-            self.meta_policy = None
+            self.meta_policy_black, self.meta_policy_white = None, None
 
     def _get_baseline(self) -> _policy_t:
         pretrained_dir = os.path.join(
@@ -273,8 +276,18 @@ class PSROSPRunner(SPRunner):
             return super()._get_baseline()
 
     def _epoch(self, epoch: int) -> dict[str, Any]:
-        self.population.sample(self.meta_policy)
-        data, info = self.env.rollout_fixed_opponent(
+        self.population.sample(self.meta_policy_black)
+        data, info = self.env.rollout_player_black(
+            rounds=self.rounds,
+            player=self.policy,
+            opponent=self.population,
+            augment=self.cfg.get("augment", False),
+            out_device=self.cfg.get("out_device", None),
+        )
+        info.update(add_prefix(self.policy.learn(data.to_tensordict()), "policy/"))
+        del data
+        self.population.sample(self.meta_policy_white)
+        data, info = self.env.rollout_player_white(
             rounds=self.rounds,
             player=self.policy,
             opponent=self.population,
@@ -324,13 +337,15 @@ class PSROSPRunner(SPRunner):
                 env=self.env,
                 population=self.population,
                 old_payoffs=self.payoffs,
+                type=PayoffType.black_vs_white,
             )
-            # print_payoffs(self.payoffs)
             print(repr(self.payoffs))
-            meta_policy_0, meta_policy_1 = self.meta_solver(payoffs=self.payoffs)
-            logging.info(f"Meta Policy: {meta_policy_0}, {meta_policy_1}")
-            self.meta_policy = meta_policy_0
-            # logging.info(f"JPC:{calculate_jpc(self.payoffs+1)/2}")
+            self.meta_policy_black, self.meta_policy_white = self.meta_solver(
+                payoffs=self.payoffs
+            )
+            logging.info(
+                f"Meta Policy: {self.meta_policy_black}, {self.meta_policy_white}"
+            )
 
         return info
 

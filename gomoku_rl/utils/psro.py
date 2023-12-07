@@ -301,60 +301,30 @@ def get_new_payoffs_sp(
             new_payoffs[i, -1] = wr_1 + wr_2 - 1
             new_payoffs[-1, i] = -new_payoffs[i, -1]
     elif type == PayoffType.black_vs_white:
-        for i in range(n):
-            with population.fixed_behavioural_strategy(index=n - 1):
-                player_i = population.make_behavioural_strategy(index=i)
-                wr = eval_win_rate(
-                    env=env,
-                    player_black=population,
-                    player_white=player_i,
-                )
-            new_payoffs[-1, i] = 2 * wr - 1
-
         for i in range(n - 1):
-            with population.fixed_behavioural_strategy(index=i):
-                player_i = population.make_behavioural_strategy(index=n-1)
-                wr = eval_win_rate(
-                    env=env,
-                    player_black=population,
-                    player_white=player_i,
-                )
-            new_payoffs[i, -1] = 2 * wr - 1
-    return new_payoffs
-
-
-def get_initial_payoffs_sp(
-    env,
-    population: Population,
-    type: PayoffType = PayoffType.both,
-):
-    n = len(population)
-
-    new_payoffs = np.zeros(shape=(n, n))
-
-    for i in range(n):
-        for j in range(n):
-            if i == j:
-                continue
-            with population.fixed_behavioural_strategy(index=j):
+            with population.fixed_behavioural_strategy(index=n - 1):
                 player_i = population.make_behavioural_strategy(index=i)
                 wr_1 = eval_win_rate(
                     env=env,
-                    player_black=player_i,
-                    player_white=population,
+                    player_black=population,
+                    player_white=player_i,
                 )
+                
                 wr_2 = 1 - eval_win_rate(
                     env=env,
                     player_black=population,
                     player_white=player_i,
                 )
+            new_payoffs[-1, i] = 2 * wr_1 - 1
+            new_payoffs[i, -1] = 2 * wr_2 - 1
 
-            # the policy has 50% chance to play black and 50% chance to play white
-            # so the utility for it is 0.5*(win_rate_black+ win_rate_white)
-            # we transform it so that it's zero-sum
-            new_payoffs[i, j] = wr_1 + wr_2 - 1
-            new_payoffs[j, i] = -new_payoffs[i, j]
-
+        with population.fixed_behavioural_strategy(index=-1):
+            wr = eval_win_rate(
+                env=env,
+                player_black=population,
+                player_white=population,
+            )
+        new_payoffs[-1, -1] = 2 * wr - 1
     return new_payoffs
 
 
