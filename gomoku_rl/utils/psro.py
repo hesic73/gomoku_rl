@@ -13,6 +13,13 @@ import torch
 import logging
 import functools
 from typing import Callable
+import enum
+
+
+class PayoffType(enum.Enum):
+    black_vs_white = enum.auto()
+    both = enum.auto()
+
 
 _meta_solver_t = Callable[
     [
@@ -260,6 +267,7 @@ def get_new_payoffs_sp(
     env,
     population: Population,
     old_payoffs: np.ndarray | None,
+    type: PayoffType = PayoffType.both,
 ):
     n = len(population)
     if old_payoffs is not None:
@@ -272,32 +280,45 @@ def get_new_payoffs_sp(
     if old_payoffs is not None:
         new_payoffs[:-1, :-1] = old_payoffs
 
-    for i in range(n - 1):
-        with population.fixed_behavioural_strategy(index=n - 1):
-            player_i = population.make_behavioural_strategy(index=i)
-            wr_1 = eval_win_rate(
-                env=env,
-                player_black=player_i,
-                player_white=population,
-            )
-            wr_2 = 1 - eval_win_rate(
-                env=env,
-                player_black=population,
-                player_white=player_i,
-            )
+    if type == PayoffType.both:
+        for i in range(n - 1):
+            with population.fixed_behavioural_strategy(index=n - 1):
+                player_i = population.make_behavioural_strategy(index=i)
+                wr_1 = eval_win_rate(
+                    env=env,
+                    player_black=player_i,
+                    player_white=population,
+                )
+                wr_2 = 1 - eval_win_rate(
+                    env=env,
+                    player_black=population,
+                    player_white=player_i,
+                )
 
-        # the policy has 50% chance to play black and 50% chance to play white
-        # so the utility for it is 0.5*(win_rate_black+ win_rate_white)
-        # we transform it so that it's zero-sum
-        new_payoffs[i, -1] = wr_1 + wr_2 - 1
-        new_payoffs[-1, i] = -new_payoffs[i, -1]
+            # the policy has 50% chance to play black and 50% chance to play white
+            # so the utility for it is 0.5*(win_rate_black+ win_rate_white)
+            # we transform it so that it's zero-sum
+            new_payoffs[i, -1] = wr_1 + wr_2 - 1
+            new_payoffs[-1, i] = -new_payoffs[i, -1]
+    elif type == PayoffType.black_vs_white:
+        for i in range(n - 1):
+            with population.fixed_behavioural_strategy(index=n - 1):
+                player_i = population.make_behavioural_strategy(index=i)
+                wr_1 = eval_win_rate(
+                    env=env,
+                    player_black=player_i,
+                    player_white=population,
+                )
 
+            new_payoffs[i, -1] = 2 * wr_1 - 1
+            new_payoffs[-1, i] = -new_payoffs[i, -1]
     return new_payoffs
 
 
 def get_initial_payoffs_sp(
     env,
     population: Population,
+    type: PayoffType = PayoffType.both,
 ):
     n = len(population)
 

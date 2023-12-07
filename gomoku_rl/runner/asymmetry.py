@@ -10,15 +10,17 @@ import copy
 from gomoku_rl.utils.psro import (
     ConvergedIndicator,
     Population,
+    get_meta_solver,
+    PayoffType,
+    get_new_payoffs_sp,
 )
 from gomoku_rl.utils.eval import eval_win_rate
-import wandb
 import torch
 from gomoku_rl.policy import get_policy
 import numpy as np
 
 
-class IBRRunner(SPRunner):
+class SimpleRunner(SPRunner):
     def __init__(self, cfg: DictConfig) -> None:
         super().__init__(cfg)
         ci_kwargs = get_kwargs(
@@ -39,8 +41,15 @@ class IBRRunner(SPRunner):
             dir=os.path.join(self.run_dir, "population"),
             device=cfg.device,
         )
-
-        self.meta_policy = np.ones(1)
+        self.payoffs = get_new_payoffs_sp(
+            env=self.env,
+            population=self.population,
+            old_payoffs=None,
+            type=PayoffType.black_vs_white,
+        )  # black vs white
+        print(repr(self.payoffs))
+        self.meta_solver = get_meta_solver(cfg.get("meta_solver", "uniform"))
+        self.meta_policy: np.ndarray | None = None
 
     def _get_baseline(self) -> _policy_t:
         pretrained_dir = os.path.join(
@@ -108,8 +117,18 @@ class IBRRunner(SPRunner):
             _policy = copy.deepcopy(self.policy)
             _policy.eval()
             self.population.add(_policy)
-            self.meta_policy = np.zeros(shape=len(self.meta_policy) + 1)
-            self.meta_policy[-1] = 1.0
+            self.payoffs = get_new_payoffs_sp(
+                env=self.env,
+                population=self.population,
+                old_payoffs=self.payoffs,
+                type=PayoffType.black_vs_white,
+            )
+            print(repr(self.payoffs))
+            self.meta_policy, _ = self.meta_solver(payoffs=self.payoffs)
+            logging.info(f"Meta Policy: {self.meta_policy}")
+
+        if epoch % 50 == 0 and epoch != 0:
+            torch.cuda.empty_cache()
 
         return info
 
