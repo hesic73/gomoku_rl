@@ -301,17 +301,25 @@ def get_new_payoffs_sp(
             new_payoffs[i, -1] = wr_1 + wr_2 - 1
             new_payoffs[-1, i] = -new_payoffs[i, -1]
     elif type == PayoffType.black_vs_white:
-        for i in range(n - 1):
+        for i in range(n):
             with population.fixed_behavioural_strategy(index=n - 1):
                 player_i = population.make_behavioural_strategy(index=i)
-                wr_1 = eval_win_rate(
+                wr = eval_win_rate(
                     env=env,
-                    player_black=player_i,
-                    player_white=population,
+                    player_black=population,
+                    player_white=player_i,
                 )
+            new_payoffs[-1, i] = 2 * wr - 1
 
-            new_payoffs[i, -1] = 2 * wr_1 - 1
-            new_payoffs[-1, i] = -new_payoffs[i, -1]
+        for i in range(n - 1):
+            with population.fixed_behavioural_strategy(index=i):
+                player_i = population.make_behavioural_strategy(index=n-1)
+                wr = eval_win_rate(
+                    env=env,
+                    player_black=population,
+                    player_white=player_i,
+                )
+            new_payoffs[i, -1] = 2 * wr - 1
     return new_payoffs
 
 
