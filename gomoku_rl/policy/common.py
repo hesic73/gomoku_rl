@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+from torch.nn import Parameter
 from torch.cuda import _device_t
 from torchrl.modules import ProbabilisticActor
 from torch.distributions.categorical import Categorical
@@ -13,7 +14,7 @@ from tensordict import TensorDict
 
 
 from omegaconf import DictConfig, OmegaConf
-from typing import Callable
+from typing import Callable, Iterable
 
 from gomoku_rl.utils.module import ValueNet, ActorNet, ResidualTower
 
@@ -181,7 +182,7 @@ def make_dataset_naive(tensordict: TensorDict, num_minibatches: int = 8):
 from torch.optim import Optimizer, Adam, AdamW
 
 
-def get_optimizer(cfg: DictConfig, params) -> Optimizer:
+def get_optimizer(cfg: DictConfig, params:Iterable[Parameter]) -> Optimizer:
     dict_cls: dict[str, Optimizer] = {
         "adam": Adam,
         "adamw": AdamW,
