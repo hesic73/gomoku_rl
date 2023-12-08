@@ -1,7 +1,5 @@
 # Gomoku RL
 
-**Note: The project is currently under development and I am addressing issues with the implementation of PPO.**
-
 **Note: although AI has learned complex strategies, it is still difficult to defeat humans at present.  In the first screenshot, humans defeated AI, while in the second screenshot, humans lost to AI.**
 
 ![](/images/lose1.gif)
@@ -66,9 +64,8 @@ def main():
         batch_size=256,
         augment=False,
     )
-    for data in transitions_black:
-        print(data)
-        break
+
+    print(transitions_black)
 
     pprint(dict(info))
 

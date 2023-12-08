@@ -16,7 +16,7 @@ share_network: true
 optimizer:
   name: adamW
   kwargs:
-    lr: 1e-3
+    lr: 5e-4
     weight_decay: 1e-4
 
 

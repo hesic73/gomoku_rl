@@ -555,7 +555,7 @@ class GomokuEnv:
         self._fps = (rounds * 2 * self.num_envs) / (end - start)
         info.update(
             {
-                "train/player_black_win": info_buffer["white_win"],
+                "train/player_black_win": info_buffer["black_win"],
                 "train/player_black_episode_len": info_buffer["episode_len"],
             }
         )
