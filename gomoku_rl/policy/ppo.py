@@ -47,9 +47,9 @@ class PPOPolicy(Policy):
             )
         else:
             self.actor = make_ppo_actor(
-                cfg=cfg.actor, action_spec=action_spec, device=self.device
+                cfg=cfg, action_spec=action_spec, device=self.device
             )
-            self.critic = make_critic(cfg=cfg.critic, device=self.device)
+            self.critic = make_critic(cfg=cfg, device=self.device)
 
         fake_input = observation_spec.zero()
         fake_input["action_mask"] = ~fake_input["action_mask"]
