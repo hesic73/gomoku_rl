@@ -276,24 +276,26 @@ class PSROSPRunner(SPRunner):
             return super()._get_baseline()
 
     def _epoch(self, epoch: int) -> dict[str, Any]:
+        info = {}
         self.population.sample(self.meta_policy_black)
-        data, info = self.env.rollout_player_black(
+        data1, info1 = self.env.rollout_player_black(
             rounds=self.rounds,
             player=self.policy,
             opponent=self.population,
             augment=self.cfg.get("augment", False),
             out_device=self.cfg.get("out_device", None),
         )
-        info.update(add_prefix(self.policy.learn(data.to_tensordict()), "policy/"))
-        del data
+        info.update(info1)
         self.population.sample(self.meta_policy_white)
-        data, info = self.env.rollout_player_white(
+        data2, info2 = self.env.rollout_player_white(
             rounds=self.rounds,
             player=self.policy,
             opponent=self.population,
             augment=self.cfg.get("augment", False),
             out_device=self.cfg.get("out_device", None),
         )
+        info.update(info2)
+        data = torch.cat([data1, data2], dim=-1)
         info.update(add_prefix(self.policy.learn(data.to_tensordict()), "policy/"))
         del data
 

@@ -492,7 +492,7 @@ class GomokuEnv:
         opponent: _policy_t,
         out_device=None,
         augment: bool = False,
-    ):
+    ) -> tuple[TensorDict, dict[str, float]]:
         info: defaultdict[str, float] = defaultdict(float)
 
         tensordicts: list[TensorDict] = []
@@ -532,7 +532,7 @@ class GomokuEnv:
         opponent: _policy_t,
         out_device=None,
         augment: bool = False,
-    ):
+    ) -> tuple[TensorDict, dict[str, float]]:
         info: defaultdict[str, float] = defaultdict(float)
 
         tensordicts: list[TensorDict] = []
