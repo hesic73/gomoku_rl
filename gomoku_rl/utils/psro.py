@@ -88,8 +88,8 @@ class Population:
         self._idx = -1
         self.device = device
         # this should be deterministic, as PSRO requires pure strategies. But it seems it easily overfits
-        # self._interaction_type = InteractionType.MODE
-        self._interaction_type = InteractionType.RANDOM
+        self._interaction_type = InteractionType.MODE
+        # self._interaction_type = InteractionType.RANDOM
 
         self.policy_sets: list[_policy_t | int] = []
         # if it's a module, we save it on disk
@@ -263,6 +263,71 @@ def get_new_payoffs(
     return new_payoffs
 
 
+def init_payoffs_sp(env, population: Population, type: PayoffType):
+    if type == PayoffType.black_vs_white:
+        return _init_payoffs_sp_bw(env, population)
+    elif type == PayoffType.both:
+        return _init_payoffs_sp_both(env, population)
+    else:
+        raise NotImplementedError()
+
+
+def _init_payoffs_sp_both(env, population: Population):
+    n = len(population)
+    new_payoffs = np.zeros(shape=(n, n))
+    for i in range(n):
+        for j in range(i + 1, n):
+            with population.fixed_behavioural_strategy(index=i):
+                player_j = population.make_behavioural_strategy(j)
+                wr_1 = eval_win_rate(
+                    env=env,
+                    player_black=population,
+                    player_white=player_j,
+                )
+
+                wr_2 = eval_win_rate(
+                    env=env,
+                    player_black=player_j,
+                    player_white=population,
+                )
+            new_payoffs[i, j] = wr_1 - wr_2
+            new_payoffs[j, i] = wr_2 - wr_1
+
+    return new_payoffs
+
+
+def _init_payoffs_sp_bw(env, population: Population):
+    n = len(population)
+    new_payoffs = np.zeros(shape=(n, n))
+    for i in range(n):
+        for j in range(i + 1, n):
+            with population.fixed_behavioural_strategy(index=i):
+                player_j = population.make_behavioural_strategy(j)
+                wr_1 = eval_win_rate(
+                    env=env,
+                    player_black=population,
+                    player_white=player_j,
+                )
+
+                wr_2 = eval_win_rate(
+                    env=env,
+                    player_black=player_j,
+                    player_white=population,
+                )
+            new_payoffs[i, j] = 2 * wr_1 - 1
+            new_payoffs[j, i] = 2 * wr_2 - 1
+
+    for i in range(n):
+        with population.fixed_behavioural_strategy(index=i):
+            wr = eval_win_rate(
+                env=env,
+                player_black=population,
+                player_white=population,
+            )
+        new_payoffs[i, i] = 2 * wr - 1
+    return new_payoffs
+
+
 def get_new_payoffs_sp(
     env,
     population: Population,
@@ -302,18 +367,18 @@ def get_new_payoffs_sp(
             new_payoffs[-1, i] = -new_payoffs[i, -1]
     elif type == PayoffType.black_vs_white:
         for i in range(n - 1):
-            with population.fixed_behavioural_strategy(index=n - 1):
+            with population.fixed_behavioural_strategy(index=-1):
                 player_i = population.make_behavioural_strategy(index=i)
                 wr_1 = eval_win_rate(
                     env=env,
                     player_black=population,
                     player_white=player_i,
                 )
-                
-                wr_2 = 1 - eval_win_rate(
+
+                wr_2 = eval_win_rate(
                     env=env,
-                    player_black=population,
-                    player_white=player_i,
+                    player_black=player_i,
+                    player_white=population,
                 )
             new_payoffs[-1, i] = 2 * wr_1 - 1
             new_payoffs[i, -1] = 2 * wr_2 - 1

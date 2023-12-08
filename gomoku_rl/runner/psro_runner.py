@@ -14,6 +14,7 @@ from gomoku_rl.utils.psro import (
     PSROPolicyWrapper,
     get_new_payoffs,
     get_new_payoffs_sp,
+    init_payoffs_sp,
     get_meta_solver,
     calculate_jpc,
     PayoffType,
@@ -228,10 +229,9 @@ class PSROSPRunner(SPRunner):
             device=cfg.device,
         )
 
-        self.payoffs = get_new_payoffs_sp(
+        self.payoffs = init_payoffs_sp(
             env=self.env,
             population=self.population,
-            old_payoffs=None,
             type=PayoffType.black_vs_white,
         )
         print(repr(self.payoffs))
@@ -353,7 +353,7 @@ class PSROSPRunner(SPRunner):
         wandb.log(
             {
                 "payoff": payoff_headmap(
-                    (self.payoffs + 1) / 2 * 100,
+                    (self.payoffs[-5:, -5:] + 1) / 2 * 100,
                 )
             }
         )
