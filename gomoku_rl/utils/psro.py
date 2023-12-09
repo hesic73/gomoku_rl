@@ -205,7 +205,6 @@ class PSROPolicyWrapper:
         actor = copy.deepcopy(self.policy)
         actor.eval()
         self.population.add(actor)
-        self._cnt += 1
 
     def __call__(self, tensordict: TensorDict) -> TensorDict:
         if self._oracle_mode:
@@ -214,13 +213,10 @@ class PSROPolicyWrapper:
             return self.population(tensordict)
 
     def eval(self):
-        if self._oracle_mode:
-            # strategies in the policy set are always in eval mode
-            self.policy.eval()
+        self.policy.eval()
 
     def train(self):
-        if self._oracle_mode:
-            self.policy.train()
+        self.policy.train()
 
 
 def get_new_payoffs(
@@ -242,24 +238,21 @@ def get_new_payoffs(
         new_payoffs[:-1, :-1] = old_payoffs
 
     for i in range(n):
-        with population_0.fixed_behavioural_strategy(index=n - 1):
+        with population_0.fixed_behavioural_strategy(index=-1):
             with population_1.fixed_behavioural_strategy(index=i):
-                wr = eval_win_rate(
+                wr_1 = eval_win_rate(
                     env=env,
                     player_black=population_0,
                     player_white=population_1,
                 )
-        new_payoffs[-1, i] = 2 * wr - 1
+                wr_2 = eval_win_rate(
+                    env=env,
+                    player_black=population_1,
+                    player_white=population_0,
+                )
+        new_payoffs[-1, i] = 2 * wr_1 - 1
+        new_payoffs[i, -1] = 2 * wr_2 - 1
 
-    for i in range(n - 1):
-        with population_0.fixed_behavioural_strategy(index=i):
-            with population_1.fixed_behavioural_strategy(index=n - 1):
-                wr = eval_win_rate(
-                    env=env,
-                    player_black=population_0,
-                    player_white=population_1,
-                )
-        new_payoffs[i, -1] = 2 * wr - 1
     return new_payoffs
 
 

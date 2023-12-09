@@ -22,7 +22,6 @@ from gomoku_rl.utils.psro import (
 from gomoku_rl.utils.eval import eval_win_rate
 import wandb
 import torch
-from gomoku_rl.policy import get_policy
 
 
 class PSRORunner(Runner):
@@ -76,10 +75,10 @@ class PSRORunner(Runner):
 
         info.update(
             {
-                "pure_strategy_0": self.player_0.population._idx
+                "pure_strategy_black": self.player_0.population._idx
                 if self.learning_player_id == 1
                 else -1,
-                "pure_strategy_1": self.player_1.population._idx
+                "pure_strategy_white": self.player_1.population._idx
                 if self.learning_player_id == 0
                 else -1,
             }
@@ -96,8 +95,8 @@ class PSRORunner(Runner):
             {
                 "eval/black_vs_white": eval_win_rate(
                     self.eval_env,
-                    player_black=self.player_0,
-                    player_white=self.player_1,
+                    player_black=self.policy_black,
+                    player_white=self.policy_white,
                 ),
                 "eval/black_vs_baseline": eval_win_rate(
                     self.eval_env,
@@ -154,7 +153,7 @@ class PSRORunner(Runner):
         wandb.log(
             {
                 "payoff": payoff_headmap(
-                    (self.payoffs + 1) / 2 * 100,
+                    (self.payoffs[:-5, :-5] + 1) / 2 * 100,
                 )
             }
         )
