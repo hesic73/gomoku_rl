@@ -268,10 +268,13 @@ class GomokuEnv:
         rounds: int,
         player_black: _policy_t,
         player_white: _policy_t,
+        out_device,
         augment: bool = False,
         return_black_transitions: bool = True,
         return_white_transitions: bool = True,
     ):
+        if out_device is None:
+            out_device = self.device
         tensordict_t_minus_1 = self.reset()
         tensordict_t = self.reset()
 
@@ -324,9 +327,9 @@ class GomokuEnv:
                     else transition_white
                 )
             if return_black_transitions:
-                blacks.append(transition_black)
+                blacks.append(transition_black.to(out_device))
             if return_white_transitions and i != 0:
-                whites.append(transition_white)
+                whites.append(transition_white.to(out_device))
 
         return blacks, whites
 
@@ -335,6 +338,7 @@ class GomokuEnv:
         rounds: int,
         player_black: _policy_t,
         player_white: _policy_t,
+        out_device=None,
         augment: bool = False,
         return_black_transitions: bool = True,
         return_white_transitions: bool = True,
@@ -348,6 +352,7 @@ class GomokuEnv:
             rounds=rounds,
             player_black=player_black,
             player_white=player_white,
+            out_device=out_device,
             augment=augment,
             return_black_transitions=return_black_transitions,
             return_white_transitions=return_white_transitions,
@@ -564,3 +569,84 @@ class GomokuEnv:
         out = torch.stack(tensordicts, dim=-1)
 
         return out, info
+
+    def _self_play_step(
+        self,
+        tensordict_t_minus_1: TensorDict,
+        tensordict_t: TensorDict,
+        player: _policy_t,
+        is_last: bool,
+    ):
+        tensordict_t_plus_1 = self._step_and_maybe_reset(
+            tensordict=tensordict_t, is_last=is_last
+        )
+        with set_interaction_type(type=InteractionType.RANDOM):
+            tensordict_t_plus_1 = player(tensordict_t_plus_1)
+        transition = make_transition(
+            tensordict_t_minus_1, tensordict_t, tensordict_t_plus_1
+        )
+        return (
+            transition,
+            tensordict_t,
+            tensordict_t_plus_1,
+        )
+
+    @torch.no_grad()
+    def _rollout_self_play(
+        self,
+        steps: int,
+        player: _policy_t,
+        out_device,
+        augment: bool = False,
+    ) -> list[TensorDict]:
+        if out_device is None:
+            out_device = self.device
+
+        tensordicts = []
+
+        tensordict_t_minus_1 = self.reset()
+        with set_interaction_type(type=InteractionType.RANDOM):
+            tensordict_t_minus_1 = player(tensordict_t_minus_1)
+        tensordict_t = self._step(tensordict_t_minus_1, is_last=False)
+        with set_interaction_type(type=InteractionType.RANDOM):
+            tensordict_t = player(tensordict_t)
+
+        for i in range(steps - 1):
+            (
+                transition,
+                tensordict_t_minus_1,
+                tensordict_t,
+            ) = self._self_play_step(
+                tensordict_t_minus_1, tensordict_t, player, is_last=i == steps - 2
+            )
+
+            if augment:
+                transition = augment_transition(transition)
+
+            tensordicts.append(transition.to(out_device))
+
+        return tensordicts
+
+    def rollout_self_play(
+        self,
+        steps: int,
+        player: _policy_t,
+        out_device=None,
+        augment: bool = False,
+    ) -> tuple[TensorDict, dict[str, float]]:
+        info: defaultdict[str, float] = defaultdict(float)
+        self._post_step = get_log_func(info)
+
+        start = time.perf_counter()
+        tensordicts = self._rollout_self_play(
+            steps=steps,
+            player=player,
+            out_device=out_device,
+            augment=augment,
+        )
+        end = time.perf_counter()
+        self._fps = (steps * self.num_envs) / (end - start)
+
+        self._post_step = None
+        tensordicts = torch.stack(tensordicts, dim=-1)
+        return tensordicts, info

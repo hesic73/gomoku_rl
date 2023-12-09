@@ -60,33 +60,6 @@ class PSRORunner(Runner):
         )
         self.meta_solver = get_meta_solver(cfg.get("meta_solver", "uniform"))
 
-    def _get_baseline(self) -> _policy_t:
-        pretrained_dir = os.path.join(
-            "pretrained_models",
-            f"{self.cfg.board_size}_{self.cfg.board_size}",
-        )
-        if os.path.isdir(pretrained_dir) and (
-            ckpts := [
-                p
-                for f in os.listdir(pretrained_dir)
-                if os.path.isfile(p := os.path.join(pretrained_dir, f))
-                and p.endswith(".pt")
-            ]
-        ):
-            baseline = get_policy(
-                name=self.cfg.algo.name,
-                cfg=self.cfg.algo,
-                action_spec=self.env.action_spec,
-                observation_spec=self.env.observation_spec,
-                device=self.env.device,
-            )
-            logging.info(f"Baseline:{ckpts[0]}")
-            baseline.load_state_dict(torch.load(ckpts[0]))
-            baseline.eval()
-            return baseline
-        else:
-            return super()._get_baseline()
-
     def _epoch(self, epoch: int) -> dict[str, Any]:
         if self.learning_player_id == 0:
             self.player_1.sample()
@@ -246,38 +219,10 @@ class PSROSPRunner(SPRunner):
         else:
             self.meta_policy_black, self.meta_policy_white = None, None
 
-    def _get_baseline(self) -> _policy_t:
-        pretrained_dir = os.path.join(
-            "pretrained_models",
-            f"{self.cfg.board_size}_{self.cfg.board_size}",
-            f"{self.cfg.algo.name}",
-        )
-
-        if os.path.isdir(pretrained_dir) and (
-            ckpts := [
-                p
-                for f in os.listdir(pretrained_dir)
-                if os.path.isfile(p := os.path.join(pretrained_dir, f))
-                and p.endswith(".pt")
-            ]
-        ):
-            baseline = get_policy(
-                name=self.cfg.algo.name,
-                cfg=self.cfg.algo,
-                action_spec=self.env.action_spec,
-                observation_spec=self.env.observation_spec,
-                device=self.env.device,
-            )
-            logging.info(f"Baseline:{ckpts[0]}")
-            baseline.load_state_dict(torch.load(ckpts[0]))
-            baseline.eval()
-            return baseline
-        else:
-            return super()._get_baseline()
-
     def _epoch(self, epoch: int) -> dict[str, Any]:
         info = {}
-        self.population.sample(self.meta_policy_black)
+        self.population.sample(self.meta_policy_white)
+        info.update({"pure_strategy_white": self.population._idx})
         data1, info1 = self.env.rollout_player_black(
             rounds=self.rounds,
             player=self.policy,
@@ -286,7 +231,8 @@ class PSROSPRunner(SPRunner):
             out_device=self.cfg.get("out_device", None),
         )
         info.update(info1)
-        self.population.sample(self.meta_policy_white)
+        self.population.sample(self.meta_policy_black)
+        info.update({"pure_strategy_black": self.population._idx})
         data2, info2 = self.env.rollout_player_white(
             rounds=self.rounds,
             player=self.policy,
@@ -324,9 +270,7 @@ class PSROSPRunner(SPRunner):
         weighted_wr = alpha * info["eval/player_vs_opponent"] + (1 - alpha) * (
             1 - info["eval/opponent_vs_player"]
         )
-        info.update(
-            {"weighted_win_rate": weighted_wr, "pure_strategy": self.population._idx}
-        )
+        info.update({"weighted_win_rate": weighted_wr})
 
         self.converged_indicator.update(weighted_wr)
         if self.converged_indicator.converged():

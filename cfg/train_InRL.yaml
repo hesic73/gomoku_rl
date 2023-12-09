@@ -1,0 +1,26 @@
+seed: 0
+num_envs: 512
+board_size: 15
+device: cuda
+out_device: cpu
+run_dir:
+
+augment: false
+
+epochs: 200
+rounds: 113
+save_interval: -1
+log_interval: 5
+
+
+# black_checkpoint: pretrained_models/${board_size}_${board_size}/${algo.name}/0.pt
+# white_checkpoint: pretrained_models/${board_size}_${board_size}/${algo.name}/0.pt
+
+wandb:
+  group: ${board_size}_${board_size}_${algo.name}_InRL
+  project: gomoku_rl
+  mode: online # set to 'disabled' when debugging locally
+
+defaults:
+  - _self_
+  - algo: ppo

@@ -65,7 +65,33 @@ class Runner(abc.ABC):
         self.run_dir = run_dir
 
     def _get_baseline(self) -> _policy_t:
-        return uniform_policy
+        pretrained_dir = os.path.join(
+            "pretrained_models",
+            f"{self.cfg.board_size}_{self.cfg.board_size}",
+            f"{self.cfg.algo.name}",
+        )
+
+        if os.path.isdir(pretrained_dir) and (
+            ckpts := [
+                p
+                for f in os.listdir(pretrained_dir)
+                if os.path.isfile(p := os.path.join(pretrained_dir, f))
+                and p.endswith(".pt")
+            ]
+        ):
+            baseline = get_policy(
+                name=self.cfg.algo.name,
+                cfg=self.cfg.algo,
+                action_spec=self.env.action_spec,
+                observation_spec=self.env.observation_spec,
+                device=self.env.device,
+            )
+            logging.info(f"Baseline:{ckpts[0]}")
+            baseline.load_state_dict(torch.load(ckpts[0]))
+            baseline.eval()
+            return baseline
+        else:
+            return uniform_policy
 
     @abc.abstractmethod
     def _epoch(self, epoch: int) -> dict[str, Any]:
@@ -132,7 +158,11 @@ class SPRunner(abc.ABC):
         set_seed(seed)
 
         self.epochs: int = cfg.get("epochs")
-        self.rounds: int = cfg.get("rounds")
+        self.rounds: int = cfg.get("rounds", -1)
+        self.steps: int = cfg.get("steps", -1)
+        assert (self.rounds != -1 and self.steps == -1) or (
+            self.rounds == -1 and self.steps != -1
+        )
         self.save_interval: int = cfg.get("save_interval", -1)
 
         self.policy = get_policy(
@@ -157,7 +187,34 @@ class SPRunner(abc.ABC):
         self.run_dir = run_dir
 
     def _get_baseline(self) -> _policy_t:
-        return uniform_policy
+        pretrained_dir = os.path.join(
+            "pretrained_models",
+            f"{self.cfg.board_size}_{self.cfg.board_size}",
+            f"{self.cfg.algo.name}",
+        )
+
+        if os.path.isdir(pretrained_dir) and (
+            ckpts := [
+                p
+                for f in os.listdir(pretrained_dir)
+                if os.path.isfile(p := os.path.join(pretrained_dir, f))
+                and p.endswith(".pt")
+            ]
+        ):
+            baseline = get_policy(
+                name=self.cfg.algo.name,
+                cfg=self.cfg.algo,
+                action_spec=self.env.action_spec,
+                observation_spec=self.env.observation_spec,
+                device=self.env.device,
+            )
+            logging.info(f"Baseline:{ckpts[0]}")
+            baseline.load_state_dict(torch.load(ckpts[0]))
+            baseline.eval()
+            return baseline
+        else:
+            return uniform_policy
+
 
     @abc.abstractmethod
     def _epoch(self, epoch: int) -> dict[str, Any]:
