@@ -181,14 +181,11 @@ class Population:
 
 
 class PSROPolicyWrapper:
-    def __init__(self, policy: Policy, dir: str, device: _device_t):
+    def __init__(self, policy: Policy, population: Population):
         self.policy = policy
-        actor = copy.deepcopy(policy)
-        actor.eval()
-        self.population = Population(initial_policy=actor, dir=dir, device=device)
+        self.population = population
         self.meta_policy = None
         self._oracle_mode = True
-        self._cnt = 0
 
     def set_meta_policy(self, meta_policy: np.ndarray):
         assert len(meta_policy) == len(self.population)

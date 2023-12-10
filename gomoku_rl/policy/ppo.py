@@ -43,9 +43,11 @@ class PPOPolicy(Policy):
 
         self.max_grad_norm: float = cfg.max_grad_norm
         if self.cfg.get("share_network"):
-            self.actor, self.critic = make_ppo_ac(
+            actor_value_operator = make_ppo_ac(
                 cfg, action_spec=action_spec, device=self.device
             )
+            self.actor = actor_value_operator.get_policy_operator()
+            self.critic = actor_value_operator.get_value_head()
         else:
             self.actor = make_ppo_actor(
                 cfg=cfg, action_spec=action_spec, device=self.device
@@ -78,7 +80,9 @@ class PPOPolicy(Policy):
         actor_output = actor_output.exclude("probs")
         tensordict.update(actor_output)
 
-        critic_input = tensordict.select("observation")
+        # share_network=True, use `hidden` as input
+        # share_network=False, use `observation` as input
+        critic_input = tensordict.select("hidden", "observation", strict=False)
         critic_output = self.critic(critic_input)
         tensordict.update(critic_output)
 

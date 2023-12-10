@@ -73,10 +73,15 @@ class ResidualTower(nn.Module):
         self.layers = nn.Sequential(*tmp)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
+        batch_shape = x.shape[:-3]
+        x = x.reshape(-1, *x.shape[-3:])
+        
         x = self.cnn(x)
         x = self.bn(x)
         x = nn.functional.relu(x)
         x = self.layers(x)
+        
+        x = x.reshape(*batch_shape, *x.shape[1:])
         return x
 
 
@@ -90,6 +95,11 @@ class PolicyHead(nn.Module):
     def forward(
         self, x: torch.Tensor, mask: torch.Tensor | None = None
     ) -> torch.Tensor:
+        batch_shape = x.shape[:-3]
+        x = x.reshape(-1, *x.shape[-3:])
+        if mask is not None:
+            mask = mask.reshape(-1, *mask.shape[-1:])
+        
         x = self.cnn(x)
         x = self.bn(x)
         x = nn.functional.relu(x)
@@ -98,6 +108,8 @@ class PolicyHead(nn.Module):
         if mask is not None:
             x = torch.where(mask == 0, -float("inf"), x)
         x = nn.functional.softmax(x, dim=-1)
+        
+        x = x.reshape(*batch_shape, *x.shape[1:])
         return x
 
 
@@ -114,6 +126,9 @@ class ValueHead(nn.Module):
         self.linear_1 = nn.LazyLinear(out_features=1)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
+        batch_shape = x.shape[:-3]
+        x = x.reshape(-1, *x.shape[-3:])
+        
         # Note: the order is different from the original implementation(bn,relu,flatten)
         # it seems when using vmap and nn.Conv.out_channels=1,
         # it will throw a RuntimeError
@@ -124,6 +139,8 @@ class ValueHead(nn.Module):
         x = self.linear_0(x)
         x = nn.functional.relu(x)
         x = self.linear_1(x)
+        
+        x = x.reshape(*batch_shape, *x.shape[1:])
         return x
 
 
@@ -144,13 +161,8 @@ class ActorNet(nn.Module):
     def forward(
         self, x: torch.Tensor, mask: torch.Tensor | None = None
     ) -> torch.Tensor:
-        batch_shape = x.shape[:-3]
-        x = x.reshape(-1, *x.shape[-3:])
-        if mask is not None:
-            mask = mask.reshape(-1, *mask.shape[-1:])
         embedding = self.residual_tower(x)
         probs: torch.Tensor = self.policy_head(embedding, mask)
-        probs = probs.reshape(*batch_shape, *probs.shape[1:])
         return probs
 
 
@@ -166,9 +178,6 @@ class ValueNet(nn.Module):
         self.value_head = ValueHead(num_channels=num_channels)
 
     def forward(self, x: torch.Tensor):
-        batch_shape = x.shape[:-3]
-        x = x.reshape(-1, *x.shape[-3:])
         x = self.residual_tower(x)
         x = self.value_head(x)
-        x = x.reshape(*batch_shape, *x.shape[1:])
         return x

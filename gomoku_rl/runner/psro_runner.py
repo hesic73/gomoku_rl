@@ -38,15 +38,31 @@ class PSRORunner(Runner):
 
         self.learning_player_id = cfg.get("first_id", 0)
 
+        if self.cfg.get("black_checkpoint", None):
+            _policy = copy.deepcopy(self.policy_black)
+            _policy.eval()
+        else:
+            _policy = uniform_policy
         self.player_0 = PSROPolicyWrapper(
             self.policy_black,
-            dir=os.path.join(self.run_dir, "population_0"),
-            device=cfg.device,
+            population=Population(
+                initial_policy=_policy,
+                dir=os.path.join(self.run_dir, "population_0"),
+                device=cfg.device,
+            ),
         )
+        if self.cfg.get("white_checkpoint", None):
+            _policy = copy.deepcopy(self.policy_white)
+            _policy.eval()
+        else:
+            _policy = uniform_policy
         self.player_1 = PSROPolicyWrapper(
             self.policy_white,
-            dir=os.path.join(self.run_dir, "population_1"),
-            device=cfg.device,
+            population=Population(
+                initial_policy=_policy,
+                dir=os.path.join(self.run_dir, "population_1"),
+                device=cfg.device,
+            ),
         )
         self.player_0.set_oracle_mode(self.learning_player_id == 0)
         self.player_1.set_oracle_mode(self.learning_player_id != 0)
@@ -58,6 +74,12 @@ class PSRORunner(Runner):
             old_payoffs=None,
         )
         self.meta_solver = get_meta_solver(cfg.get("meta_solver", "uniform"))
+
+    def _get_baseline(self) -> _policy_t:
+        self.cfg.algo.share_network = False
+        tmp = super()._get_baseline()
+        self.cfg.algo.share_network = True
+        return tmp
 
     def _epoch(self, epoch: int) -> dict[str, Any]:
         if self.learning_player_id == 0:
