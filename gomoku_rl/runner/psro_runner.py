@@ -134,6 +134,7 @@ class PSRORunner(Runner):
             else (1 - info["eval/black_vs_white"])
         )
         if self.converged_indicator.converged():
+            self.env.reset_rollout()
             self.converged_indicator.reset()
             if self.learning_player_id == 0:
                 self.player_0.set_oracle_mode(False)
@@ -169,7 +170,7 @@ class PSRORunner(Runner):
         wandb.log(
             {
                 "payoff": payoff_headmap(
-                    (self.payoffs[:-5, :-5] + 1) / 2 * 100,
+                    (self.payoffs[-5:, -5:] + 1) / 2 * 100,
                 )
             }
         )

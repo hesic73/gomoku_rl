@@ -1,15 +1,9 @@
-import logging
 from typing import Any
 from omegaconf import DictConfig
-
-from gomoku_rl.utils.policy import _policy_t, uniform_policy
 from .base import SPRunner, Runner
 from gomoku_rl.utils.misc import add_prefix
-import os
-import copy
 from gomoku_rl.utils.eval import eval_win_rate
 import torch
-from gomoku_rl.policy import get_policy
 
 
 class IndependentRLRunner(Runner):

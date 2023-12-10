@@ -262,6 +262,10 @@ class GomokuEnv:
             tensordict_t_plus_2,
         )
 
+    def reset_rollout(self):
+        delattr(self, "_t")
+        delattr(self, "_t_minus_1")
+
     @torch.no_grad()
     def _rollout(
         self,
