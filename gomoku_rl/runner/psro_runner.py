@@ -68,7 +68,7 @@ class PSRORunner(Runner):
         self.player_1.set_oracle_mode(self.learning_player_id != 0)
 
         self.payoffs = get_new_payoffs(
-            env=self.env,
+            env=self.eval_env,
             population_0=self.player_0.population,
             population_1=self.player_1.population,
             old_payoffs=None,
@@ -111,8 +111,8 @@ class PSRORunner(Runner):
             {
                 "eval/black_vs_white": eval_win_rate(
                     self.eval_env,
-                    player_black=self.policy_black,
-                    player_white=self.policy_white,
+                    player_black=self.player_0,
+                    player_white=self.player_1,
                 ),
                 "eval/black_vs_baseline": eval_win_rate(
                     self.eval_env,
@@ -148,7 +148,7 @@ class PSRORunner(Runner):
                 self.player_0.add_current_policy()
                 self.player_1.add_current_policy()
                 self.payoffs = get_new_payoffs(
-                    env=self.env,
+                    env=self.eval_env,
                     population_0=self.player_0.population,
                     population_1=self.player_1.population,
                     old_payoffs=self.payoffs,
@@ -218,7 +218,7 @@ class PSROSPRunner(SPRunner):
         )
 
         self.payoffs = init_payoffs_sp(
-            env=self.env,
+            env=self.eval_env,
             population=self.population,
             type=PayoffType.black_vs_white,
         )
@@ -295,7 +295,7 @@ class PSROSPRunner(SPRunner):
             self.population.add(_policy)
 
             self.payoffs = get_new_payoffs_sp(
-                env=self.env,
+                env=self.eval_env,
                 population=self.population,
                 old_payoffs=self.payoffs,
                 type=PayoffType.black_vs_white,

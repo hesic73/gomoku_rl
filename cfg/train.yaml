@@ -8,15 +8,15 @@ run_dir:
 augment: false
 
 epochs: 500
-rounds: 113
+rounds: 64
 save_interval: -1
 log_interval: 5
 
 # psro
-meta_solver: nash
+meta_solver: last_5
 mean_threshold: 0.99
 std_threshold: 0.005
-min_iter_steps: 30
+min_iter_steps: 20
 max_iter_steps: 300
 
 # black_checkpoint: pretrained_models/${board_size}_${board_size}/0.pt
