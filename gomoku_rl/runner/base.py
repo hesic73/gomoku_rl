@@ -80,8 +80,8 @@ class Runner(abc.ABC):
             ]
         ):
             baseline = get_policy(
-                name=self.cfg.algo.name,
-                cfg=self.cfg.algo,
+                name=self.cfg.baseline.name,
+                cfg=self.cfg.baseline,
                 action_spec=self.env.action_spec,
                 observation_spec=self.env.observation_spec,
                 device=self.env.device,
@@ -202,8 +202,8 @@ class SPRunner(abc.ABC):
             ]
         ):
             baseline = get_policy(
-                name=self.cfg.algo.name,
-                cfg=self.cfg.algo,
+                name=self.cfg.baseline.name,
+                cfg=self.cfg.baseline,
                 action_spec=self.env.action_spec,
                 observation_spec=self.env.observation_spec,
                 device=self.env.device,

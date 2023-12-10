@@ -12,7 +12,7 @@ num_minibatches: 16
 normalize_advantage: true
 average_gae: False
 
-share_network: true
+share_network: False
 
 optimizer:
   name: adam

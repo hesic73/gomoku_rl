@@ -75,12 +75,6 @@ class PSRORunner(Runner):
         )
         self.meta_solver = get_meta_solver(cfg.get("meta_solver", "uniform"))
 
-    def _get_baseline(self) -> _policy_t:
-        self.cfg.algo.share_network = False
-        tmp = super()._get_baseline()
-        self.cfg.algo.share_network = True
-        return tmp
-
     def _epoch(self, epoch: int) -> dict[str, Any]:
         if self.learning_player_id == 0:
             self.player_1.sample()
