@@ -5,5 +5,9 @@ device: cuda
 
 human_black: true
 
+algo:
+  share_network: false
+
 defaults:
   - algo: ppo
+  - _self_

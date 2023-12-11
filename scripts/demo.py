@@ -1,10 +1,12 @@
+from PyQt5 import QtCore
 import hydra
 from omegaconf import DictConfig, OmegaConf
 from gomoku_rl import CONFIG_PATH
 import sys
 from PyQt5.QtWidgets import QApplication, QMainWindow
 import logging
-from gomoku_rl.policy import get_policy
+from gomoku_rl.policy import get_policy, Policy
+from gomoku_rl.utils.policy import uniform_policy
 from torchrl.data.tensor_specs import (
     DiscreteTensorSpec,
     CompositeSpec,
@@ -14,6 +16,8 @@ from torchrl.data.tensor_specs import (
 import torch
 from PyQt5.QtWidgets import (
     QWidget,
+    QAction,
+    QFileDialog,
 )
 from PyQt5.QtGui import (
     QPainter,
@@ -22,8 +26,9 @@ from PyQt5.QtGui import (
     QPaintEvent,
     QFont,
     QMouseEvent,
+    QKeySequence,
 )
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QSize
 import logging
 
 import enum
@@ -46,31 +51,50 @@ def _is_action_valid(x: int, y: int, board_size: int):
     return 0 <= x < board_size and 0 <= y < board_size
 
 
-def rand_valid_action(
-    board_size: int,
-    is_valid_action: Callable[
-        [
-            int,
+def make_model(cfg: DictConfig):
+    board_size = cfg.board_size
+    device = cfg.device
+    action_spec = DiscreteTensorSpec(
+        board_size * board_size,
+        shape=[
+            1,
         ],
-        bool,
-    ],
-):
-    while True:
-        action = random.randint(0, board_size * board_size - 1)
-        if not is_valid_action(action):
-            logging.warning(f"Invalid action {action}. Retry.")
-            continue
-        break
-
-    x = action // board_size
-    y = action % board_size
-
-    return [x, y]
+        device=device,
+    )
+    # when using PPO, setting num_envs=1 will cause an error in critic
+    observation_spec = CompositeSpec(
+        {
+            "observation": UnboundedContinuousTensorSpec(
+                device=cfg.device,
+                shape=[2, 3, board_size, board_size],
+            ),
+            "action_mask": BinaryDiscreteTensorSpec(
+                n=board_size * board_size,
+                device=device,
+                shape=[2, board_size * board_size],
+                dtype=torch.bool,
+            ),
+        },
+        shape=[
+            2,
+        ],
+        device=device,
+    )
+    model = get_policy(
+        name=cfg.algo.name,
+        cfg=cfg.algo,
+        action_spec=action_spec,
+        observation_spec=observation_spec,
+        device=cfg.device,
+    )
+    return model
 
 
 class GomokuBoard(QWidget):
     def __init__(
         self,
+        grid_size: int,
+        piece_radius: int,
         board_size: int = 19,
         human_color: Piece | None = Piece.BLACK,
         model: Callable[
@@ -83,8 +107,8 @@ class GomokuBoard(QWidget):
     ):
         super().__init__()
         self.board_size = board_size
-        self.grid_size = 28
-        self.piece_radius = 12
+        self.grid_size = grid_size
+        self.piece_radius = piece_radius
         assert 5 <= self.board_size < 20
 
         self.board: list[list[Piece]] = [
@@ -96,7 +120,7 @@ class GomokuBoard(QWidget):
         self._env = Gomoku(num_envs=1, board_size=board_size, device="cpu")
         self._env.reset()
 
-        self.model = model
+        self.model = model or uniform_policy
 
         if self.human_color == Piece.WHITE:
             self._AI_step()
@@ -135,28 +159,20 @@ class GomokuBoard(QWidget):
             logging.warning(f"_AI_step:Game already done!!!")
             return
 
-        if self.model is None:
-            x, y = rand_valid_action(self.board_size, self._is_action_valid)
-        else:
-            tensordict = TensorDict(
-                {
-                    "observation": self._env.get_encoded_board(),
-                    "action_mask": self._env.get_action_mask(),
-                },
-                batch_size=1,
-            ).to(self.model.device)
-            with torch.no_grad():
-                tensordict = self.model(tensordict).cpu()
-            action: int = tensordict["action"].item()
-            x = action // self.board_size
-            y = action % self.board_size
-            if not self._is_action_valid(action):
-                # 设计上有点小缺陷，state全储存在_env（除了board），而GomokuEnv目前的设置是收到非法操作
-                # state不变。所以如果在这结束不太好处理，就随机选一个action吧（好像也比较合理）。
-                logging.warning(
-                    f"AI:{self.current_player} ({x},{y}) Invalid! Use random policy instead."
-                )
-                x, y = rand_valid_action(self.board_size, self._is_action_valid)
+        tensordict = TensorDict(
+            {
+                "observation": self._env.get_encoded_board(),
+                "action_mask": self._env.get_action_mask(),
+            },
+            batch_size=1,
+        ).to(self.model.device)
+        with torch.no_grad():
+            tensordict = self.model(tensordict).cpu()
+        action: int = tensordict["action"].item()
+        x = action // self.board_size
+        y = action % self.board_size
+
+        assert self._is_action_valid(action)
 
         logging.info(f"AI:{self.current_player} ({x},{y})")
         self.step([x, y])
@@ -170,11 +186,11 @@ class GomokuBoard(QWidget):
     def drawBoard(self, painter: QPainter):
         # Define the size of the board and calculate intersection size
         w, h = self.width(), self.height()
-        assert w < h
+        # assert w < h
         self.total_board_size = (self.board_size - 1) * self.grid_size
         assert self.total_board_size < h
         self.margin_size_x = int((w - self.total_board_size) / 2)
-        self.margin_size_y = min(self.margin_size_x, 80)
+        self.margin_size_y = min(int((h - self.total_board_size) / 2), 80)
 
         # Draw board grid
         painter.setPen(QColor(0, 0, 0))
@@ -274,12 +290,15 @@ class GomokuBoard(QWidget):
                 if not self.done:
                     self._AI_step()
 
+    def sizeHint(self) -> QSize:
+        tmp = (self.board_size - 1) * self.grid_size + 100
+        return QSize(tmp, tmp)
+
 
 @hydra.main(version_base=None, config_path=CONFIG_PATH, config_name="demo")
 def main(cfg: DictConfig):
     OmegaConf.register_new_resolver("eval", eval)
     OmegaConf.resolve(cfg)
-    # pprint(OmegaConf.to_container(cfg))
 
     # 设计的有点问题，耦合了
     # 有空再改
@@ -291,42 +310,8 @@ def main(cfg: DictConfig):
 
     model_ckpt_path = cfg.get("checkpoint", None)
     if model_ckpt_path is not None:
-        board_size = cfg.board_size
-        device = cfg.device
-        action_spec = DiscreteTensorSpec(
-            board_size * board_size,
-            shape=[
-                1,
-            ],
-            device=device,
-        )
-        # when using PPO, setting num_envs=1 will cause an error in critic
-        observation_spec = CompositeSpec(
-            {
-                "observation": UnboundedContinuousTensorSpec(
-                    device=cfg.device,
-                    shape=[2, 3, board_size, board_size],
-                ),
-                "action_mask": BinaryDiscreteTensorSpec(
-                    n=board_size * board_size,
-                    device=device,
-                    shape=[2, board_size * board_size],
-                    dtype=torch.bool,
-                ),
-            },
-            shape=[
-                2,
-            ],
-            device=device,
-        )
-        model = get_policy(
-            name=cfg.algo.name,
-            cfg=cfg.algo,
-            action_spec=action_spec,
-            observation_spec=observation_spec,
-            device=cfg.device,
-        )
-        model.load_state_dict(torch.load(model_ckpt_path, map_location = cfg.device))
+        model = make_model(cfg)
+        model.load_state_dict(torch.load(model_ckpt_path, map_location=cfg.device))
         model.eval()
     else:
         model = None
@@ -334,14 +319,43 @@ def main(cfg: DictConfig):
     app = QApplication(sys.argv)
 
     board = GomokuBoard(
-        board_size=cfg.get("board_size", 19),
+        grid_size=28,
+        piece_radius=12,
+        board_size=cfg.get("board_size", 15),
         human_color=human_color,
         model=model,
     )
     window = QMainWindow()
-    window.setFixedSize(600, 800)
+    window.setMinimumSize(board.sizeHint())
     window.setCentralWidget(board)
     window.setWindowTitle("demo")
+
+    menu = window.menuBar().addMenu("&File")
+    open_action = QAction("&Open")
+
+    def open_file():
+        path = QFileDialog.getOpenFileName(
+            parent=window, caption="Open", filter="*.pt"
+        )[0]
+        if path:
+            if not isinstance(board.model, Policy):
+                board.model = make_model(cfg)
+
+            try:
+                board.model.load_state_dict(
+                    torch.load(model_ckpt_path, map_location=cfg.device)
+                )
+                board.model.eval()
+            except Exception:
+                logging.warning(
+                    f"Failed to load checkpoint {path}. Use the random policy"
+                )
+                board.model = uniform_policy
+
+    open_action.triggered.connect(open_file)
+    open_action.setShortcut(QKeySequence.Open)
+    menu.addAction(open_action)
+
     window.show()
     sys.exit(app.exec_())
 
