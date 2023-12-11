@@ -1,16 +1,15 @@
 seed: 0
-num_envs: 512
+num_envs: 1024
 board_size: 15
 device: cuda
 out_device: cpu
 run_dir:
 
-augment: true
+augment: false
 
-epochs: 200
+epochs: 100
 steps: 128
 save_interval: -1
-log_interval: 5
 
 
 # checkpoint: pretrained_models/${board_size}_${board_size}/${algo.name}/0.pt

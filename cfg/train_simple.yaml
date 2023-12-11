@@ -10,7 +10,6 @@ augment: false
 epochs: 200
 rounds: 113 # This is a design flaw, if rounds*2<board_size^2, later states can never be explored
 save_interval: -1
-log_interval: 5
 
 # psro
 meta_solver: nash

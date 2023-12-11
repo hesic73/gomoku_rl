@@ -10,7 +10,6 @@ augment: true
 epochs: 100
 rounds: 64
 save_interval: 250
-log_interval: 5
 
 # psro
 meta_solver: nash

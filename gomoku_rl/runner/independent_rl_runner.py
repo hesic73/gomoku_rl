@@ -31,26 +31,6 @@ class IndependentRLRunner(Runner):
         )
         del data_white
 
-        info.update(
-            {
-                "eval/black_vs_white": eval_win_rate(
-                    self.eval_env,
-                    player_black=self.policy_black,
-                    player_white=self.policy_white,
-                ),
-                "eval/black_vs_baseline": eval_win_rate(
-                    self.eval_env,
-                    player_black=self.policy_black,
-                    player_white=self.baseline,
-                ),
-                "eval/baseline_vs_white": eval_win_rate(
-                    self.eval_env,
-                    player_black=self.baseline,
-                    player_white=self.policy_white,
-                ),
-            }
-        )
-
         if epoch % 50 == 0 and epoch != 0:
             torch.cuda.empty_cache()
 
@@ -61,6 +41,26 @@ class IndependentRLRunner(Runner):
 
     def _log(self, info: dict[str, Any], epoch: int):
         if epoch % 5 == 0:
+            info.update(
+                {
+                    "eval/black_vs_white": eval_win_rate(
+                        self.eval_env,
+                        player_black=self.policy_black,
+                        player_white=self.policy_white,
+                    ),
+                    "eval/black_vs_baseline": eval_win_rate(
+                        self.eval_env,
+                        player_black=self.policy_black,
+                        player_white=self.baseline,
+                    ),
+                    "eval/baseline_vs_white": eval_win_rate(
+                        self.eval_env,
+                        player_black=self.baseline,
+                        player_white=self.policy_white,
+                    ),
+                }
+            )
+
             print(
                 "Black vs White:{:.2f}%\tBlack vs Baseline:{:.2f}%\tBaseline vs White:{:.2f}%".format(
                     info["eval/black_vs_white"] * 100,
@@ -85,22 +85,6 @@ class IndependentRLSPRunner(SPRunner):
         info.update(add_prefix(self.policy.learn(data.to_tensordict()), "policy/"))
         del data
 
-        info.update(
-            {
-                "eval/player_vs_player": eval_win_rate(
-                    self.eval_env,
-                    player_black=self.policy,
-                    player_white=self.policy,
-                ),
-                "eval/player_vs_baseline": eval_win_rate(
-                    self.eval_env, player_black=self.policy, player_white=self.baseline
-                ),
-                "eval/baseline_vs_player": eval_win_rate(
-                    self.eval_env, player_black=self.baseline, player_white=self.policy
-                ),
-            }
-        )
-
         if epoch % 50 == 0 and epoch != 0:
             torch.cuda.empty_cache()
 
@@ -111,6 +95,25 @@ class IndependentRLSPRunner(SPRunner):
 
     def _log(self, info: dict[str, Any], epoch: int):
         if epoch % 5 == 0:
+            info.update(
+                {
+                    "eval/player_vs_player": eval_win_rate(
+                        self.eval_env,
+                        player_black=self.policy,
+                        player_white=self.policy,
+                    ),
+                    "eval/player_vs_baseline": eval_win_rate(
+                        self.eval_env,
+                        player_black=self.policy,
+                        player_white=self.baseline,
+                    ),
+                    "eval/baseline_vs_player": eval_win_rate(
+                        self.eval_env,
+                        player_black=self.baseline,
+                        player_white=self.policy,
+                    ),
+                }
+            )
             print(
                 "Player vs Player:{:.2f}%\tPlayer vs Baseline:{:.2f}%\tBaseline vs Player:{:.2f}%".format(
                     info["eval/player_vs_player"] * 100,
