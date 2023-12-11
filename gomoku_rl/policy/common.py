@@ -183,12 +183,12 @@ def make_ppo_ac(
     return ActorValueOperator(common_module, policy_module, value_module)
 
 
-def make_dataset_naive(tensordict: TensorDict, num_minibatches: int = 8):
+def make_dataset_naive(tensordict: TensorDict, batch_size: int):
     tensordict = tensordict.reshape(-1)
     perm = torch.randperm(
-        (tensordict.shape[0] // num_minibatches) * num_minibatches,
+        (tensordict.shape[0] // batch_size) * batch_size,
         device=tensordict.device,
-    ).reshape(num_minibatches, -1)
+    ).reshape(-1, batch_size)
     for indices in perm:
         yield tensordict[indices]
 

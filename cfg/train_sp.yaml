@@ -5,10 +5,10 @@ device: cuda
 out_device: cpu
 run_dir:
 
-augment: false
+augment: true
 
 epochs: 800
-rounds: 113 # This is a design flaw, if rounds*2<board_size^2, later states can never be explored
+rounds: 64 # This is a design flaw, if rounds*2<board_size^2, later states can never be explored
 save_interval: -1
 log_interval: 5
 
@@ -31,3 +31,4 @@ wandb:
 defaults:
   - _self_
   - algo: ppo
+  - baseline: ppo_no_share

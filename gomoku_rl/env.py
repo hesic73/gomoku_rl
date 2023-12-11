@@ -337,7 +337,7 @@ class GomokuEnv:
                 )
                 transition_white = (
                     augment_transition(transition_white)
-                    if return_white_transitions
+                    if return_white_transitions and i != 0
                     else transition_white
                 )
             if return_black_transitions:

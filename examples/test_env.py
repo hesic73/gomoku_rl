@@ -103,14 +103,14 @@ def main():
     )
 
     for transition in tqdm(
-        make_dataset_naive(transitions_white, num_minibatches=16),
+        make_dataset_naive(transitions_white, batch_size=1024),
         total=16,
     ):
         # _debug_print(transition[59])
         assert_transition(transition, type=Type.white)
 
     for transition in tqdm(
-        make_dataset_naive(transitions_black, num_minibatches=16),
+        make_dataset_naive(transitions_black, batch_size=1024),
         total=16,
     ):
         assert_transition(transition, type=Type.black)
@@ -121,7 +121,7 @@ def main():
         opponent=uniform_policy,
     )
     for transition in tqdm(
-        make_dataset_naive(transitions, num_minibatches=16),
+        make_dataset_naive(transitions, batch_size=1024),
         total=16,
     ):
         assert_transition(transition, type=Type.mixed)

@@ -39,7 +39,7 @@ class PPOPolicy(Policy):
         self.gae_gamma: float = cfg.gamma
         self.gae_lambda: float = cfg.gae_lambda
         self.average_gae: float = cfg.average_gae
-        self.num_minibatches: int = int(cfg.num_minibatches)
+        self.batch_size: int = int(cfg.batch_size)
 
         self.max_grad_norm: float = cfg.max_grad_norm
         if self.cfg.get("share_network"):
@@ -61,7 +61,6 @@ class PPOPolicy(Policy):
         # print(f"actor params:{count_parameters(self.actor)}")
         # print(f"critic params:{count_parameters(self.critic)}")
 
-        # TO DO: when share_network is true, avoid calling the common module multiple times
         self.loss_module = ClipPPOLoss(
             actor=self.actor,
             critic=self.critic,
@@ -127,7 +126,7 @@ class PPOPolicy(Policy):
         grad_norms = []
         for _ in range(self.ppo_epoch):
             for minibatch in make_dataset_naive(
-                data, num_minibatches=self.num_minibatches
+                data, batch_size=self.batch_size
             ):
                 minibatch: TensorDict = minibatch.to(self.device)
                 loss_vals = self.loss_module(minibatch)

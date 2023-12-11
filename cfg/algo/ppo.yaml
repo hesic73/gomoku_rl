@@ -7,7 +7,7 @@ entropy_coef: 0.01 # 0.01
 gae_lambda: 0.95
 gamma: 0.99 # 0.99
 max_grad_norm: 0.5
-num_minibatches: 16
+batch_size: 4096
 
 normalize_advantage: true
 average_gae: False
