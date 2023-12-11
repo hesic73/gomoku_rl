@@ -74,6 +74,7 @@ class PPOPolicy(Policy):
         self.optim = get_optimizer(self.cfg.optimizer, self.loss_module.parameters())
 
     def __call__(self, tensordict: TensorDict):
+        tensordict=tensordict.to(self.device)
         actor_input = tensordict.select("observation", "action_mask", strict=False)
         actor_output: TensorDict = self.actor(actor_input)
         actor_output = actor_output.exclude("probs")

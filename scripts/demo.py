@@ -1,4 +1,3 @@
-from PyQt5 import QtCore
 import hydra
 from omegaconf import DictConfig, OmegaConf
 from gomoku_rl import CONFIG_PATH
@@ -6,7 +5,7 @@ import sys
 from PyQt5.QtWidgets import QApplication, QMainWindow
 import logging
 from gomoku_rl.policy import get_policy, Policy
-from gomoku_rl.utils.policy import uniform_policy
+from gomoku_rl.utils.policy import uniform_policy, _policy_t
 from torchrl.data.tensor_specs import (
     DiscreteTensorSpec,
     CompositeSpec,
@@ -17,7 +16,11 @@ import torch
 from PyQt5.QtWidgets import (
     QWidget,
     QAction,
+    QActionGroup,
     QFileDialog,
+    QVBoxLayout,
+    QLabel,
+    QSizePolicy
 )
 from PyQt5.QtGui import (
     QPainter,
@@ -35,9 +38,6 @@ import enum
 
 from gomoku_rl.core import Gomoku
 import torch
-import random
-
-from typing import Callable
 from tensordict import TensorDict
 
 
@@ -97,13 +97,7 @@ class GomokuBoard(QWidget):
         piece_radius: int,
         board_size: int = 19,
         human_color: Piece | None = Piece.BLACK,
-        model: Callable[
-            [
-                TensorDict,
-            ],
-            TensorDict,
-        ]
-        | None = None,
+        model: _policy_t | None = None,
     ):
         super().__init__()
         self.board_size = board_size
@@ -116,16 +110,18 @@ class GomokuBoard(QWidget):
         ]  # 0 represents an empty intersection
 
         self.human_color = human_color
+        self.model = model or uniform_policy
 
         self._env = Gomoku(num_envs=1, board_size=board_size, device="cpu")
         self._env.reset()
-
-        self.model = model or uniform_policy
 
         if self.human_color == Piece.WHITE:
             self._AI_step()
 
         self.setStyleSheet("background-color: rgba(255,212,101,255);")
+        tmp = (self.board_size - 1) * self.grid_size + 100
+        self.setMinimumHeight(tmp)
+        self.setMinimumWidth(tmp)
 
     def reset(self):
         for i in range(len(self.board)):
@@ -165,7 +161,7 @@ class GomokuBoard(QWidget):
                 "action_mask": self._env.get_action_mask(),
             },
             batch_size=1,
-        ).to(self.model.device)
+        )
         with torch.no_grad():
             tensordict = self.model(tensordict).cpu()
         action: int = tensordict["action"].item()
@@ -297,6 +293,7 @@ class GomokuBoard(QWidget):
 
 @hydra.main(version_base=None, config_path=CONFIG_PATH, config_name="demo")
 def main(cfg: DictConfig):
+    """Qt一直没学明白，写得比较丑"""
     OmegaConf.register_new_resolver("eval", eval)
     OmegaConf.resolve(cfg)
 
@@ -308,13 +305,12 @@ def main(cfg: DictConfig):
     else:
         human_color = Piece.WHITE
 
-    model_ckpt_path = cfg.get("checkpoint", None)
-    if model_ckpt_path is not None:
+    if model_ckpt_path := cfg.get("checkpoint", None):
         model = make_model(cfg)
         model.load_state_dict(torch.load(model_ckpt_path, map_location=cfg.device))
         model.eval()
     else:
-        model = None
+        model = uniform_policy
 
     app = QApplication(sys.argv)
 
@@ -325,12 +321,25 @@ def main(cfg: DictConfig):
         human_color=human_color,
         model=model,
     )
+
     window = QMainWindow()
     window.setMinimumSize(board.sizeHint())
-    window.setCentralWidget(board)
     window.setWindowTitle("demo")
 
-    menu = window.menuBar().addMenu("&File")
+    central_widget = QWidget()
+    label = QLabel()
+    label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+    label.setFont(QFont("Arial", 24))
+    # TO DO
+    label.setText("Hello world!")
+    label.setMinimumHeight(32)
+    layout = QVBoxLayout(central_widget)
+    layout.addWidget(label, Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignVCenter)
+    layout.addWidget(board, Qt.AlignmentFlag.AlignCenter)
+    window.setCentralWidget(central_widget)
+
+    menu = window.menuBar().addMenu("&Menu")
+    status_bar = window.statusBar()
     open_action = QAction("&Open")
 
     def open_file():
@@ -342,10 +351,9 @@ def main(cfg: DictConfig):
                 board.model = make_model(cfg)
 
             try:
-                board.model.load_state_dict(
-                    torch.load(model_ckpt_path, map_location=cfg.device)
-                )
+                board.model.load_state_dict(torch.load(path, map_location=cfg.device))
                 board.model.eval()
+                status_bar.showMessage(f"Checkpoint path:{path}")
             except Exception:
                 logging.warning(
                     f"Failed to load checkpoint {path}. Use the random policy"
@@ -354,7 +362,43 @@ def main(cfg: DictConfig):
 
     open_action.triggered.connect(open_file)
     open_action.setShortcut(QKeySequence.Open)
+    open_action.setToolTip("Load a pretrained checkpoint.")
     menu.addAction(open_action)
+
+    reset_action = QAction("&Reset")
+    reset_action.triggered.connect(board.reset)
+    reset_action.setShortcut("Ctrl+R")
+    reset_action.setToolTip("Reset the board.")
+    menu.addAction(reset_action)
+
+    human_color_action_group = QActionGroup(window)
+
+    black_color_action = QAction("&Black")
+    black_color_action.setCheckable(True)
+    human_color_action_group.addAction(black_color_action)
+
+    def _black():
+        board.human_color = Piece.BLACK
+        board.reset()
+
+    black_color_action.triggered.connect(_black)
+
+    white_color_action = QAction("&White")
+    white_color_action.setCheckable(True)
+    human_color_action_group.addAction(white_color_action)
+
+    def _white():
+        board.human_color = Piece.WHITE
+        board.reset()
+
+    white_color_action.triggered.connect(_white)
+
+    black_color_action.setChecked(board.human_color == Piece.BLACK)
+    white_color_action.setChecked(board.human_color == Piece.WHITE)
+
+    menu.addSeparator().setText("Human Color")
+    menu.addAction(black_color_action)
+    menu.addAction(white_color_action)
 
     window.show()
     sys.exit(app.exec_())
