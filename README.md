@@ -25,11 +25,11 @@ I use python 3.11.5, torch 2.1.0 and **torchrl 0.2.1**. Lower versions of python
 
 ## Getting Started
 
-*gomoku_rl* uses `hydra` to configure training hyperparameters. You can modify the settings in `cfg/train.yaml` or override them via the command line:
+*gomoku_rl* uses `hydra` to configure training hyperparameters. You can modify the settings in `cfg/train_InRL.yaml` or override them via the command line:
 
 ```bash
-# override default settings in cfg/train.yaml
-python scripts/train_InRL.py board_size=15 num_env=1024 device=cuda epochs=1000 wandb.mode=online
+# override default settings in cfg/train_InRL.yaml
+python scripts/train_InRL.py board_size=15 num_env=1024 device=cuda epochs=3000 wandb.mode=online
 # or simply:
 python scripts/train_InRL.py.py
 ```
@@ -48,7 +48,24 @@ python scripts/demo.py
 
 Pretrained models for a $15\times15$ board are available under  `pretrained_models/15_15/`. Be aware that using the wrong model for the board size will lead to loading errors due to mismatches in AI architectures. In PPO, when `share_network=True`, the actor and the critic could utilize a shared encoding module. At present, a `PPOPolicy` object with a shared encoder cannot load from a checkpoint without sharing.
 
-## API Usage
+## Details
+
+Free-style Gomoku is a two-player zero-sum extensive-form game. Two players alternatively place black and white stones on a board and the first who forms an unbroken line of five or more stones of his color wins. In the context of Multi-Agent Reinforcement Learning (MARL), two agents learn in the environment competitively. During each agent's turn, its observation is the (encoded) current board state, and its action is the selection of a position on the board to place a stone. We use action masking to prevent illegal moves. Winning rewards the agent with +1, while losing incurs a penalty of -1. 
+
+
+## API
+
+### Policy
+In general, policies are expected to be of the type `Callable[[Tensordict,], Tensordict]`. Here, `Tensordict` is a class with dictionary-like properties inherited from tensors (refer to [https://github.com/pytorch/tensordict](https://github.com/pytorch/tensordict)). The input `Tensordict` contains `observation` and `action_mask`. As described in [1], `observation` has a shape of [\*, 3, B, B], where $B$ denotes the board size. Similarly, `action_mask` has a shape of [\*, B^2]. The expected output `action` should have a shape of [\*,] within the range of [0, B^2).
+
+Like in [tianshou](https://github.com/thu-ml/tianshou), a `Policy` interface is defined. See `gomoku_rl/policy/base.py` for more information.
+
+
+### GomokuEnv
+
+`GomokuEnv` comprises `num_envs` independent Gomoku environments, compatible with both CPU and CUDA. It effortlessly attains $10^5$ fps, enabling the concurrent execution of thousands of environments. It provides high level APIs such as `GomokuEnv.rollout` and `GomokuEnv.rollout_self_play`.
+
+Example:
 
 ```python
 from gomoku_rl import GomokuEnv
@@ -63,7 +80,6 @@ def main():
         rounds=50,
         player_black=uniform_policy,
         player_white=uniform_policy,
-        batch_size=256,
         augment=False,
     )
 
@@ -76,10 +92,6 @@ if __name__ == "__main__":
     main()
 
 ```
-
-## Details
-
-Free-style Gomoku is a two-player zero-sum extensive-form game. Two players alternatively place black and white stones on a board and the first who forms an unbroken line of five or more stones of his color wins. In the context of Multi-Agent Reinforcement Learning (MARL), two agents learn in the environment competitively. During each agent's turn, its observation is the (encoded) current board state, and its action is the selection of a position on the board to place a stone. We use action masking to prevent illegal moves. Winning rewards the agent with +1, while losing incurs a penalty of -1. 
 
 ## Limitations
 

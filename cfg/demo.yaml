@@ -8,8 +8,6 @@ human_black: true
 grid_size: 28
 piece_radius: 12
 
-algo:
-  share_network: false
 
 defaults:
   - algo: ppo

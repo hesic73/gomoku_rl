@@ -10,7 +10,6 @@ def main():
         rounds=50,
         player_black=uniform_policy,
         player_white=uniform_policy,
-        batch_size=256,
         augment=False,
     )
 
