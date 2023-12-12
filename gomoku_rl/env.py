@@ -394,34 +394,43 @@ class GomokuEnv:
         return_black_transitions: bool,
         out_device,
         augment: bool = False,
-    ) -> list[TensorDict]:
+        tensordict_t_minus_1: TensorDict | None = None,
+        tensordict_t: TensorDict | None = None,
+    ) -> tuple[list[TensorDict], TensorDict, TensorDict]:
         if out_device is None:
             out_device = self.device
         tensordicts = []
-        tensordict_t_minus_1 = self.reset()
-        tensordict_t = self.reset()
+        if tensordict_t_minus_1 is None and tensordict_t is None:
+            tensordict_t_minus_1 = self.reset()
+            tensordict_t = self.reset()
 
-        tensordict_t_minus_1.update(
-            {
-                "done": torch.ones(self.num_envs, dtype=torch.bool, device=self.device),
-                "win": torch.zeros(self.num_envs, dtype=torch.bool, device=self.device),
-                "action": torch.zeros(
-                    self.num_envs, dtype=torch.long, device=self.device
-                ),  # placeholder
-            }
-        )  # here we set it to True
+            tensordict_t_minus_1.update(
+                {
+                    "done": torch.ones(
+                        self.num_envs, dtype=torch.bool, device=self.device
+                    ),
+                    "win": torch.zeros(
+                        self.num_envs, dtype=torch.bool, device=self.device
+                    ),
+                    "action": torch.zeros(
+                        self.num_envs, dtype=torch.long, device=self.device
+                    ),  # placeholder
+                }
+            )  # here we set it to True
 
-        with set_interaction_type(type=InteractionType.RANDOM):
-            tensordict_t = player_black(tensordict_t)
+            with set_interaction_type(type=InteractionType.RANDOM):
+                tensordict_t = player_black(tensordict_t)
 
-        tensordict_t.update(
-            {
-                "done": torch.zeros(
-                    self.num_envs, dtype=torch.bool, device=self.device
-                ),
-                "win": torch.zeros(self.num_envs, dtype=torch.bool, device=self.device),
-            }
-        )
+            tensordict_t.update(
+                {
+                    "done": torch.zeros(
+                        self.num_envs, dtype=torch.bool, device=self.device
+                    ),
+                    "win": torch.zeros(
+                        self.num_envs, dtype=torch.bool, device=self.device
+                    ),
+                }
+            )
 
         for i in range(rounds):
             (
@@ -448,7 +457,7 @@ class GomokuEnv:
             elif len(transition_white) > 0 and i != 0:
                 tensordicts.append(transition_white.to(out_device))
 
-        return tensordicts
+        return tensordicts, tensordict_t_minus_1, tensordict_t
 
     def rollout_fixed_opponent(
         self,
@@ -517,24 +526,26 @@ class GomokuEnv:
         out_device=None,
         augment: bool = False,
     ) -> tuple[TensorDict, dict[str, float]]:
+        if not hasattr(self, "_t") and not hasattr(self, "_t_minus_1"):
+            self._t = None
+            self._t_minus_1 = None
         info: defaultdict[str, float] = defaultdict(float)
-
-        tensordicts: list[TensorDict] = []
 
         start = time.perf_counter()
         info_buffer = defaultdict(float)
 
         self._post_step = get_log_func(info_buffer)
-        tensordicts.extend(
-            self._rollout_fixed_opponent(
-                rounds=rounds,
-                player_black=opponent,
-                player_white=player,
-                return_black_transitions=False,
-                out_device=out_device,
-                augment=augment,
-            )
+        tensordicts, self._t_minus_1, self._t = self._rollout_fixed_opponent(
+            rounds=rounds,
+            player_black=opponent,
+            player_white=player,
+            return_black_transitions=False,
+            out_device=out_device,
+            augment=augment,
+            tensordict_t_minus_1=self._t_minus_1,
+            tensordict_t=self._t,
         )
+
         end = time.perf_counter()
         self._fps = (rounds * 2 * self.num_envs) / (end - start)
         info.update(
@@ -557,24 +568,26 @@ class GomokuEnv:
         out_device=None,
         augment: bool = False,
     ) -> tuple[TensorDict, dict[str, float]]:
+        if not hasattr(self, "_t") and not hasattr(self, "_t_minus_1"):
+            self._t = None
+            self._t_minus_1 = None
         info: defaultdict[str, float] = defaultdict(float)
-
-        tensordicts: list[TensorDict] = []
 
         start = time.perf_counter()
         info_buffer = defaultdict(float)
 
         self._post_step = get_log_func(info_buffer)
-        tensordicts.extend(
-            self._rollout_fixed_opponent(
-                rounds=rounds,
-                player_black=player,
-                player_white=opponent,
-                return_black_transitions=True,
-                out_device=out_device,
-                augment=augment,
-            )
+        tensordicts, self._t_minus_1, self._t = self._rollout_fixed_opponent(
+            rounds=rounds,
+            player_black=player,
+            player_white=opponent,
+            return_black_transitions=True,
+            out_device=out_device,
+            augment=augment,
+            tensordict_t_minus_1=self._t_minus_1,
+            tensordict_t=self._t,
         )
+
         end = time.perf_counter()
         self._fps = (rounds * 2 * self.num_envs) / (end - start)
         info.update(

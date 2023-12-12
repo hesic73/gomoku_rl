@@ -190,6 +190,7 @@ class PSRORunner(Runner):
 class PSROSPRunner(SPRunner):
     def __init__(self, cfg: DictConfig) -> None:
         super().__init__(cfg)
+        self.env_2 = copy.deepcopy(self.env)
         ci_kwargs = get_kwargs(
             cfg,
             "mean_threshold",
@@ -249,7 +250,7 @@ class PSROSPRunner(SPRunner):
         info.update(info1)
         self.population.sample(self.meta_policy_black)
         info.update({"pure_strategy_black": self.population._idx})
-        data2, info2 = self.env.rollout_player_white(
+        data2, info2 = self.env_2.rollout_player_white(
             rounds=self.rounds,
             player=self.policy,
             opponent=self.population,
