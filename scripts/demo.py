@@ -20,12 +20,13 @@ from PyQt5.QtWidgets import (
     QFileDialog,
     QVBoxLayout,
     QLabel,
-    QSizePolicy
+    QSizePolicy,
 )
 from PyQt5.QtGui import (
     QPainter,
     QColor,
     QBrush,
+    QPen,
     QPaintEvent,
     QFont,
     QMouseEvent,
@@ -109,6 +110,8 @@ class GomokuBoard(QWidget):
             [Piece.EMPTY] * board_size for _ in range(board_size)
         ]  # 0 represents an empty intersection
 
+        self.latest_move: tuple[int, int] | None = None
+
         self.human_color = human_color
         self.model = model or uniform_policy
 
@@ -129,6 +132,7 @@ class GomokuBoard(QWidget):
                 self.board[i][j] = Piece.EMPTY
 
         self._env.reset()
+        self.latest_move = None
 
         if self.human_color == Piece.WHITE:
             self._AI_step()
@@ -237,6 +241,26 @@ class GomokuBoard(QWidget):
                         self.piece_radius * 2,
                     )
 
+        if self.latest_move is not None:
+            x, y = self.latest_move
+            if self.board[x][y] == Piece.BLACK:
+                painter.setPen(QPen(QColor(255, 255, 255), 2))
+            elif self.board[x][y] == Piece.WHITE:
+                painter.setPen(QPen(QColor(0, 0, 0), 2))
+
+            painter.drawLine(
+                self.margin_size_x + x * self.grid_size,
+                self.margin_size_y + y * self.grid_size - int(self.piece_radius * 0.75),
+                self.margin_size_x + x * self.grid_size,
+                self.margin_size_y + y * self.grid_size + int(self.piece_radius * 0.75),
+            )
+            painter.drawLine(
+                self.margin_size_x + x * self.grid_size - int(self.piece_radius * 0.75),
+                self.margin_size_y + y * self.grid_size,
+                self.margin_size_x + x * self.grid_size + int(self.piece_radius * 0.75),
+                self.margin_size_y + y * self.grid_size,
+            )
+
     def step(self, action: list[int]):
         assert 2 == len(action)
         x = action[0]
@@ -249,6 +273,7 @@ class GomokuBoard(QWidget):
             return
 
         self.board[x][y] = self.current_player
+        self.latest_move = (x, y)
 
         self._env.step(torch.tensor([x * self.board_size + y]))
         self.update()  # Redraw the board
@@ -293,7 +318,6 @@ class GomokuBoard(QWidget):
 
 @hydra.main(version_base=None, config_path=CONFIG_PATH, config_name="demo")
 def main(cfg: DictConfig):
-    """Qt一直没学明白，写得比较丑"""
     OmegaConf.register_new_resolver("eval", eval)
     OmegaConf.resolve(cfg)
 
@@ -315,8 +339,8 @@ def main(cfg: DictConfig):
     app = QApplication(sys.argv)
 
     board = GomokuBoard(
-        grid_size=28,
-        piece_radius=12,
+        grid_size=cfg.get("grid_size", 28),
+        piece_radius=cfg.get("piece_radius", 12),
         board_size=cfg.get("board_size", 15),
         human_color=human_color,
         model=model,
@@ -331,7 +355,7 @@ def main(cfg: DictConfig):
     label.setAlignment(Qt.AlignmentFlag.AlignCenter)
     label.setFont(QFont("Arial", 24))
     # TO DO
-    label.setText("Hello world!")
+    label.setText("")
     label.setMinimumHeight(32)
     layout = QVBoxLayout(central_widget)
     layout.addWidget(label, Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignVCenter)
