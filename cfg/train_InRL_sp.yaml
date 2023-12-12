@@ -11,6 +11,9 @@ epochs: 100
 steps: 128
 save_interval: -1
 
+algo:
+  share_network: false
+
 
 # checkpoint: pretrained_models/${board_size}_${board_size}/${algo.name}/0.pt
 
@@ -20,6 +23,6 @@ wandb:
   mode: online # set to 'disabled' when debugging locally
 
 defaults:
-  - _self_
   - algo: ppo
   - baseline: ppo_no_share
+  - _self_

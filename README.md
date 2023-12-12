@@ -1,5 +1,7 @@
 # Gomoku RL
 
+**Empirically, Independent RL is enough (and in fact much better than PSRO).** In PSRO, if the initial strategy is unskilled, subsequent strategies easily overfit. As mentioned in [[1]](#refer-anchor-1), due to Gomoku's asymmetry, it's hard to train a network to play both black and white.
+
 **Note: although AI has learned complex strategies, it is still difficult to defeat humans at present.  In the first screenshot, humans defeated AI, while in the second screenshot, humans lost to AI.**
 
 ![](/images/lose1.gif)
@@ -27,9 +29,9 @@ I use python 3.11.5, torch 2.1.0 and **torchrl 0.2.1**. Lower versions of python
 
 ```bash
 # override default settings in cfg/train.yaml
-python scripts/train.py board_size=15 num_env=1024 device=cuda algo=ppo epochs=100 wandb.mode=online
+python scripts/train_InRL.py board_size=15 num_env=1024 device=cuda epochs=1000 wandb.mode=online
 # or simply:
-python scripts/train.py
+python scripts/train_InRL.py.py
 ```
 
 The default location for saving checkpoints is `wandb/*/files` or `tempfile.gettempdir()` if `wandb.mode=='disabled'`. Modify the output directory by specifying the `run_dir` parameter.
@@ -44,7 +46,7 @@ python scripts/demo.py human_black=True board_size=15 checkpoint=/path/to/your/m
 python scripts/demo.py
 ```
 
-Pretrained models for a $15\times15$ board are available under  `pretrained_models/15_15/`. Be aware that using the wrong model  for the board size will lead to loading errors due to mismatches in AI architectures.
+Pretrained models for a $15\times15$ board are available under  `pretrained_models/15_15/`. Be aware that using the wrong model for the board size will lead to loading errors due to mismatches in AI architectures. In PPO, when `share_network=True`, the actor and the critic could utilize a shared encoding module. At present, a `PPOPolicy` object with a shared encoder cannot load from a checkpoint without sharing.
 
 ## API Usage
 
@@ -82,7 +84,6 @@ Free-style Gomoku is a two-player zero-sum extensive-form game. Two players alte
 ## Limitations
 
 - Constrained to Free-style Gomoku support only.
-- The GUI is very rudimentary and cannot adapt to different resolutions.
 
 ## References
 
