@@ -29,7 +29,7 @@ I use python 3.11.5, torch 2.1.0 and **torchrl 0.2.1**. Lower versions of python
 
 ```bash
 # override default settings in cfg/train_InRL.yaml
-python scripts/train_InRL.py board_size=15 num_env=1024 device=cuda epochs=3000 wandb.mode=online
+python scripts/train_InRL.py num_env=1024 device=cuda epochs=3000 wandb.mode=online
 # or simply:
 python scripts/train_InRL.py.py
 ```
@@ -41,7 +41,7 @@ After training, play Gomoku with your model using the `scripts/demo.py` script:
 ```bash
 # Install PyQt5
 pip install PyQt5
-python scripts/demo.py human_black=True board_size=15 checkpoint=/path/to/your/model
+python scripts/demo.py device=cpu grid_size=56 piece_radius=24 checkpoint=/model/path
 # default checkpoint (only for board_size=15)
 python scripts/demo.py
 ```

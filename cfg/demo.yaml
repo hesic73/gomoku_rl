@@ -1,7 +1,7 @@
 board_size: 15
 
 checkpoint: pretrained_models/${board_size}_${board_size}/${algo.name}/0.pt
-device: cuda
+device: cpu
 
 human_black: true
 
