@@ -1,0 +1,27 @@
+name: dqn
+
+buffer_size: 100_000
+buffer_device: cuda
+batch_size: 8192
+gamma: 0.95
+
+max_grad_norm: 0.5
+
+eps_init: 1.0
+eps_end: 0.05
+annealing_num_steps: 1000
+
+
+target_update_interval: 4
+
+n_optim: 32
+
+
+optimizer:
+  name: adam
+  kwargs:
+    lr: 5e-4
+
+
+num_channels: 32
+num_residual_blocks: 3

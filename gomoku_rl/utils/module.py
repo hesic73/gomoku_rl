@@ -75,17 +75,17 @@ class ResidualTower(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         batch_shape = x.shape[:-3]
         x = x.reshape(-1, *x.shape[-3:])
-        
+
         x = self.cnn(x)
         x = self.bn(x)
         x = nn.functional.relu(x)
         x = self.layers(x)
-        
+
         x = x.reshape(*batch_shape, *x.shape[1:])
         return x
 
 
-class PolicyHead(nn.Module):
+class _PolicyHead(nn.Module):
     def __init__(self, out_features: int, num_channels: int) -> None:
         super().__init__()
         self.cnn = nn.Conv2d(in_channels=num_channels, out_channels=2, kernel_size=1)
@@ -99,7 +99,7 @@ class PolicyHead(nn.Module):
         x = x.reshape(-1, *x.shape[-3:])
         if mask is not None:
             mask = mask.reshape(-1, *mask.shape[-1:])
-        
+
         x = self.cnn(x)
         x = self.bn(x)
         x = nn.functional.relu(x)
@@ -107,9 +107,17 @@ class PolicyHead(nn.Module):
         x = self.linear(x)
         if mask is not None:
             x = torch.where(mask == 0, -float("inf"), x)
-        x = nn.functional.softmax(x, dim=-1)
-        
+
         x = x.reshape(*batch_shape, *x.shape[1:])
+        return x
+
+
+class PolicyHead(_PolicyHead):
+    def forward(
+        self, x: torch.Tensor, mask: torch.Tensor | None = None
+    ) -> torch.Tensor:
+        x = super().forward(x, mask)
+        x = nn.functional.softmax(x, dim=-1)
         return x
 
 
@@ -128,7 +136,7 @@ class ValueHead(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         batch_shape = x.shape[:-3]
         x = x.reshape(-1, *x.shape[-3:])
-        
+
         # Note: the order is different from the original implementation(bn,relu,flatten)
         # it seems when using vmap and nn.Conv.out_channels=1,
         # it will throw a RuntimeError
@@ -139,7 +147,7 @@ class ValueHead(nn.Module):
         x = self.linear_0(x)
         x = nn.functional.relu(x)
         x = self.linear_1(x)
-        
+
         x = x.reshape(*batch_shape, *x.shape[1:])
         return x
 
@@ -181,3 +189,29 @@ class ValueNet(nn.Module):
         x = self.residual_tower(x)
         x = self.value_head(x)
         return x
+
+
+class MyDuelingCnnDQNet(nn.Module):
+    def __init__(
+        self,
+        in_channels: int,
+        out_features: int,
+        num_residual_blocks: int = 3,
+        num_channels: int = 32,
+    ) -> None:
+        super().__init__()
+        self.features = ResidualTower(
+            in_channels=in_channels,
+            num_channels=num_channels,
+            num_residual_blocks=num_residual_blocks,
+        )
+        self.advantage = _PolicyHead(
+            out_features=out_features, num_channels=num_channels
+        )
+        self.value = _PolicyHead(out_features=out_features, num_channels=num_channels)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        x = self.features(x)
+        advantage = self.advantage(x)
+        value = self.value(x)
+        return value + advantage - advantage.mean(dim=-1, keepdim=True)

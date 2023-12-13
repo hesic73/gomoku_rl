@@ -7,23 +7,20 @@ run_dir:
 
 augment: false
 
-epochs: 500
+epochs: 1000
 rounds: 64 
 save_interval: -1
 
 # psro
-meta_solver: last_3
+meta_solver: uniform
 mean_threshold: 0.99
 std_threshold: 0.005
 min_iter_steps: 30
-max_iter_steps: 300
+max_iter_steps: 500
 
-# checkpoint: pretrained_models/${board_size}_${board_size}/${algo.name}/1.pt
+checkpoint: pretrained_models/${board_size}_${board_size}/${algo.name}/0.pt
 
-# population_dir: pretrained_models/${board_size}_${board_size}/${algo.name}
-
-# algo:
-#   share_network: false
+population_dir: pretrained_models/${board_size}_${board_size}/${algo.name}
 
 wandb:
   group: ${board_size}_${board_size}_${algo.name}_sp

@@ -56,8 +56,9 @@ class PPOPolicy(Policy):
 
         fake_input = observation_spec.zero()
         fake_input["action_mask"] = ~fake_input["action_mask"]
-        self.actor(fake_input)
-        self.critic(fake_input)
+        with torch.no_grad():
+            self.actor(fake_input)
+            self.critic(fake_input)
         # print(f"actor params:{count_parameters(self.actor)}")
         # print(f"critic params:{count_parameters(self.critic)}")
 

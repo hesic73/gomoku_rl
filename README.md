@@ -1,5 +1,7 @@
 # Gomoku RL
 
+DQN is under development (and basically wrong).
+
 **Empirically, Independent RL is enough (and in fact much better than PSRO).** In PSRO, if the initial strategy is unskilled, subsequent strategies easily overfit. As mentioned in [[1]](#refer-anchor-1), due to Gomoku's asymmetry, it's hard to train a network to play both black and white.
 
 **Note: although AI has learned complex strategies, it is still difficult to defeat humans at present.  In the first screenshot, humans defeated AI, while in the second screenshot, humans lost to AI.**

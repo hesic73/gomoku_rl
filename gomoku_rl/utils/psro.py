@@ -88,8 +88,8 @@ class Population:
         self._idx = -1
         self.device = device
         # this should be deterministic, as PSRO requires pure strategies. But it seems it easily overfits
-        # self._interaction_type = InteractionType.MODE
-        self._interaction_type = InteractionType.RANDOM
+        self._interaction_type = InteractionType.MODE
+        # self._interaction_type = InteractionType.RANDOM
 
         self.policy_sets: list[_policy_t | int] = []
         # if it's a module, we save it on disk

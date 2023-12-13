@@ -28,25 +28,9 @@ from gomoku_rl.utils.module import (
     ResidualTower,
     PolicyHead,
     ValueHead,
+    MyDuelingCnnDQNet,
 )
-
-
-def _get_cnn_mlp_kwargs(cfg: DictConfig):
-    cnn_kwargs = OmegaConf.to_container(cfg.cnn_kwargs)
-    cnn_kwargs.update(
-        {"activation_class": getattr(nn, cnn_kwargs.get("activation_class", "ReLU"))}
-    )
-    if (norm_class := cnn_kwargs.get("norm_class", None)) is not None:
-        cnn_kwargs.update({"norm_class": getattr(nn, norm_class)})
-
-    mlp_kwargs = OmegaConf.to_container(cfg.mlp_kwargs)
-    mlp_kwargs.update(
-        {"activation_class": getattr(nn, mlp_kwargs.get("activation_class", "ReLU"))}
-    )
-    if (norm_class := mlp_kwargs.get("norm_class", None)) is not None:
-        mlp_kwargs.update({"norm_class": getattr(nn, norm_class)})
-
-    return cnn_kwargs, mlp_kwargs
+from gomoku_rl.utils.misc import get_kwargs
 
 
 def make_dqn_actor(
@@ -54,9 +38,10 @@ def make_dqn_actor(
     action_spec: TensorSpec,
     device: _device_t,
 ):
-    cnn_kwargs, mlp_kwargs = _get_cnn_mlp_kwargs(cfg)
-
-    net = DuelingCnnDQNet(action_spec.space.n, 1, cnn_kwargs, mlp_kwargs, device=device)
+    net_kwargs = get_kwargs(cfg, "num_residual_blocks", "num_channels")
+    net = MyDuelingCnnDQNet(
+        in_channels=3, out_features=action_spec.space.n, **net_kwargs
+    )
     actor = QValueActor(
         net,
         spec=action_spec,
@@ -66,15 +51,12 @@ def make_dqn_actor(
 
 
 def make_egreedy_actor(
-    cfg: DictConfig,
+    actor: TensorDictModule,
     action_spec: TensorSpec,
     eps_init: float = 1.0,
     eps_end: float = 0.10,
     annealing_num_steps: int = 1000,
-    device: _device_t = "cuda",
 ):
-    actor = make_dqn_actor(cfg=cfg, action_spec=action_spec, device=device)
-
     explorative_policy = TensorDictSequential(
         actor,
         EGreedyModule(

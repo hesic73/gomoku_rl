@@ -1,5 +1,6 @@
 from .base import Policy
 from .ppo import PPOPolicy
+from .dqn import DQNPolicy
 
 from torchrl.data.tensor_specs import DiscreteTensorSpec, TensorSpec
 from omegaconf import DictConfig
@@ -16,6 +17,7 @@ def get_policy(
 ) -> Policy:
     policies = {
         "ppo": PPOPolicy,
+        "dqn": DQNPolicy,
     }
     assert name.lower() in policies
     cls = policies[name.lower()]

@@ -3,4 +3,5 @@ python scripts/train.py \
     board_size=8 \
     rounds=32 \
     epochs=100 \
-    wandb.mode=disabled
+    wandb.mode=disabled \
+    algo=dqn
