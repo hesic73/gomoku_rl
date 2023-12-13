@@ -11,8 +11,6 @@ epochs: 100
 steps: 128
 save_interval: -1
 
-algo:
-  share_network: false
 
 
 # checkpoint: pretrained_models/${board_size}_${board_size}/${algo.name}/0.pt
@@ -24,5 +22,5 @@ wandb:
 
 defaults:
   - algo: ppo
-  - baseline: ppo_no_share
+  - baseline: ppo_share
   - _self_

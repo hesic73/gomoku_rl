@@ -3,21 +3,17 @@ from gomoku_rl.utils.visual import annotate_heatmap, heatmap
 import hydra
 from omegaconf import DictConfig, OmegaConf
 import os
-import datetime
 from gomoku_rl import CONFIG_PATH
 import torch
 
 import matplotlib.pyplot as plt
 
 from gomoku_rl.env import GomokuEnv
-
-from gomoku_rl.utils.wandb import init_wandb
 from gomoku_rl.utils.psro import calculate_jpc
+from gomoku_rl.utils.elo import compute_elo_ratings
+from gomoku_rl.utils.policy import uniform_policy
 from gomoku_rl.policy import get_pretrained_policy
-import logging
-from tqdm import tqdm
 import numpy as np
-from typing import Callable, Any, Dict
 import functools
 
 
@@ -46,19 +42,23 @@ def main(cfg: DictConfig):
     )
 
     checkpoints = cfg.checkpoints
-    players = [make_player(checkpoint_path=p) for p in checkpoints]
+    players = []
+    # players.append(uniform_policy)
+    players.extend(make_player(checkpoint_path=p) for p in checkpoints)
 
-    payoff = get_payoff_matrix(env=env, row_policies=players, col_policies=players, n=5)
+    payoff = get_payoff_matrix(env=env, row_policies=players, col_policies=players, n=2)
     print(payoff)
+    elo_ratings = compute_elo_ratings(payoff=(payoff + 1 - payoff.T) / 2)
+    print(elo_ratings)
     print(f"JPC:{calculate_jpc(payoff.numpy())}")
-    im, _ = heatmap(
-        payoff * 100,
-        row_labels=[os.path.split(p)[1] for p in checkpoints],
-        col_labels=[os.path.split(p)[1] for p in checkpoints],
-    )
-    annotate_heatmap(im, valfmt="{x:.2f}%")
-    plt.tight_layout()
-    plt.savefig("payoff.png")
+    # im, _ = heatmap(
+    #     payoff[1:, 1:] * 100,
+    #     row_labels=[os.path.split(p)[1] for p in checkpoints],
+    #     col_labels=[os.path.split(p)[1] for p in checkpoints],
+    # )
+    # annotate_heatmap(im, valfmt="{x:.2f}%")
+    # plt.tight_layout()
+    # plt.savefig("payoff.png")
 
 
 if __name__ == "__main__":

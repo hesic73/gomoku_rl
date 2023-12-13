@@ -4,10 +4,8 @@ board_size: 15
 device: cuda
 
 checkpoints:
-  # - pretrained_models/${board_size}_${board_size}/${algo.name}/0.pt
-  # - pretrained_models/${board_size}_${board_size}/${algo.name}/1.pt
-  - wandb/latest-run/files/black_final.pt
-  - wandb/latest-run/files/white_final.pt
+ - pretrained_models/${board_size}_${board_size}/${algo.name}/0.pt
+ - pretrained_models/${board_size}_${board_size}/${algo.name}/1.pt
 
 defaults:
   - _self_
