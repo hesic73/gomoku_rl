@@ -12,8 +12,8 @@ rounds: 64
 save_interval: 300
 
 
-black_checkpoint: black_final.pt #pretrained_models/${board_size}_${board_size}/${algo.name}/0.pt
-white_checkpoint: white_final.pt #pretrained_models/${board_size}_${board_size}/${algo.name}/0.pt
+black_checkpoint: pretrained_models/${board_size}_${board_size}/${algo.name}/0.pt
+white_checkpoint: pretrained_models/${board_size}_${board_size}/${algo.name}/0.pt
 
 wandb:
   group: ${board_size}_${board_size}_${algo.name}_InRL
