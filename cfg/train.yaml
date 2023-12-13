@@ -1,25 +1,25 @@
 seed: 0
-num_envs: 512
+num_envs: 1024
 board_size: 15
 device: cuda
 out_device: cpu
 run_dir:
 
-augment: true
+augment: false
 
-epochs: 100
+epochs: 1000
 rounds: 64
 save_interval: 250
 
 # psro
-meta_solver: nash
+meta_solver: uniform
 mean_threshold: 0.99
 std_threshold: 0.005
 min_iter_steps: 20
 max_iter_steps: 300
 
-# black_checkpoint: pretrained_models/${board_size}_${board_size}/0.pt
-# white_checkpoint: pretrained_models/${board_size}_${board_size}/0.pt
+black_checkpoint: pretrained_models/${board_size}_${board_size}/${algo.name}/0.pt
+white_checkpoint: pretrained_models/${board_size}_${board_size}/${algo.name}/1.pt
 
 wandb:
   group: ${board_size}_${board_size}

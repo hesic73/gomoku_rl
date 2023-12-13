@@ -4,4 +4,6 @@ python scripts/train.py \
     rounds=32 \
     epochs=100 \
     wandb.mode=disabled \
+    black_checkpoint= \
+    white_checkpoint= \
     algo=dqn

@@ -1,20 +1,20 @@
 name: dqn
 
-buffer_size: 100_000
-buffer_device: cuda
-batch_size: 8192
+buffer_size: 500_000
+buffer_device: cpu
+batch_size: 5096
 gamma: 0.95
 
 max_grad_norm: 0.5
 
 eps_init: 1.0
-eps_end: 0.05
+eps_end: 0.1
 annealing_num_steps: 1000
 
 
 target_update_interval: 4
 
-n_optim: 32
+n_optim: 8
 
 
 optimizer:

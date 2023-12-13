@@ -98,6 +98,7 @@ class DQNPolicy(Policy):
         else:
             tensordict = self.actor_explore(tensordict)
             self.actor_explore.module[-1].step()
+            # print(self.actor_explore.module[-1].eps)
             return tensordict
 
     def learn(self, data: TensorDict) -> Dict:
