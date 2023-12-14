@@ -1,5 +1,5 @@
 # Gomoku RL
-![Lines of code](https://img.shields.io/tokei/lines/github/hesic73/gomoku_rl)
+[![](https://tokei.rs/b1/github/hesic73/gomoku_rl)](https://github.com/hesic73/gomoku_rl).
 
 **Empirically, Independent RL is enough (and in fact much better than PSRO).** As mentioned in [[1]](#refer-anchor-1), due to Gomoku's asymmetry, it's hard to train a network to play both black and white.
 
