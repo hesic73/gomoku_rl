@@ -5,7 +5,7 @@ from gomoku_rl.utils.wandb import init_wandb
 from gomoku_rl.runner import PSRORunner
 
 
-@hydra.main(version_base=None, config_path=CONFIG_PATH, config_name="train")
+@hydra.main(version_base=None, config_path=CONFIG_PATH, config_name="train_psro")
 def main(cfg: DictConfig):
     OmegaConf.register_new_resolver("eval", eval)
     OmegaConf.resolve(cfg)

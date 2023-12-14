@@ -11,11 +11,6 @@
 
 *gomoku_rl* is an open-sourced project that trains agents to play the game of Gomoku through deep reinforcement learning. Previous works often rely on variants of AlphaGo/AlphaZero and inefficiently use GPU resources. Notably, many existing projects are limited to small boards, with only a few exceptions. [[1]](#refer-anchor-1) incorporates curriculum learning and other enhancements;  [[2]](#refer-anchor-2)  and  [[3]](#refer-anchor-3)  collect transitions from multiple environments and also parallelize MCTS execution. In contrast, *gomoku_rl* features GPU-parallelized simulation and leverages recent advancements in **MARL**. Starting from random play, a model can achieve human-level performance on a $15\times15$ board within hours of training on a 3090.
 
-## Supported Algorithms
-
-- PPO
-- DQN
-
 ## Installation
 
 Install *gomoku_rl* with the following command:
@@ -52,6 +47,13 @@ python scripts/demo.py
 ```
 
 Pretrained models for a $15\times15$ board are available under  `pretrained_models/15_15/`. Be aware that using the wrong model for the board size will lead to loading errors due to mismatches in AI architectures. In PPO, when `share_network=True`, the actor and the critic could utilize a shared encoding module. At present, a `PPOPolicy` object with a shared encoder cannot load from a checkpoint without sharing.
+
+
+## Supported Algorithms
+
+- PPO
+- DQN
+
 
 ## Details
 
