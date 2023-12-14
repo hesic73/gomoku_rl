@@ -1,8 +1,8 @@
 name: dqn
 
-buffer_size: 500_000
+buffer_size: 1_000_000
 buffer_device: cpu
-batch_size: 5096
+batch_size: 8192
 gamma: 0.95
 
 max_grad_norm: 0.5

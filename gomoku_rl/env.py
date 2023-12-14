@@ -7,7 +7,6 @@ from torchrl.data.tensor_specs import (
     CompositeSpec,
     DiscreteTensorSpec,
     BinaryDiscreteTensorSpec,
-    BoundedTensorSpec,
     UnboundedContinuousTensorSpec,
 )
 import time

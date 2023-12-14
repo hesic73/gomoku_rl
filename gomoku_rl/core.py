@@ -4,7 +4,12 @@ from torch.cuda import _device_t
 import torch.nn.functional as F
 
 
-def compute_done(board: torch.Tensor) -> torch.Tensor:
+def compute_done(
+    board: torch.Tensor,
+    kernel_horizontal: torch.Tensor,
+    kernel_vertical: torch.Tensor,
+    kernel_diagonal: torch.Tensor,
+) -> torch.Tensor:
     """_summary_
 
     Args:
@@ -17,43 +22,6 @@ def compute_done(board: torch.Tensor) -> torch.Tensor:
     """
 
     board = board.unsqueeze(1)  # (E,1,B,B)
-
-    kernel_horizontal = (
-        torch.tensor([1, 1, 1, 1, 1], device=board.device, dtype=board.dtype)
-        .unsqueeze(-1)
-        .unsqueeze(0)
-        .unsqueeze(0)
-    )  # (1,1,5,1)
-
-    kernel_vertical = (
-        torch.tensor([1, 1, 1, 1, 1], device=board.device, dtype=board.dtype)
-        .unsqueeze(0)
-        .unsqueeze(0)
-        .unsqueeze(0)
-    )  # (1,1,1,5)
-
-    kernel_diagonal = torch.tensor(
-        [
-            [
-                [1, 0, 0, 0, 0],
-                [0, 1, 0, 0, 0],
-                [0, 0, 1, 0, 0],
-                [0, 0, 0, 1, 0],
-                [0, 0, 0, 0, 1],
-            ],
-            [
-                [0, 0, 0, 0, 1],
-                [0, 0, 0, 1, 0],
-                [0, 0, 1, 0, 0],
-                [0, 1, 0, 0, 0],
-                [1, 0, 0, 0, 0],
-            ],
-        ],
-        device=board.device,
-        dtype=board.dtype,
-    ).unsqueeze(
-        1
-    )  # (2,1,5,5)
 
     output_horizontal = F.conv2d(input=board, weight=kernel_horizontal)  # (E,1,B-4,B)
 
@@ -110,6 +78,43 @@ class Gomoku:
             num_envs, dtype=torch.long, device=self.device
         )
 
+        self.kernel_horizontal = (
+            torch.tensor([1, 1, 1, 1, 1], device=self.device, dtype=torch.float)
+            .unsqueeze(-1)
+            .unsqueeze(0)
+            .unsqueeze(0)
+        )  # (1,1,5,1)
+
+        self.kernel_vertical = (
+            torch.tensor([1, 1, 1, 1, 1], device=self.device, dtype=torch.float)
+            .unsqueeze(0)
+            .unsqueeze(0)
+            .unsqueeze(0)
+        )  # (1,1,1,5)
+
+        self.kernel_diagonal = torch.tensor(
+            [
+                [
+                    [1, 0, 0, 0, 0],
+                    [0, 1, 0, 0, 0],
+                    [0, 0, 1, 0, 0],
+                    [0, 0, 0, 1, 0],
+                    [0, 0, 0, 0, 1],
+                ],
+                [
+                    [0, 0, 0, 0, 1],
+                    [0, 0, 0, 1, 0],
+                    [0, 0, 1, 0, 0],
+                    [0, 1, 0, 0, 0],
+                    [1, 0, 0, 0, 0],
+                ],
+            ],
+            device=self.device,
+            dtype=torch.float,
+        ).unsqueeze(
+            1
+        )  # (2,1,5,5)
+
     def to(self, device: _device_t):
         self.board.to(device=device)
         self.done.to(device=device)
@@ -156,29 +161,31 @@ class Gomoku:
         if env_indices is None:
             env_indices = torch.ones_like(action, dtype=torch.bool)
 
-        # if action isn't in [0,{board_size}^2), the indexing will crash
-        x = action // self.board_size
-        y = action % self.board_size
+        board_1d_view = self.board.view(self.num_envs, -1)
 
-        values_on_board = self.board[
-            torch.arange(self.num_envs, device=self.device), x, y
+        values_on_board = board_1d_view[
+            torch.arange(self.num_envs, device=self.device),
+            action,
         ]  # (E,)
 
         nop = (values_on_board != 0) | (~env_indices)  # (E,)
-
+        inc = torch.logical_not(nop).long()  # (E,)
         piece = turn_to_piece(self.turn)
-        self.board[torch.arange(self.num_envs, device=self.device), x, y] = torch.where(
-            nop, values_on_board, piece
-        )
-        self.move_count = self.move_count + torch.logical_not(nop).long()
+        board_1d_view[
+            torch.arange(self.num_envs, device=self.device), action
+        ] = torch.where(nop, values_on_board, piece)
+        self.move_count = self.move_count + inc
 
         # F.conv2d doesn't support LongTensor on CUDA. So we use float.
         board_one_side = (self.board == piece.unsqueeze(-1).unsqueeze(-1)).float()
-        self.done = compute_done(board_one_side) | (
-            self.move_count == self.board_size * self.board_size
-        )
+        self.done = compute_done(
+            board_one_side,
+            self.kernel_horizontal,
+            self.kernel_vertical,
+            self.kernel_diagonal,
+        ) | (self.move_count == self.board_size * self.board_size)
 
-        self.turn = (self.turn + torch.logical_not(nop).long()) % 2
+        self.turn = (self.turn + inc) % 2
         self.last_move = torch.where(nop, self.last_move, action)
 
         return self.done & env_indices, nop & env_indices

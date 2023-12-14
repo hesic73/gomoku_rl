@@ -36,13 +36,6 @@ def get_replay_buffer(
     return buffer
 
 
-def get_loss_module(actor: TensorDictModule, gamma: float):
-    loss_module = DQNLoss(actor, delay_value=True)
-    loss_module.make_value_estimator(gamma=gamma)
-    target_updater = SoftUpdate(loss_module, eps=0.995)
-    return loss_module, target_updater
-
-
 class DQNPolicy(Policy):
     def __init__(
         self,
@@ -77,7 +70,9 @@ class DQNPolicy(Policy):
         self.n_optim: int = cfg.n_optim
         self.target_update_interval: int = cfg.target_update_interval
 
-        self.loss_module, self.target_updater = get_loss_module(self.actor, self.gamma)
+        self.loss_module = DQNLoss(self.actor, delay_value=True)
+        self.loss_module.make_value_estimator(gamma=self.gamma)
+        self.target_updater = SoftUpdate(self.loss_module, eps=0.995)
 
         self.optimizer = get_optimizer(
             self.cfg.optimizer, self.loss_module.parameters()
@@ -146,7 +141,14 @@ class DQNPolicy(Policy):
         self._eval = False
 
     def state_dict(self) -> Dict:
-        return self.actor.state_dict()
+        # Resuming training will become impossible if the parameters of the loss_module are discarded.
+        return {
+            "actor": self.actor.state_dict(),
+            "loss": self.loss_module.state_dict(),
+        }
 
     def load_state_dict(self, state_dict: Dict):
-        return self.actor.load_state_dict(state_dict)
+        self.actor.load_state_dict(state_dict["actor"])
+        self.loss_module.load_state_dict(state_dict["loss"])
+        self.loss_module.make_value_estimator(gamma=self.gamma)
+        self.target_updater = SoftUpdate(self.loss_module, eps=0.995)

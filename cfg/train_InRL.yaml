@@ -9,11 +9,11 @@ augment: false
 
 epochs: 1500
 rounds: 64
-save_interval: 300
+save_interval: -1
 
 
 black_checkpoint: pretrained_models/${board_size}_${board_size}/${algo.name}/0.pt
-white_checkpoint: pretrained_models/${board_size}_${board_size}/${algo.name}/0.pt
+white_checkpoint: pretrained_models/${board_size}_${board_size}/${algo.name}/1.pt
 
 wandb:
   group: ${board_size}_${board_size}_${algo.name}_InRL
@@ -23,4 +23,4 @@ wandb:
 defaults:
   - _self_
   - algo: ppo
-  - baseline: ppo_no_share
+  - baseline: ppo

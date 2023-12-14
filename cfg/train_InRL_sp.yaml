@@ -22,5 +22,5 @@ wandb:
 
 defaults:
   - algo: ppo
-  - baseline: ppo_share
+  - baseline: ppo
   - _self_

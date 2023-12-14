@@ -49,10 +49,14 @@ class Runner(abc.ABC):
         )
 
         if black_checkpoint := cfg.get("black_checkpoint", None):
-            self.policy_black.load_state_dict(torch.load(black_checkpoint))
+            self.policy_black.load_state_dict(
+                torch.load(black_checkpoint, map_location=self.cfg.device)
+            )
             logging.info(f"black_checkpoint:{black_checkpoint}")
         if white_checkpoint := cfg.get("white_checkpoint", None):
-            self.policy_white.load_state_dict(torch.load(white_checkpoint))
+            self.policy_white.load_state_dict(
+                torch.load(white_checkpoint, map_location=self.cfg.device)
+            )
             logging.info(f"white_checkpoint:{white_checkpoint}")
 
         self.baseline = self._get_baseline()
@@ -68,7 +72,7 @@ class Runner(abc.ABC):
         pretrained_dir = os.path.join(
             "pretrained_models",
             f"{self.cfg.board_size}_{self.cfg.board_size}",
-            f"{self.cfg.algo.name}",
+            f"{self.cfg.baseline.name}",
         )
 
         if os.path.isdir(pretrained_dir) and (
@@ -87,7 +91,7 @@ class Runner(abc.ABC):
                 device=self.env.device,
             )
             logging.info(f"Baseline:{ckpts[0]}")
-            baseline.load_state_dict(torch.load(ckpts[0]))
+            baseline.load_state_dict(torch.load(ckpts[0], map_location=self.cfg.device))
             baseline.eval()
             return baseline
         else:
@@ -174,7 +178,9 @@ class SPRunner(abc.ABC):
         )
 
         if checkpoint := cfg.get("checkpoint", None):
-            self.policy.load_state_dict(torch.load(checkpoint))
+            self.policy.load_state_dict(
+                torch.load(checkpoint, map_location=self.cfg.device)
+            )
             logging.info(f"load from {checkpoint}")
 
         self.baseline = self._get_baseline()
@@ -190,7 +196,7 @@ class SPRunner(abc.ABC):
         pretrained_dir = os.path.join(
             "pretrained_models",
             f"{self.cfg.board_size}_{self.cfg.board_size}",
-            f"{self.cfg.algo.name}",
+            f"{self.cfg.baseline.name}",
         )
 
         if os.path.isdir(pretrained_dir) and (
@@ -209,12 +215,11 @@ class SPRunner(abc.ABC):
                 device=self.env.device,
             )
             logging.info(f"Baseline:{ckpts[0]}")
-            baseline.load_state_dict(torch.load(ckpts[0]))
+            baseline.load_state_dict(torch.load(ckpts[0], map_location=self.cfg.device))
             baseline.eval()
             return baseline
         else:
             return uniform_policy
-
 
     @abc.abstractmethod
     def _epoch(self, epoch: int) -> dict[str, Any]:

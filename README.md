@@ -1,10 +1,8 @@
 # Gomoku RL
 
-DQN is under development (and basically wrong).
+**Empirically, Independent RL is enough (and in fact much better than PSRO).** As mentioned in [[1]](#refer-anchor-1), due to Gomoku's asymmetry, it's hard to train a network to play both black and white.
 
-**Empirically, Independent RL is enough (and in fact much better than PSRO).** In PSRO, if the initial strategy is unskilled, subsequent strategies easily overfit. As mentioned in [[1]](#refer-anchor-1), due to Gomoku's asymmetry, it's hard to train a network to play both black and white.
-
-**Note: although AI has learned complex strategies, it is still difficult to defeat humans at present.  In the first screenshot, humans defeated AI, while in the second screenshot, humans lost to AI.**
+**Note: although it has learned complex strategies, AI still cannot defeat humans 100%. In the first screenshot, humans defeated AI, while in the second screenshot, humans lost to AI.**
 
 ![](/images/lose1.gif)
 ![](/images/win1.gif)
@@ -12,6 +10,11 @@ DQN is under development (and basically wrong).
 ## Introduction
 
 *gomoku_rl* is an open-sourced project that trains agents to play the game of Gomoku through deep reinforcement learning. Previous works often rely on variants of AlphaGo/AlphaZero and inefficiently use GPU resources. Notably, many existing projects are limited to small boards, with only a few exceptions. [[1]](#refer-anchor-1) incorporates curriculum learning and other enhancements;  [[2]](#refer-anchor-2)  and  [[3]](#refer-anchor-3)  collect transitions from multiple environments and also parallelize MCTS execution. In contrast, *gomoku_rl* features GPU-parallelized simulation and leverages recent advancements in **MARL**. Starting from random play, a model can achieve human-level performance on a $15\times15$ board within hours of training on a 3090.
+
+## Supported Algorithms
+
+- PPO
+- DQN
 
 ## Installation
 
