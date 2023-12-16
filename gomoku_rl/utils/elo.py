@@ -19,3 +19,27 @@ def compute_elo_ratings(payoff: np.ndarray, average_rating: float = 1200) -> np.
     elo_ratings = payoff.mean(axis=-1)
     elo_ratings = elo_ratings * (400 / np.log(10)) + average_rating
     return elo_ratings
+
+
+def compute_expected_score(rating_0: float, rating_1: float) -> float:
+    return 1 / (1 + 10.0 ** ((rating_1 - rating_0) / 400))
+
+
+class Elo:
+    def __init__(self) -> None:
+        self.players: dict[str, float] = {}
+
+    def addPlayer(self, name: str, rating: float = 1200):
+        assert name not in self.players
+        self.players[name] = rating
+
+    def expected_score(self, player_0: str, player_1: str) -> float:
+        rating_0 = self.players[player_0]
+        rating_1 = self.players[player_1]
+        return compute_expected_score(rating_0, rating_1)
+
+    def update(self, player_0: str, player_1: str, score: float, K: float = 64):
+        e = self.expected_score(player_0, player_1)
+        tmp = K * (score - e)
+        self.players[player_0] = self.players[player_0] + tmp
+        self.players[player_1] = self.players[player_1] - tmp

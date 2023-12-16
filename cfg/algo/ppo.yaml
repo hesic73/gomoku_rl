@@ -20,7 +20,7 @@ optimizer:
     lr: 5e-4
 
 
-num_channels: 32
-num_residual_blocks: 3
+num_channels: 64
+num_residual_blocks: 4
 
 
