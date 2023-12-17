@@ -166,3 +166,7 @@ outputs
 wandb
 /*.pt
 /*.png
+
+dist/
+build/
+*.rar

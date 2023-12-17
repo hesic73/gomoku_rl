@@ -5,8 +5,8 @@ device: cpu
 
 human_black: true
 
-grid_size: 28
-piece_radius: 12
+grid_size: 56
+piece_radius: 24
 
 
 defaults:

@@ -3,10 +3,7 @@
 
 **Empirically, Independent RL is enough (and in fact much better than PSRO).** As mentioned in [[1]](#refer-anchor-1), due to Gomoku's asymmetry, it's hard to train a network to play both black and white.
 
-**Note: although it has learned complex strategies, AI still cannot defeat humans 100%. In the first screenshot, humans defeated AI, while in the second screenshot, humans lost to AI.**
-
-![](/images/lose1.gif)
-![](/images/win1.gif)
+![](/images/screenshot_0.gif)
 
 ## Introduction
 
