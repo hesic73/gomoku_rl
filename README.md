@@ -74,6 +74,8 @@ cmake --build . --config Release
 
 ```
 
+**PS**: If CMake cannot find Torch, try `set(Torch_DIR /absolute/path/to/libtorch/share/cmake/torch)`.
+
 
 ## Supported Algorithms
 
