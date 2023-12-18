@@ -1,4 +1,7 @@
 # Gomoku RL
+
+**TO DO: pure C++ GUI application in Qt 5 and Libtorch.**
+
 [![](https://tokei.rs/b1/github/hesic73/gomoku_rl)](https://github.com/hesic73/gomoku_rl).
 
 **Empirically, Independent RL is enough (and in fact much better than PSRO).** As mentioned in [[1]](#refer-anchor-1), due to Gomoku's asymmetry, it's hard to train a network to play both black and white.
@@ -45,6 +48,31 @@ python scripts/demo.py
 ```
 
 Pretrained models for a $15\times15$ board are available under  `pretrained_models/15_15/`. Be aware that using the wrong model for the board size will lead to loading errors due to mismatches in AI architectures. In PPO, when `share_network=True`, the actor and the critic could utilize a shared encoding module. At present, a `PPOPolicy` object with a shared encoder cannot load from a checkpoint without sharing.
+
+## GUI
+
+**Note:  for deployment, we opt for `torch.jit.ScriptModule` instead of `torch.nn.Module`.** The `*.pt` files used in `scripts/train_*.py` are state dicts of a `torch.nn.Module` and cannot be directly utilized in this context.
+
+
+In addition to `scripts/demo.py`, there is a standalone C++ GUI application. To compile the source code, make sure to have Qt5, Libtorch and cmake installed. Refer to [https://pytorch.org/cppdocs/installing.html](https://pytorch.org/cppdocs/installing.html) for instructions on how to install C++ distributions of Pytorch.
+
+Here are the commands to build the executable:
+
+```bash
+# Make a directory
+mkdir build; cd build
+
+# Generate the build system
+# If torch is not installed on your computer, specify the absolute path to Libtorch
+cmake -DCMAKE_PREFIX_PATH=/absolute/path/to/libtorch ../src
+
+# Alternatively, if torch is installed, use the following command
+cmake -DCMAKE_PREFIX_PATH=`python3 -c 'import torch;print(torch.utils.cmake_prefix_path)'` ../src
+
+# Build the executable
+cmake --build . --config Release
+
+```
 
 
 ## Supported Algorithms

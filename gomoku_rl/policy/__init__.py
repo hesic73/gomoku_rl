@@ -44,5 +44,5 @@ def get_pretrained_policy(
         observation_spec=observation_spec,
         device=device,
     )
-    policy.load_state_dict(torch.load(checkpoint_path))
+    policy.load_state_dict(torch.load(checkpoint_path, map_location=device))
     return policy

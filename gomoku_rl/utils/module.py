@@ -160,8 +160,8 @@ class ActorNet(nn.Module):
         num_channels: int = 32,
     ) -> None:
         super().__init__()
-        self.residual_tower = residual_tower
-        self.policy_head = PolicyHead(
+        self.residual_tower: nn.Module = residual_tower
+        self.policy_head: nn.Module = PolicyHead(
             out_features=out_features,
             num_channels=num_channels,
         )
