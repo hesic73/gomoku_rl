@@ -1,8 +1,9 @@
 # Gomoku RL
 
-**TO DO: pure C++ GUI application in Qt 5 and Libtorch.**
 
-[![](https://tokei.rs/b1/github/hesic73/gomoku_rl)](https://github.com/hesic73/gomoku_rl).
+[![](https://tokei.rs/b1/github/hesic73/gomoku_rl)](https://github.com/hesic73/gomoku_rl)
+
+**TO DO: pure C++ GUI application in Qt 5 and Libtorch.**
 
 **Empirically, Independent RL is enough (and in fact much better than PSRO).** As mentioned in [[1]](#refer-anchor-1), due to Gomoku's asymmetry, it's hard to train a network to play both black and white.
 

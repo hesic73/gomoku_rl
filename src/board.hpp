@@ -37,8 +37,10 @@ public:
         setFixedSize(tmp, tmp);
         margin_size_x = 50;
         margin_size_y = 50;
+        reset();
     }
     ~Board() {}
+    Cell get_human() const { return human; }
 
 public slots:
     void load(QString str)
@@ -46,6 +48,19 @@ public slots:
         auto bytes = str.toUtf8();
         auto path = std::filesystem::u8path(bytes.constData());
         model.load(path.string());
+    }
+    void reset()
+    {
+        gomoku.reset();
+        if (human == Cell::White)
+        {
+            AI_step();
+        }
+        update();
+    }
+    void set_human(Cell color)
+    {
+        human = color;
     }
 
 protected:
