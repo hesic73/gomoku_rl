@@ -1,7 +1,7 @@
 # Gomoku RL
 
 
-[![](https://tokei.rs/b1/github/hesic73/gomoku_rl)](https://github.com/hesic73/gomoku_rl)
+![](https://tokei.rs/b1/github/hesic73/gomoku_rl)(https://github.com/hesic73/gomoku_rl)
 
 **TO DO: pure C++ GUI application in Qt 5 and Libtorch.**
 
