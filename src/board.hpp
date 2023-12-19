@@ -13,6 +13,8 @@
 
 #include <cstdint>
 #include <iostream>
+#include <string>
+#include <filesystem>
 #include "core.hpp"
 #include "model.hpp"
 
@@ -35,10 +37,16 @@ public:
         setFixedSize(tmp, tmp);
         margin_size_x = 50;
         margin_size_y = 50;
-
-        model.load("D:/24_spring/tsmodule.pt");
     }
     ~Board() {}
+
+public slots:
+    void load(QString str)
+    {
+        auto bytes = str.toUtf8();
+        auto path = std::filesystem::u8path(bytes.constData());
+        model.load(path.string());
+    }
 
 protected:
     virtual void mousePressEvent(QMouseEvent *event) override
