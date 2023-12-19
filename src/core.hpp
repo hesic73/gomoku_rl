@@ -1,3 +1,5 @@
+#ifndef CORE_H
+#define CORE_H
 #include <cstdint>
 #include <string>
 #include <vector>
@@ -267,3 +269,5 @@ public:
     }
     const std::uint32_t board_size;
 };
+
+#endif // CORE_H

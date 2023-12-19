@@ -26,6 +26,7 @@ set(PROJECT_SOURCES
         mainwindow.hpp
         board.hpp
         core.hpp
+        model.hpp
 )
 
 add_executable(gomoku-gui

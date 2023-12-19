@@ -14,12 +14,13 @@
 #include <cstdint>
 #include <iostream>
 #include "core.hpp"
+#include "model.hpp"
 
 class Board : public QWidget
 {
     Q_OBJECT
 public:
-    Board(QWidget *parent = nullptr, std::uint32_t board_size = 6, Cell human = Cell::Black) : QWidget(parent), gomoku(board_size), human(human)
+    Board(QWidget *parent = nullptr, std::uint32_t board_size = 15, Cell human = Cell::Black) : QWidget(parent), gomoku(board_size), human(human)
     {
         setStyleSheet("background-color: rgba(255,212,101,255);");
 
@@ -34,6 +35,8 @@ public:
         setFixedSize(tmp, tmp);
         margin_size_x = 50;
         margin_size_y = 50;
+
+        model.load("D:/24_spring/tsmodule.pt");
     }
     ~Board() {}
 
@@ -58,7 +61,10 @@ protected:
         std::cout << "Human:" << x << "," << y << std::endl;
         gomoku.step(x * gomoku.board_size + y);
         update();
-        // std::cout << gomoku.string_repr();
+        if (gomoku.is_done())
+        {
+            std::cout << "Done" << std::endl;
+        }
         if (!gomoku.is_done())
         {
             AI_step();
@@ -160,12 +166,24 @@ private:
     int piece_radius;
     int margin_size_x;
     int margin_size_y;
+    Model model;
 
     void AI_step()
     {
-        auto action = gomoku.get_random_valid_action();
+        std::uint32_t action;
+        if (model.is_loaded())
+            action = model(gomoku.get_board_view(), gomoku.board_size, gomoku.get_turn(), gomoku.last_action());
+        else
+        {
+            action = gomoku.get_random_valid_action();
+        }
+
         std::cout << "AI:" << action / gomoku.board_size << "," << action % gomoku.board_size << std::endl;
         gomoku.step(action);
+        if (gomoku.is_done())
+        {
+            std::cout << "Done" << std::endl;
+        }
         update();
     }
 };
