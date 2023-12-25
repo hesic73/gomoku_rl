@@ -13,6 +13,7 @@
 #include <QKeySequence>
 #include <QActionGroup>
 #include "board.hpp"
+#include "buttonpanel.hpp"
 
 class MainWindow : public QMainWindow
 {
@@ -21,8 +22,34 @@ public:
     MainWindow(QWidget *parent = nullptr) : QMainWindow(parent)
     {
         board = new Board(this);
+        button_panel = new ButtonPanel(this);
+        button_panel->connect_restart([this]()
+                                      { this->board->reset(); });
+        button_panel->connect_undo([this]()
+                                   { this->board->undo(); });
+        button_panel->connect_color_index_changed([this](int index)
+                                                  {
+            Cell color;
+            if(index==0){
+                color=Cell::Black;
+            }else{
+                color=Cell::White;
+            }
+
+            if(this->board->get_human()==color){
+                        return;
+                    }
+            this->board->set_human(color);
+            this->board->reset(); });
+
+        auto w = new QWidget(this);
+        auto layout = new QVBoxLayout(w);
+        layout->addWidget(board);
+        layout->addWidget(button_panel);
+        w->setLayout(layout);
+
         setWindowTitle("gomoku-gui");
-        setCentralWidget(board);
+        setCentralWidget(w);
 
         auto menu_bar = menuBar();
         auto file_menu = menu_bar->addMenu("&File");
@@ -76,5 +103,6 @@ public:
 
 private:
     Board *board;
+    ButtonPanel *button_panel;
 };
 #endif // MAINWINDOW_H

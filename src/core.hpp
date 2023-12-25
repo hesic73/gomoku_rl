@@ -212,6 +212,10 @@ public:
     }
     bool is_done() const { return done; }
     Cell get_turn() const { return turn; }
+    int get_move_count() const
+    {
+        return static_cast<int>(history.size());
+    }
 
     std::uint32_t get_random_valid_action() const
     {

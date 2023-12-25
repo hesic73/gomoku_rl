@@ -27,6 +27,8 @@ set(PROJECT_SOURCES
         board.hpp
         core.hpp
         model.hpp
+        buttonpanel.hpp
+        labeledcombobox.hpp
 )
 
 add_executable(gomoku-gui
@@ -35,6 +37,9 @@ add_executable(gomoku-gui
 
 target_link_libraries(gomoku-gui PRIVATE Qt${QT_VERSION_MAJOR}::Widgets "${TORCH_LIBRARIES}")
 
+if(CMAKE_BUILD_TYPE STREQUAL "Release")
+  set_property(TARGET gomoku-gui PROPERTY WIN32_EXECUTABLE true)
+endif()
 
 # The following code block is suggested to be used on Windows.
 # According to https://github.com/pytorch/pytorch/issues/25457,

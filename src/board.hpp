@@ -58,6 +58,16 @@ public slots:
         }
         update();
     }
+    void undo()
+    {
+        if (gomoku.get_move_count() < 2)
+        {
+            return;
+        }
+        gomoku.unstep();
+        gomoku.unstep();
+        update();
+    }
     void set_human(Cell color)
     {
         human = color;
