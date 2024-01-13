@@ -2,7 +2,7 @@
 
 **Empirically, Independent RL is enough (and in fact much better than PSRO).** As mentioned in [[1]](#refer-anchor-1), due to Gomoku's asymmetry, it's hard to train a network to play both black and white.
 
-![](/images/screenshot_0.gif)
+![](/assets//images/screenshot_0.gif)
 
 ## Introduction
 

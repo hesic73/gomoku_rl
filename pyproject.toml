@@ -24,8 +24,14 @@ dependencies = [
 ]
 requires-python = ">=3.10"
 
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+]
+
 [project.optional-dependencies]
 gui = ["PyQt5"]
+test = ["pytest"]
 
 [project.urls]
 Repository = "https://github.com/hesic73/gomoku_rl.git"
