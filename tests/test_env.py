@@ -47,7 +47,8 @@ def assert_layer_transition(
     same = (layer > EPS) & (next_layer > EPS)
     assert_tensor_1d_all((same == (layer > EPS)).all(-1).all(-1) | done)
     assert_tensor_1d_all(
-        (layer.long().sum(-1).sum(-1) + 1 == next_layer.long().sum(-1).sum(-1)) | done
+        (layer.long().sum(-1).sum(-1) + 1 ==
+         next_layer.long().sum(-1).sum(-1)) | done
     )
 
 
@@ -70,7 +71,8 @@ def assert_transition(tensordict: TensorDict, type: Type):
     layer1 = observation[:, 0]
     x = action // board_size
     y = action % board_size
-    assert_tensor_1d_all((layer1[torch.arange(num_envs, device=device), x, y] < EPS))
+    assert_tensor_1d_all(
+        (layer1[torch.arange(num_envs, device=device), x, y] < EPS))
     layer1 = layer1.clone()
     layer1[torch.arange(num_envs, device=device), x, y] = 1.0
     assert_tensor_1d_all(
@@ -78,17 +80,7 @@ def assert_transition(tensordict: TensorDict, type: Type):
     )
 
 
-def _debug_print(transition: TensorDict):
-    observation = transition["observation"]
-    next_observation = transition["next", "observation"]
-    done = transition["next", "done"]
-    print(observation)
-    print(next_observation)
-    print(done.item())
-    exit()
-
-
-def main():
+def test_rollout():
     device = "cuda:0"
     num_envs = 256
     board_size = 10
@@ -115,6 +107,15 @@ def main():
     ):
         assert_transition(transition, type=Type.black)
 
+
+def test_rollout_fixed_opponent():
+    device = "cuda:0"
+    num_envs = 256
+    board_size = 10
+    seed = 1234
+    set_seed(seed)
+    env = GomokuEnv(num_envs=num_envs, board_size=board_size, device=device)
+
     transitions, info = env.rollout_fixed_opponent(
         50,
         player=uniform_policy,
@@ -128,4 +129,5 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    # test_rollout()
+    test_rollout_fixed_opponent()
