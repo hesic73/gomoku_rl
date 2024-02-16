@@ -149,3 +149,23 @@ if __name__ == "__main__":
 <div id="refer-anchor-5"></div>
 
 - [5] [What Matters In On-Policy Reinforcement Learning? A Large-Scale Empirical Study](https://arxiv.org/pdf/2006.05990.pdf)
+
+
+## TO DO
+
+- [ ] Restructure the code to decouple rollout functionality from `GomokuEnv`.
+- [ ] Enhance documentaion.
+
+
+## Citation
+Please use this bibtex if you want to cite this repository:
+```
+@misc{He2023gomoku_rl,
+  author = {He, Sicheng},
+  title = {gomoku_rl},
+  year = {2023},
+  publisher = {GitHub},
+  journal = {GitHub repository},
+  howpublished = {\url{https://github.com/hesic73/gomoku_rl}},
+}
+```
