@@ -12,8 +12,8 @@
 #
 import os
 import sys
-print(f"Add {os.path.abspath('../..')} to sys.path.")
-sys.path.insert(0, os.path.abspath('../..'))
+print(f"Add {os.path.abspath('..')} to sys.path.")
+sys.path.insert(0, os.path.abspath('..'))
 
 
 # -- Project information -----------------------------------------------------
