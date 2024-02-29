@@ -55,7 +55,7 @@
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="gomoku_rl.html#submodules">Submodules</a></li>
-<li class="toctree-l3"><a class="reference internal" href="gomoku_rl.html#module-contents">Module contents</a></li>
+<li class="toctree-l3"><a class="reference internal" href="gomoku_rl.html#module-gomoku_rl">Module contents</a></li>
 </ul>
 </li>
 </ul>
@@ -89,8 +89,200 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section id="gomoku-rl-utils-augment-module">
-<h1>gomoku_rl.utils.augment module<a class="headerlink" href="#gomoku-rl-utils-augment-module" title="Link to this heading"></a></h1>
+  <section id="module-gomoku_rl.utils.augment">
+<span id="gomoku-rl-utils-augment-module"></span><h1>gomoku_rl.utils.augment module<a class="headerlink" href="#module-gomoku_rl.utils.augment" title="Link to this heading"></a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="gomoku_rl.utils.augment.AntiDiagonalFlip">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gomoku_rl.utils.augment.</span></span><span class="sig-name descname"><span class="pre">AntiDiagonalFlip</span></span><a class="reference internal" href="_modules/gomoku_rl/utils/augment.html#AntiDiagonalFlip"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gomoku_rl.utils.augment.AntiDiagonalFlip" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#gomoku_rl.utils.augment.Transform" title="gomoku_rl.utils.augment.Transform"><code class="xref py py-class docutils literal notranslate"><span class="pre">Transform</span></code></a></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="gomoku_rl.utils.augment.AntiDiagonalFlip.inverse_map_board">
+<span class="sig-name descname"><span class="pre">inverse_map_board</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">board</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/gomoku_rl/utils/augment.html#AntiDiagonalFlip.inverse_map_board"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gomoku_rl.utils.augment.AntiDiagonalFlip.inverse_map_board" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="gomoku_rl.utils.augment.AntiDiagonalFlip.inverse_map_index">
+<span class="sig-name descname"><span class="pre">inverse_map_index</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">index</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">board_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tensor</span></span></span><a class="reference internal" href="_modules/gomoku_rl/utils/augment.html#AntiDiagonalFlip.inverse_map_index"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gomoku_rl.utils.augment.AntiDiagonalFlip.inverse_map_index" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="gomoku_rl.utils.augment.AntiDiagonalFlip.map_board">
+<span class="sig-name descname"><span class="pre">map_board</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">board</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/gomoku_rl/utils/augment.html#AntiDiagonalFlip.map_board"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gomoku_rl.utils.augment.AntiDiagonalFlip.map_board" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="gomoku_rl.utils.augment.AntiDiagonalFlip.map_index">
+<span class="sig-name descname"><span class="pre">map_index</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">index</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">board_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tensor</span></span></span><a class="reference internal" href="_modules/gomoku_rl/utils/augment.html#AntiDiagonalFlip.map_index"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gomoku_rl.utils.augment.AntiDiagonalFlip.map_index" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="gomoku_rl.utils.augment.DiagonalFlip">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gomoku_rl.utils.augment.</span></span><span class="sig-name descname"><span class="pre">DiagonalFlip</span></span><a class="reference internal" href="_modules/gomoku_rl/utils/augment.html#DiagonalFlip"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gomoku_rl.utils.augment.DiagonalFlip" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#gomoku_rl.utils.augment.Transform" title="gomoku_rl.utils.augment.Transform"><code class="xref py py-class docutils literal notranslate"><span class="pre">Transform</span></code></a></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="gomoku_rl.utils.augment.DiagonalFlip.inverse_map_board">
+<span class="sig-name descname"><span class="pre">inverse_map_board</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">board</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/gomoku_rl/utils/augment.html#DiagonalFlip.inverse_map_board"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gomoku_rl.utils.augment.DiagonalFlip.inverse_map_board" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="gomoku_rl.utils.augment.DiagonalFlip.inverse_map_index">
+<span class="sig-name descname"><span class="pre">inverse_map_index</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">index</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">board_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tensor</span></span></span><a class="reference internal" href="_modules/gomoku_rl/utils/augment.html#DiagonalFlip.inverse_map_index"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gomoku_rl.utils.augment.DiagonalFlip.inverse_map_index" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="gomoku_rl.utils.augment.DiagonalFlip.map_board">
+<span class="sig-name descname"><span class="pre">map_board</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">board</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/gomoku_rl/utils/augment.html#DiagonalFlip.map_board"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gomoku_rl.utils.augment.DiagonalFlip.map_board" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="gomoku_rl.utils.augment.DiagonalFlip.map_index">
+<span class="sig-name descname"><span class="pre">map_index</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">index</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">board_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tensor</span></span></span><a class="reference internal" href="_modules/gomoku_rl/utils/augment.html#DiagonalFlip.map_index"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gomoku_rl.utils.augment.DiagonalFlip.map_index" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="gomoku_rl.utils.augment.HorizontalFlip">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gomoku_rl.utils.augment.</span></span><span class="sig-name descname"><span class="pre">HorizontalFlip</span></span><a class="reference internal" href="_modules/gomoku_rl/utils/augment.html#HorizontalFlip"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gomoku_rl.utils.augment.HorizontalFlip" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#gomoku_rl.utils.augment.Transform" title="gomoku_rl.utils.augment.Transform"><code class="xref py py-class docutils literal notranslate"><span class="pre">Transform</span></code></a></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="gomoku_rl.utils.augment.HorizontalFlip.inverse_map_board">
+<span class="sig-name descname"><span class="pre">inverse_map_board</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">board</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/gomoku_rl/utils/augment.html#HorizontalFlip.inverse_map_board"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gomoku_rl.utils.augment.HorizontalFlip.inverse_map_board" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="gomoku_rl.utils.augment.HorizontalFlip.inverse_map_index">
+<span class="sig-name descname"><span class="pre">inverse_map_index</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">index</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">board_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tensor</span></span></span><a class="reference internal" href="_modules/gomoku_rl/utils/augment.html#HorizontalFlip.inverse_map_index"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gomoku_rl.utils.augment.HorizontalFlip.inverse_map_index" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="gomoku_rl.utils.augment.HorizontalFlip.map_board">
+<span class="sig-name descname"><span class="pre">map_board</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">board</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/gomoku_rl/utils/augment.html#HorizontalFlip.map_board"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gomoku_rl.utils.augment.HorizontalFlip.map_board" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="gomoku_rl.utils.augment.HorizontalFlip.map_index">
+<span class="sig-name descname"><span class="pre">map_index</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">index</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">board_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tensor</span></span></span><a class="reference internal" href="_modules/gomoku_rl/utils/augment.html#HorizontalFlip.map_index"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gomoku_rl.utils.augment.HorizontalFlip.map_index" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="gomoku_rl.utils.augment.Identity">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gomoku_rl.utils.augment.</span></span><span class="sig-name descname"><span class="pre">Identity</span></span><a class="reference internal" href="_modules/gomoku_rl/utils/augment.html#Identity"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gomoku_rl.utils.augment.Identity" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#gomoku_rl.utils.augment.Transform" title="gomoku_rl.utils.augment.Transform"><code class="xref py py-class docutils literal notranslate"><span class="pre">Transform</span></code></a></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="gomoku_rl.utils.augment.Identity.inverse_map_board">
+<span class="sig-name descname"><span class="pre">inverse_map_board</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">board</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tensor</span></span></span><a class="reference internal" href="_modules/gomoku_rl/utils/augment.html#Identity.inverse_map_board"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gomoku_rl.utils.augment.Identity.inverse_map_board" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="gomoku_rl.utils.augment.Identity.inverse_map_index">
+<span class="sig-name descname"><span class="pre">inverse_map_index</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">index</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">board_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tensor</span></span></span><a class="reference internal" href="_modules/gomoku_rl/utils/augment.html#Identity.inverse_map_index"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gomoku_rl.utils.augment.Identity.inverse_map_index" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="gomoku_rl.utils.augment.Identity.map_board">
+<span class="sig-name descname"><span class="pre">map_board</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">board</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tensor</span></span></span><a class="reference internal" href="_modules/gomoku_rl/utils/augment.html#Identity.map_board"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gomoku_rl.utils.augment.Identity.map_board" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="gomoku_rl.utils.augment.Identity.map_index">
+<span class="sig-name descname"><span class="pre">map_index</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">index</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">board_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tensor</span></span></span><a class="reference internal" href="_modules/gomoku_rl/utils/augment.html#Identity.map_index"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gomoku_rl.utils.augment.Identity.map_index" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="gomoku_rl.utils.augment.Rotation">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gomoku_rl.utils.augment.</span></span><span class="sig-name descname"><span class="pre">Rotation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">k</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/gomoku_rl/utils/augment.html#Rotation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gomoku_rl.utils.augment.Rotation" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#gomoku_rl.utils.augment.Transform" title="gomoku_rl.utils.augment.Transform"><code class="xref py py-class docutils literal notranslate"><span class="pre">Transform</span></code></a></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="gomoku_rl.utils.augment.Rotation.inverse_map_board">
+<span class="sig-name descname"><span class="pre">inverse_map_board</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">board</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/gomoku_rl/utils/augment.html#Rotation.inverse_map_board"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gomoku_rl.utils.augment.Rotation.inverse_map_board" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="gomoku_rl.utils.augment.Rotation.inverse_map_index">
+<span class="sig-name descname"><span class="pre">inverse_map_index</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">index</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">board_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tensor</span></span></span><a class="reference internal" href="_modules/gomoku_rl/utils/augment.html#Rotation.inverse_map_index"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gomoku_rl.utils.augment.Rotation.inverse_map_index" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="gomoku_rl.utils.augment.Rotation.map_board">
+<span class="sig-name descname"><span class="pre">map_board</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">board</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/gomoku_rl/utils/augment.html#Rotation.map_board"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gomoku_rl.utils.augment.Rotation.map_board" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="gomoku_rl.utils.augment.Rotation.map_index">
+<span class="sig-name descname"><span class="pre">map_index</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">index</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">board_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tensor</span></span></span><a class="reference internal" href="_modules/gomoku_rl/utils/augment.html#Rotation.map_index"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gomoku_rl.utils.augment.Rotation.map_index" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="gomoku_rl.utils.augment.Transform">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gomoku_rl.utils.augment.</span></span><span class="sig-name descname"><span class="pre">Transform</span></span><a class="reference internal" href="_modules/gomoku_rl/utils/augment.html#Transform"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gomoku_rl.utils.augment.Transform" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">ABC</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="gomoku_rl.utils.augment.Transform.inverse_map_board">
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">inverse_map_board</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">board</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tensor</span></span></span><a class="reference internal" href="_modules/gomoku_rl/utils/augment.html#Transform.inverse_map_board"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gomoku_rl.utils.augment.Transform.inverse_map_board" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="gomoku_rl.utils.augment.Transform.inverse_map_index">
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">inverse_map_index</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">index</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">board_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tensor</span></span></span><a class="reference internal" href="_modules/gomoku_rl/utils/augment.html#Transform.inverse_map_index"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gomoku_rl.utils.augment.Transform.inverse_map_index" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="gomoku_rl.utils.augment.Transform.map_board">
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">map_board</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">board</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tensor</span></span></span><a class="reference internal" href="_modules/gomoku_rl/utils/augment.html#Transform.map_board"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gomoku_rl.utils.augment.Transform.map_board" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="gomoku_rl.utils.augment.Transform.map_index">
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">map_index</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">index</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">board_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tensor</span></span></span><a class="reference internal" href="_modules/gomoku_rl/utils/augment.html#Transform.map_index"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gomoku_rl.utils.augment.Transform.map_index" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="gomoku_rl.utils.augment.VerticalFlip">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gomoku_rl.utils.augment.</span></span><span class="sig-name descname"><span class="pre">VerticalFlip</span></span><a class="reference internal" href="_modules/gomoku_rl/utils/augment.html#VerticalFlip"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gomoku_rl.utils.augment.VerticalFlip" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#gomoku_rl.utils.augment.Transform" title="gomoku_rl.utils.augment.Transform"><code class="xref py py-class docutils literal notranslate"><span class="pre">Transform</span></code></a></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="gomoku_rl.utils.augment.VerticalFlip.inverse_map_board">
+<span class="sig-name descname"><span class="pre">inverse_map_board</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">board</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/gomoku_rl/utils/augment.html#VerticalFlip.inverse_map_board"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gomoku_rl.utils.augment.VerticalFlip.inverse_map_board" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="gomoku_rl.utils.augment.VerticalFlip.inverse_map_index">
+<span class="sig-name descname"><span class="pre">inverse_map_index</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">index</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">board_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tensor</span></span></span><a class="reference internal" href="_modules/gomoku_rl/utils/augment.html#VerticalFlip.inverse_map_index"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gomoku_rl.utils.augment.VerticalFlip.inverse_map_index" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="gomoku_rl.utils.augment.VerticalFlip.map_board">
+<span class="sig-name descname"><span class="pre">map_board</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">board</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/gomoku_rl/utils/augment.html#VerticalFlip.map_board"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gomoku_rl.utils.augment.VerticalFlip.map_board" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="gomoku_rl.utils.augment.VerticalFlip.map_index">
+<span class="sig-name descname"><span class="pre">map_index</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">index</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">board_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tensor</span></span></span><a class="reference internal" href="_modules/gomoku_rl/utils/augment.html#VerticalFlip.map_index"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gomoku_rl.utils.augment.VerticalFlip.map_index" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="gomoku_rl.utils.augment.augment_transition">
+<span class="sig-prename descclassname"><span class="pre">gomoku_rl.utils.augment.</span></span><span class="sig-name descname"><span class="pre">augment_transition</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">transition</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">TensorDict</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">TensorDict</span></span></span><a class="reference internal" href="_modules/gomoku_rl/utils/augment.html#augment_transition"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gomoku_rl.utils.augment.augment_transition" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="gomoku_rl.utils.augment.get_augmented_transition">
+<span class="sig-prename descclassname"><span class="pre">gomoku_rl.utils.augment.</span></span><span class="sig-name descname"><span class="pre">get_augmented_transition</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">transition</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">TensorDict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transform</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#gomoku_rl.utils.augment.Transform" title="gomoku_rl.utils.augment.Transform"><span class="pre">Transform</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">inplace</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">TensorDict</span></span></span><a class="reference internal" href="_modules/gomoku_rl/utils/augment.html#get_augmented_transition"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gomoku_rl.utils.augment.get_augmented_transition" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
 </section>
 
 

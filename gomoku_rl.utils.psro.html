@@ -55,7 +55,7 @@
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="gomoku_rl.html#submodules">Submodules</a></li>
-<li class="toctree-l3"><a class="reference internal" href="gomoku_rl.html#module-contents">Module contents</a></li>
+<li class="toctree-l3"><a class="reference internal" href="gomoku_rl.html#module-gomoku_rl">Module contents</a></li>
 </ul>
 </li>
 </ul>
@@ -89,8 +89,159 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section id="gomoku-rl-utils-psro-module">
-<h1>gomoku_rl.utils.psro module<a class="headerlink" href="#gomoku-rl-utils-psro-module" title="Link to this heading"></a></h1>
+  <section id="module-gomoku_rl.utils.psro">
+<span id="gomoku-rl-utils-psro-module"></span><h1>gomoku_rl.utils.psro module<a class="headerlink" href="#module-gomoku_rl.utils.psro" title="Link to this heading"></a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="gomoku_rl.utils.psro.ConvergedIndicator">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gomoku_rl.utils.psro.</span></span><span class="sig-name descname"><span class="pre">ConvergedIndicator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">max_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">15</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mean_threshold</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.99</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">std_threshold</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.005</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_iter_steps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">40</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_iter_steps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">300</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/gomoku_rl/utils/psro.html#ConvergedIndicator"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gomoku_rl.utils.psro.ConvergedIndicator" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="gomoku_rl.utils.psro.ConvergedIndicator.converged">
+<span class="sig-name descname"><span class="pre">converged</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="reference internal" href="_modules/gomoku_rl/utils/psro.html#ConvergedIndicator.converged"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gomoku_rl.utils.psro.ConvergedIndicator.converged" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="gomoku_rl.utils.psro.ConvergedIndicator.reset">
+<span class="sig-name descname"><span class="pre">reset</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/gomoku_rl/utils/psro.html#ConvergedIndicator.reset"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gomoku_rl.utils.psro.ConvergedIndicator.reset" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="gomoku_rl.utils.psro.ConvergedIndicator.update">
+<span class="sig-name descname"><span class="pre">update</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/gomoku_rl/utils/psro.html#ConvergedIndicator.update"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gomoku_rl.utils.psro.ConvergedIndicator.update" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="gomoku_rl.utils.psro.PSROPolicyWrapper">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gomoku_rl.utils.psro.</span></span><span class="sig-name descname"><span class="pre">PSROPolicyWrapper</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">policy</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="gomoku_rl.policy.base.html#gomoku_rl.policy.base.Policy" title="gomoku_rl.policy.base.Policy"><span class="pre">Policy</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">population</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#gomoku_rl.utils.psro.Population" title="gomoku_rl.utils.psro.Population"><span class="pre">Population</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/gomoku_rl/utils/psro.html#PSROPolicyWrapper"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gomoku_rl.utils.psro.PSROPolicyWrapper" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="gomoku_rl.utils.psro.PSROPolicyWrapper.add_current_policy">
+<span class="sig-name descname"><span class="pre">add_current_policy</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/gomoku_rl/utils/psro.html#PSROPolicyWrapper.add_current_policy"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gomoku_rl.utils.psro.PSROPolicyWrapper.add_current_policy" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="gomoku_rl.utils.psro.PSROPolicyWrapper.eval">
+<span class="sig-name descname"><span class="pre">eval</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/gomoku_rl/utils/psro.html#PSROPolicyWrapper.eval"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gomoku_rl.utils.psro.PSROPolicyWrapper.eval" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="gomoku_rl.utils.psro.PSROPolicyWrapper.sample">
+<span class="sig-name descname"><span class="pre">sample</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/gomoku_rl/utils/psro.html#PSROPolicyWrapper.sample"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gomoku_rl.utils.psro.PSROPolicyWrapper.sample" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="gomoku_rl.utils.psro.PSROPolicyWrapper.set_meta_policy">
+<span class="sig-name descname"><span class="pre">set_meta_policy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">meta_policy</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/gomoku_rl/utils/psro.html#PSROPolicyWrapper.set_meta_policy"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gomoku_rl.utils.psro.PSROPolicyWrapper.set_meta_policy" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="gomoku_rl.utils.psro.PSROPolicyWrapper.set_oracle_mode">
+<span class="sig-name descname"><span class="pre">set_oracle_mode</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/gomoku_rl/utils/psro.html#PSROPolicyWrapper.set_oracle_mode"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gomoku_rl.utils.psro.PSROPolicyWrapper.set_oracle_mode" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="gomoku_rl.utils.psro.PSROPolicyWrapper.train">
+<span class="sig-name descname"><span class="pre">train</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/gomoku_rl/utils/psro.html#PSROPolicyWrapper.train"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gomoku_rl.utils.psro.PSROPolicyWrapper.train" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="gomoku_rl.utils.psro.PayoffType">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gomoku_rl.utils.psro.</span></span><span class="sig-name descname"><span class="pre">PayoffType</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/gomoku_rl/utils/psro.html#PayoffType"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gomoku_rl.utils.psro.PayoffType" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Enum</span></code></p>
+<p>An enumeration.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="gomoku_rl.utils.psro.PayoffType.black_vs_white">
+<span class="sig-name descname"><span class="pre">black_vs_white</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">1</span></em><a class="headerlink" href="#gomoku_rl.utils.psro.PayoffType.black_vs_white" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="gomoku_rl.utils.psro.PayoffType.both">
+<span class="sig-name descname"><span class="pre">both</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">2</span></em><a class="headerlink" href="#gomoku_rl.utils.psro.PayoffType.both" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="gomoku_rl.utils.psro.Population">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gomoku_rl.utils.psro.</span></span><span class="sig-name descname"><span class="pre">Population</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="pre">dir:</span> <span class="pre">str,</span> <span class="pre">initial_policy:</span> <span class="pre">~typing.Callable[[~tensordict._td.TensorDict],</span> <span class="pre">~tensordict._td.TensorDict]</span> <span class="pre">|</span> <span class="pre">list[~typing.Callable[[~tensordict._td.TensorDict],</span> <span class="pre">~tensordict._td.TensorDict]]</span> <span class="pre">=</span> <span class="pre">&lt;function</span> <span class="pre">uniform_policy&gt;,</span> <span class="pre">device:</span> <span class="pre">~torch.device</span> <span class="pre">|</span> <span class="pre">str</span> <span class="pre">|</span> <span class="pre">int</span> <span class="pre">|</span> <span class="pre">None</span> <span class="pre">=</span> <span class="pre">'cuda'</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/gomoku_rl/utils/psro.html#Population"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gomoku_rl.utils.psro.Population" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="gomoku_rl.utils.psro.Population.add">
+<span class="sig-name descname"><span class="pre">add</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">policy</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="gomoku_rl.policy.base.html#gomoku_rl.policy.base.Policy" title="gomoku_rl.policy.base.Policy"><span class="pre">Policy</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/gomoku_rl/utils/psro.html#Population.add"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gomoku_rl.utils.psro.Population.add" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="gomoku_rl.utils.psro.Population.fixed_behavioural_strategy">
+<span class="sig-name descname"><span class="pre">fixed_behavioural_strategy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">index</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/gomoku_rl/utils/psro.html#Population.fixed_behavioural_strategy"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gomoku_rl.utils.psro.Population.fixed_behavioural_strategy" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="gomoku_rl.utils.psro.Population.make_behavioural_strategy">
+<span class="sig-name descname"><span class="pre">make_behavioural_strategy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">index</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Callable</span><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><span class="pre">TensorDict</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">TensorDict</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/gomoku_rl/utils/psro.html#Population.make_behavioural_strategy"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gomoku_rl.utils.psro.Population.make_behavioural_strategy" title="Link to this definition"></a></dt>
+<dd><p><strong>share _module_backup!!!</strong>
+<code class="docutils literal notranslate"><span class="pre">`</span>
+<span class="pre">s1=population.make_behavioural_strategy(0)</span>
+<span class="pre">s2=population.make_behavioural_strategy(1)</span>
+<span class="pre">then</span> <span class="pre">s1</span> <span class="pre">and</span> <span class="pre">s2</span> <span class="pre">are</span> <span class="pre">the</span> <span class="pre">same</span> <span class="pre">strategy!!!</span>
+<span class="pre">`</span></code></p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="gomoku_rl.utils.psro.Population.sample">
+<span class="sig-name descname"><span class="pre">sample</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">meta_policy</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/gomoku_rl/utils/psro.html#Population.sample"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gomoku_rl.utils.psro.Population.sample" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="gomoku_rl.utils.psro.calculate_jpc">
+<span class="sig-prename descclassname"><span class="pre">gomoku_rl.utils.psro.</span></span><span class="sig-name descname"><span class="pre">calculate_jpc</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">payoffs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/gomoku_rl/utils/psro.html#calculate_jpc"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gomoku_rl.utils.psro.calculate_jpc" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="gomoku_rl.utils.psro.get_meta_solver">
+<span class="sig-prename descclassname"><span class="pre">gomoku_rl.utils.psro.</span></span><span class="sig-name descname"><span class="pre">get_meta_solver</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Callable</span><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><span class="pre">ndarray</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">ndarray</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/gomoku_rl/utils/psro.html#get_meta_solver"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gomoku_rl.utils.psro.get_meta_solver" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="gomoku_rl.utils.psro.get_new_payoffs">
+<span class="sig-prename descclassname"><span class="pre">gomoku_rl.utils.psro.</span></span><span class="sig-name descname"><span class="pre">get_new_payoffs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">env</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">population_0</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#gomoku_rl.utils.psro.Population" title="gomoku_rl.utils.psro.Population"><span class="pre">Population</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">population_1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#gomoku_rl.utils.psro.Population" title="gomoku_rl.utils.psro.Population"><span class="pre">Population</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">old_payoffs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/gomoku_rl/utils/psro.html#get_new_payoffs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gomoku_rl.utils.psro.get_new_payoffs" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="gomoku_rl.utils.psro.get_new_payoffs_sp">
+<span class="sig-prename descclassname"><span class="pre">gomoku_rl.utils.psro.</span></span><span class="sig-name descname"><span class="pre">get_new_payoffs_sp</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">env</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">population</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#gomoku_rl.utils.psro.Population" title="gomoku_rl.utils.psro.Population"><span class="pre">Population</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">old_payoffs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#gomoku_rl.utils.psro.PayoffType" title="gomoku_rl.utils.psro.PayoffType"><span class="pre">PayoffType</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">PayoffType.both</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/gomoku_rl/utils/psro.html#get_new_payoffs_sp"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gomoku_rl.utils.psro.get_new_payoffs_sp" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="gomoku_rl.utils.psro.init_payoffs_sp">
+<span class="sig-prename descclassname"><span class="pre">gomoku_rl.utils.psro.</span></span><span class="sig-name descname"><span class="pre">init_payoffs_sp</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">env</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">population</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#gomoku_rl.utils.psro.Population" title="gomoku_rl.utils.psro.Population"><span class="pre">Population</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#gomoku_rl.utils.psro.PayoffType" title="gomoku_rl.utils.psro.PayoffType"><span class="pre">PayoffType</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/gomoku_rl/utils/psro.html#init_payoffs_sp"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gomoku_rl.utils.psro.init_payoffs_sp" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="gomoku_rl.utils.psro.print_payoffs">
+<span class="sig-prename descclassname"><span class="pre">gomoku_rl.utils.psro.</span></span><span class="sig-name descname"><span class="pre">print_payoffs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">payoffs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/gomoku_rl/utils/psro.html#print_payoffs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gomoku_rl.utils.psro.print_payoffs" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="gomoku_rl.utils.psro.solve_last_n">
+<span class="sig-prename descclassname"><span class="pre">gomoku_rl.utils.psro.</span></span><span class="sig-name descname"><span class="pre">solve_last_n</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">payoffs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">ndarray</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/gomoku_rl/utils/psro.html#solve_last_n"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gomoku_rl.utils.psro.solve_last_n" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="gomoku_rl.utils.psro.solve_nash">
+<span class="sig-prename descclassname"><span class="pre">gomoku_rl.utils.psro.</span></span><span class="sig-name descname"><span class="pre">solve_nash</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">payoffs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">ndarray</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/gomoku_rl/utils/psro.html#solve_nash"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gomoku_rl.utils.psro.solve_nash" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="gomoku_rl.utils.psro.solve_uniform">
+<span class="sig-prename descclassname"><span class="pre">gomoku_rl.utils.psro.</span></span><span class="sig-name descname"><span class="pre">solve_uniform</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">payoffs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">ndarray</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/gomoku_rl/utils/psro.html#solve_uniform"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gomoku_rl.utils.psro.solve_uniform" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
 </section>
 
 

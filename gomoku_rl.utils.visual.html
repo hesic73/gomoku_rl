@@ -55,7 +55,7 @@
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="gomoku_rl.html#submodules">Submodules</a></li>
-<li class="toctree-l3"><a class="reference internal" href="gomoku_rl.html#module-contents">Module contents</a></li>
+<li class="toctree-l3"><a class="reference internal" href="gomoku_rl.html#module-gomoku_rl">Module contents</a></li>
 </ul>
 </li>
 </ul>
@@ -89,8 +89,57 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section id="gomoku-rl-utils-visual-module">
-<h1>gomoku_rl.utils.visual module<a class="headerlink" href="#gomoku-rl-utils-visual-module" title="Link to this heading"></a></h1>
+  <section id="module-gomoku_rl.utils.visual">
+<span id="gomoku-rl-utils-visual-module"></span><h1>gomoku_rl.utils.visual module<a class="headerlink" href="#module-gomoku_rl.utils.visual" title="Link to this heading"></a></h1>
+<dl class="py function">
+<dt class="sig sig-object py" id="gomoku_rl.utils.visual.annotate_heatmap">
+<span class="sig-prename descclassname"><span class="pre">gomoku_rl.utils.visual.</span></span><span class="sig-name descname"><span class="pre">annotate_heatmap</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">im</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">valfmt</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'{x:.2f}'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">textcolors</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">('black',</span> <span class="pre">'white')</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">threshold</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">textkw</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/gomoku_rl/utils/visual.html#annotate_heatmap"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gomoku_rl.utils.visual.annotate_heatmap" title="Link to this definition"></a></dt>
+<dd><p>A function to annotate a heatmap.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>im</strong> – The AxesImage to be labeled.</p></li>
+<li><p><strong>data</strong> – Data used to annotate.  If None, the image’s data is used.  Optional.</p></li>
+<li><p><strong>valfmt</strong> – The format of the annotations inside the heatmap.  This should either
+use the string format method, e.g. “$ {x:.2f}”, or be a
+<cite>matplotlib.ticker.Formatter</cite>.  Optional.</p></li>
+<li><p><strong>textcolors</strong> – A pair of colors.  The first is used for values below a threshold,
+the second for those above.  Optional.</p></li>
+<li><p><strong>threshold</strong> – Value in data units according to which the colors from textcolors are
+applied.  If None (the default) uses the middle of the colormap as
+separation.  Optional.</p></li>
+<li><p><strong>**kwargs</strong> – All other arguments are forwarded to each call to <cite>text</cite> used to create
+the text labels.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="gomoku_rl.utils.visual.heatmap">
+<span class="sig-prename descclassname"><span class="pre">gomoku_rl.utils.visual.</span></span><span class="sig-name descname"><span class="pre">heatmap</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">row_labels</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">col_labels</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ax</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cbar_kw</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cbarlabel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/gomoku_rl/utils/visual.html#heatmap"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gomoku_rl.utils.visual.heatmap" title="Link to this definition"></a></dt>
+<dd><p>Create a heatmap from a numpy array and two lists of labels.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> – A 2D numpy array of shape (M, N).</p></li>
+<li><p><strong>row_labels</strong> – A list or array of length M with the labels for the rows.</p></li>
+<li><p><strong>col_labels</strong> – A list or array of length N with the labels for the columns.</p></li>
+<li><p><strong>ax</strong> – A <cite>matplotlib.axes.Axes</cite> instance to which the heatmap is plotted.  If
+not provided, use current axes or create a new one.  Optional.</p></li>
+<li><p><strong>cbar_kw</strong> – A dictionary with arguments to <cite>matplotlib.Figure.colorbar</cite>.  Optional.</p></li>
+<li><p><strong>cbarlabel</strong> – The label for the colorbar.  Optional.</p></li>
+<li><p><strong>**kwargs</strong> – All other arguments are forwarded to <cite>imshow</cite>.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="gomoku_rl.utils.visual.payoff_headmap">
+<span class="sig-prename descclassname"><span class="pre">gomoku_rl.utils.visual.</span></span><span class="sig-name descname"><span class="pre">payoff_headmap</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">payoff</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">row_labels</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">col_labels</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/gomoku_rl/utils/visual.html#payoff_headmap"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gomoku_rl.utils.visual.payoff_headmap" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
 </section>
 
 

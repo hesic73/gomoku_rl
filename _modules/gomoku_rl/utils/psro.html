@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>gomoku_rl.utils.psro &mdash; gomoku_rl 0.1.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../_static/documentation_options.js?v=01f34227"></script>
+        <script src="../../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            gomoku_rl
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">gomoku_rl</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">gomoku_rl</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">gomoku_rl.utils.psro</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for gomoku_rl.utils.psro</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">.policy</span> <span class="kn">import</span> <span class="n">_policy_t</span><span class="p">,</span> <span class="n">uniform_policy</span>
+<span class="kn">from</span> <span class="nn">.eval</span> <span class="kn">import</span> <span class="n">eval_win_rate</span>
+<span class="kn">from</span> <span class="nn">tensordict.nn</span> <span class="kn">import</span> <span class="n">TensorDictModule</span><span class="p">,</span> <span class="n">set_interaction_type</span><span class="p">,</span> <span class="n">InteractionType</span>
+<span class="kn">from</span> <span class="nn">tensordict</span> <span class="kn">import</span> <span class="n">TensorDict</span>
+<span class="kn">from</span> <span class="nn">torch.cuda</span> <span class="kn">import</span> <span class="n">_device_t</span>
+<span class="kn">from</span> <span class="nn">gomoku_rl.policy</span> <span class="kn">import</span> <span class="n">Policy</span>
+<span class="kn">import</span> <span class="nn">copy</span>
+<span class="kn">import</span> <span class="nn">contextlib</span>
+<span class="kn">from</span> <span class="nn">scipy.optimize</span> <span class="kn">import</span> <span class="n">linprog</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">torch</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">functools</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Callable</span>
+<span class="kn">import</span> <span class="nn">enum</span>
+
+
+<div class="viewcode-block" id="PayoffType">
+<a class="viewcode-back" href="../../../gomoku_rl.utils.psro.html#gomoku_rl.utils.psro.PayoffType">[docs]</a>
+<span class="k">class</span> <span class="nc">PayoffType</span><span class="p">(</span><span class="n">enum</span><span class="o">.</span><span class="n">Enum</span><span class="p">):</span>
+    <span class="n">black_vs_white</span> <span class="o">=</span> <span class="n">enum</span><span class="o">.</span><span class="n">auto</span><span class="p">()</span>
+    <span class="n">both</span> <span class="o">=</span> <span class="n">enum</span><span class="o">.</span><span class="n">auto</span><span class="p">()</span></div>
+
+
+
+<span class="n">_meta_solver_t</span> <span class="o">=</span> <span class="n">Callable</span><span class="p">[</span>
+    <span class="p">[</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="p">],</span>
+    <span class="nb">tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">],</span>
+<span class="p">]</span>
+
+
+<div class="viewcode-block" id="ConvergedIndicator">
+<a class="viewcode-back" href="../../../gomoku_rl.utils.psro.html#gomoku_rl.utils.psro.ConvergedIndicator">[docs]</a>
+<span class="k">class</span> <span class="nc">ConvergedIndicator</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">max_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">15</span><span class="p">,</span>
+        <span class="n">mean_threshold</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.99</span><span class="p">,</span>
+        <span class="n">std_threshold</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.005</span><span class="p">,</span>
+        <span class="n">min_iter_steps</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">40</span><span class="p">,</span>
+        <span class="n">max_iter_steps</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">300</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">win_rates</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_size</span> <span class="o">=</span> <span class="n">max_size</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mean_threshold</span> <span class="o">=</span> <span class="n">mean_threshold</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">std_threshold</span> <span class="o">=</span> <span class="n">std_threshold</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">min_iter_steps</span> <span class="o">=</span> <span class="n">min_iter_steps</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_iter_steps</span> <span class="o">=</span> <span class="n">max_iter_steps</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_step_cnt</span> <span class="o">=</span> <span class="mi">0</span>
+
+<div class="viewcode-block" id="ConvergedIndicator.update">
+<a class="viewcode-back" href="../../../gomoku_rl.utils.psro.html#gomoku_rl.utils.psro.ConvergedIndicator.update">[docs]</a>
+    <span class="k">def</span> <span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">float</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">win_rates</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_step_cnt</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">win_rates</span><span class="p">)</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_size</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">win_rates</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ConvergedIndicator.reset">
+<a class="viewcode-back" href="../../../gomoku_rl.utils.psro.html#gomoku_rl.utils.psro.ConvergedIndicator.reset">[docs]</a>
+    <span class="k">def</span> <span class="nf">reset</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">win_rates</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_step_cnt</span> <span class="o">=</span> <span class="mi">0</span></div>
+
+
+<div class="viewcode-block" id="ConvergedIndicator.converged">
+<a class="viewcode-back" href="../../../gomoku_rl.utils.psro.html#gomoku_rl.utils.psro.ConvergedIndicator.converged">[docs]</a>
+    <span class="k">def</span> <span class="nf">converged</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">win_rates</span><span class="p">)</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_size</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_step_cnt</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">min_iter_steps</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_step_cnt</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_iter_steps</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">True</span>
+
+        <span class="n">mean</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">win_rates</span><span class="p">)</span>
+        <span class="n">std</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">win_rates</span><span class="p">)</span>
+        <span class="c1"># print(f&quot;Recent Win Rate: {mean:.2f}/{std:.4f}&quot;)</span>
+        <span class="k">return</span> <span class="n">mean</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mean_threshold</span> <span class="ow">and</span> <span class="n">std</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">std_threshold</span></div>
+</div>
+
+
+
+<span class="c1"># to do: save to cpu/disk</span>
+<div class="viewcode-block" id="Population">
+<a class="viewcode-back" href="../../../gomoku_rl.utils.psro.html#gomoku_rl.utils.psro.Population">[docs]</a>
+<span class="k">class</span> <span class="nc">Population</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="nb">dir</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">initial_policy</span><span class="p">:</span> <span class="n">_policy_t</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="n">_policy_t</span><span class="p">]</span> <span class="o">=</span> <span class="n">uniform_policy</span><span class="p">,</span>
+        <span class="n">device</span><span class="p">:</span> <span class="n">_device_t</span> <span class="o">=</span> <span class="s2">&quot;cuda&quot;</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dir</span> <span class="o">=</span> <span class="nb">dir</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dir</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_module_cnt</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_module</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># assume all modules are homogeneous</span>
+        <span class="c1"># used in `make_behavioural_strategy` to avoid calling &#39;copy.deepcopy&#39; multiple times</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_module_backup</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_idx</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">device</span> <span class="o">=</span> <span class="n">device</span>
+        <span class="c1"># this should be deterministic, as PSRO requires pure strategies. But it seems it easily overfits</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_interaction_type</span> <span class="o">=</span> <span class="n">InteractionType</span><span class="o">.</span><span class="n">MODE</span>
+        <span class="c1"># self._interaction_type = InteractionType.RANDOM</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">policy_sets</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">_policy_t</span> <span class="o">|</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="c1"># if it&#39;s a module, we save it on disk</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">initial_policy</span><span class="p">,</span> <span class="p">(</span><span class="n">TensorDictModule</span><span class="p">,</span> <span class="n">Policy</span><span class="p">)):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">initial_policy</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">initial_policy</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">_ip</span> <span class="ow">in</span> <span class="n">initial_policy</span><span class="p">:</span>
+                <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">_ip</span><span class="p">,</span> <span class="p">(</span><span class="n">TensorDictModule</span><span class="p">,</span> <span class="n">Policy</span><span class="p">))</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">_ip</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">policy_sets</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">initial_policy</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_func</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">sample</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">policy_sets</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Population.add">
+<a class="viewcode-back" href="../../../gomoku_rl.utils.psro.html#gomoku_rl.utils.psro.Population.add">[docs]</a>
+    <span class="k">def</span> <span class="nf">add</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">policy</span><span class="p">:</span> <span class="n">Policy</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_module</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_module</span> <span class="o">=</span> <span class="n">policy</span>  <span class="c1"># assume `policy` is a copy</span>
+        <span class="n">torch</span><span class="o">.</span><span class="n">save</span><span class="p">(</span>
+            <span class="n">policy</span><span class="o">.</span><span class="n">state_dict</span><span class="p">(),</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dir</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_module_cnt</span><span class="si">}</span><span class="s2">.pt&quot;</span><span class="p">),</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">policy_sets</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_module_cnt</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_module_cnt</span> <span class="o">+=</span> <span class="mi">1</span></div>
+
+
+    <span class="k">def</span> <span class="nf">_set_policy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_idx</span> <span class="o">==</span> <span class="n">index</span><span class="p">:</span>
+            <span class="k">return</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_idx</span> <span class="o">=</span> <span class="n">index</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">policy_sets</span><span class="p">[</span><span class="n">index</span><span class="p">],</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_func</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">policy_sets</span><span class="p">[</span><span class="n">index</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">_module</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_module</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span>
+                <span class="n">torch</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dir</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">policy_sets</span><span class="p">[</span><span class="n">index</span><span class="p">]</span><span class="si">}</span><span class="s2">.pt&quot;</span><span class="p">))</span>
+            <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_module</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_func</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_module</span>
+
+<div class="viewcode-block" id="Population.sample">
+<a class="viewcode-back" href="../../../gomoku_rl.utils.psro.html#gomoku_rl.utils.psro.Population.sample">[docs]</a>
+    <span class="k">def</span> <span class="nf">sample</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">meta_policy</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_set_policy</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">policy_sets</span><span class="p">),</span> <span class="n">p</span><span class="o">=</span><span class="n">meta_policy</span><span class="p">))</span></div>
+
+
+    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tensordict</span><span class="p">:</span> <span class="n">TensorDict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TensorDict</span><span class="p">:</span>
+        <span class="n">tensordict</span> <span class="o">=</span> <span class="n">tensordict</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+        <span class="k">with</span> <span class="n">set_interaction_type</span><span class="p">(</span><span class="nb">type</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_interaction_type</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_func</span><span class="p">(</span><span class="n">tensordict</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Population.fixed_behavioural_strategy">
+<a class="viewcode-back" href="../../../gomoku_rl.utils.psro.html#gomoku_rl.utils.psro.Population.fixed_behavioural_strategy">[docs]</a>
+    <span class="nd">@contextlib</span><span class="o">.</span><span class="n">contextmanager</span>
+    <span class="k">def</span> <span class="nf">fixed_behavioural_strategy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
+        <span class="n">_idx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_idx</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_set_policy</span><span class="p">(</span><span class="n">index</span><span class="p">)</span>
+        <span class="n">_interaction_type</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_interaction_type</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_interaction_type</span> <span class="o">=</span> <span class="n">InteractionType</span><span class="o">.</span><span class="n">RANDOM</span>
+        <span class="k">yield</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_set_policy</span><span class="p">(</span><span class="n">_idx</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_interaction_type</span> <span class="o">=</span> <span class="n">_interaction_type</span></div>
+
+
+<div class="viewcode-block" id="Population.make_behavioural_strategy">
+<a class="viewcode-back" href="../../../gomoku_rl.utils.psro.html#gomoku_rl.utils.psro.Population.make_behavioural_strategy">[docs]</a>
+    <span class="k">def</span> <span class="nf">make_behavioural_strategy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">_policy_t</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        **share _module_backup!!!**</span>
+<span class="sd">        ```</span>
+<span class="sd">        s1=population.make_behavioural_strategy(0)</span>
+<span class="sd">        s2=population.make_behavioural_strategy(1)</span>
+<span class="sd">        then s1 and s2 are the same strategy!!!</span>
+<span class="sd">        ```</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">policy_sets</span><span class="p">[</span><span class="n">index</span><span class="p">],</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">policy_sets</span><span class="p">[</span><span class="n">index</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_module_backup</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_module_backup</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_module</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_module_backup</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span>
+            <span class="n">torch</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dir</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">policy_sets</span><span class="p">[</span><span class="n">index</span><span class="p">]</span><span class="si">}</span><span class="s2">.pt&quot;</span><span class="p">))</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_module_backup</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
+
+        <span class="k">def</span> <span class="nf">_strategy</span><span class="p">(</span><span class="n">tensordict</span><span class="p">:</span> <span class="n">TensorDict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TensorDict</span><span class="p">:</span>
+            <span class="n">tensordict</span> <span class="o">=</span> <span class="n">tensordict</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+            <span class="k">with</span> <span class="n">set_interaction_type</span><span class="p">(</span><span class="nb">type</span><span class="o">=</span><span class="n">InteractionType</span><span class="o">.</span><span class="n">RANDOM</span><span class="p">):</span>
+                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_module_backup</span><span class="p">(</span><span class="n">tensordict</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">_strategy</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="PSROPolicyWrapper">
+<a class="viewcode-back" href="../../../gomoku_rl.utils.psro.html#gomoku_rl.utils.psro.PSROPolicyWrapper">[docs]</a>
+<span class="k">class</span> <span class="nc">PSROPolicyWrapper</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">policy</span><span class="p">:</span> <span class="n">Policy</span><span class="p">,</span> <span class="n">population</span><span class="p">:</span> <span class="n">Population</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">policy</span> <span class="o">=</span> <span class="n">policy</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">population</span> <span class="o">=</span> <span class="n">population</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">meta_policy</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_oracle_mode</span> <span class="o">=</span> <span class="kc">True</span>
+
+<div class="viewcode-block" id="PSROPolicyWrapper.set_meta_policy">
+<a class="viewcode-back" href="../../../gomoku_rl.utils.psro.html#gomoku_rl.utils.psro.PSROPolicyWrapper.set_meta_policy">[docs]</a>
+    <span class="k">def</span> <span class="nf">set_meta_policy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">meta_policy</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">meta_policy</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">population</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">meta_policy</span> <span class="o">=</span> <span class="n">meta_policy</span></div>
+
+
+<div class="viewcode-block" id="PSROPolicyWrapper.set_oracle_mode">
+<a class="viewcode-back" href="../../../gomoku_rl.utils.psro.html#gomoku_rl.utils.psro.PSROPolicyWrapper.set_oracle_mode">[docs]</a>
+    <span class="k">def</span> <span class="nf">set_oracle_mode</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_oracle_mode</span> <span class="o">=</span> <span class="n">value</span></div>
+
+
+<div class="viewcode-block" id="PSROPolicyWrapper.sample">
+<a class="viewcode-back" href="../../../gomoku_rl.utils.psro.html#gomoku_rl.utils.psro.PSROPolicyWrapper.sample">[docs]</a>
+    <span class="k">def</span> <span class="nf">sample</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">assert</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_oracle_mode</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">meta_policy</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">meta_policy</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="PSROPolicyWrapper.add_current_policy">
+<a class="viewcode-back" href="../../../gomoku_rl.utils.psro.html#gomoku_rl.utils.psro.PSROPolicyWrapper.add_current_policy">[docs]</a>
+    <span class="k">def</span> <span class="nf">add_current_policy</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">actor</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">policy</span><span class="p">)</span>
+        <span class="n">actor</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">actor</span><span class="p">)</span></div>
+
+
+    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tensordict</span><span class="p">:</span> <span class="n">TensorDict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TensorDict</span><span class="p">:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_oracle_mode</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">policy</span><span class="p">(</span><span class="n">tensordict</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">population</span><span class="p">(</span><span class="n">tensordict</span><span class="p">)</span>
+
+<div class="viewcode-block" id="PSROPolicyWrapper.eval">
+<a class="viewcode-back" href="../../../gomoku_rl.utils.psro.html#gomoku_rl.utils.psro.PSROPolicyWrapper.eval">[docs]</a>
+    <span class="k">def</span> <span class="nf">eval</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">policy</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="PSROPolicyWrapper.train">
+<a class="viewcode-back" href="../../../gomoku_rl.utils.psro.html#gomoku_rl.utils.psro.PSROPolicyWrapper.train">[docs]</a>
+    <span class="k">def</span> <span class="nf">train</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">policy</span><span class="o">.</span><span class="n">train</span><span class="p">()</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="get_new_payoffs">
+<a class="viewcode-back" href="../../../gomoku_rl.utils.psro.html#gomoku_rl.utils.psro.get_new_payoffs">[docs]</a>
+<span class="k">def</span> <span class="nf">get_new_payoffs</span><span class="p">(</span>
+    <span class="n">env</span><span class="p">,</span>
+    <span class="n">population_0</span><span class="p">:</span> <span class="n">Population</span><span class="p">,</span>
+    <span class="n">population_1</span><span class="p">:</span> <span class="n">Population</span><span class="p">,</span>
+    <span class="n">old_payoffs</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">):</span>
+    <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">population_0</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">population_1</span><span class="p">)</span>
+    <span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">population_0</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">old_payoffs</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="p">(</span>
+            <span class="nb">len</span><span class="p">(</span><span class="n">old_payoffs</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span>
+            <span class="ow">and</span> <span class="n">old_payoffs</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">old_payoffs</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="ow">and</span> <span class="n">old_payoffs</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span> <span class="o">==</span> <span class="n">n</span>
+        <span class="p">)</span>
+    <span class="n">new_payoffs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">n</span><span class="p">))</span>
+    <span class="k">if</span> <span class="n">old_payoffs</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">new_payoffs</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">old_payoffs</span>
+
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+        <span class="k">with</span> <span class="n">population_0</span><span class="o">.</span><span class="n">fixed_behavioural_strategy</span><span class="p">(</span><span class="n">index</span><span class="o">=-</span><span class="mi">1</span><span class="p">):</span>
+            <span class="k">with</span> <span class="n">population_1</span><span class="o">.</span><span class="n">fixed_behavioural_strategy</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="n">i</span><span class="p">):</span>
+                <span class="n">wr_1</span> <span class="o">=</span> <span class="n">eval_win_rate</span><span class="p">(</span>
+                    <span class="n">env</span><span class="o">=</span><span class="n">env</span><span class="p">,</span>
+                    <span class="n">player_black</span><span class="o">=</span><span class="n">population_0</span><span class="p">,</span>
+                    <span class="n">player_white</span><span class="o">=</span><span class="n">population_1</span><span class="p">,</span>
+                <span class="p">)</span>
+                <span class="n">wr_2</span> <span class="o">=</span> <span class="n">eval_win_rate</span><span class="p">(</span>
+                    <span class="n">env</span><span class="o">=</span><span class="n">env</span><span class="p">,</span>
+                    <span class="n">player_black</span><span class="o">=</span><span class="n">population_1</span><span class="p">,</span>
+                    <span class="n">player_white</span><span class="o">=</span><span class="n">population_0</span><span class="p">,</span>
+                <span class="p">)</span>
+        <span class="n">new_payoffs</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">wr_1</span> <span class="o">-</span> <span class="mi">1</span>
+        <span class="n">new_payoffs</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">wr_2</span> <span class="o">-</span> <span class="mi">1</span>
+
+    <span class="k">return</span> <span class="n">new_payoffs</span></div>
+
+
+
+<div class="viewcode-block" id="init_payoffs_sp">
+<a class="viewcode-back" href="../../../gomoku_rl.utils.psro.html#gomoku_rl.utils.psro.init_payoffs_sp">[docs]</a>
+<span class="k">def</span> <span class="nf">init_payoffs_sp</span><span class="p">(</span><span class="n">env</span><span class="p">,</span> <span class="n">population</span><span class="p">:</span> <span class="n">Population</span><span class="p">,</span> <span class="nb">type</span><span class="p">:</span> <span class="n">PayoffType</span><span class="p">):</span>
+    <span class="k">if</span> <span class="nb">type</span> <span class="o">==</span> <span class="n">PayoffType</span><span class="o">.</span><span class="n">black_vs_white</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">_init_payoffs_sp_bw</span><span class="p">(</span><span class="n">env</span><span class="p">,</span> <span class="n">population</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="nb">type</span> <span class="o">==</span> <span class="n">PayoffType</span><span class="o">.</span><span class="n">both</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">_init_payoffs_sp_both</span><span class="p">(</span><span class="n">env</span><span class="p">,</span> <span class="n">population</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
+
+
+
+<span class="k">def</span> <span class="nf">_init_payoffs_sp_both</span><span class="p">(</span><span class="n">env</span><span class="p">,</span> <span class="n">population</span><span class="p">:</span> <span class="n">Population</span><span class="p">):</span>
+    <span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">population</span><span class="p">)</span>
+    <span class="n">new_payoffs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">n</span><span class="p">))</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
+            <span class="k">with</span> <span class="n">population</span><span class="o">.</span><span class="n">fixed_behavioural_strategy</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="n">i</span><span class="p">):</span>
+                <span class="n">player_j</span> <span class="o">=</span> <span class="n">population</span><span class="o">.</span><span class="n">make_behavioural_strategy</span><span class="p">(</span><span class="n">j</span><span class="p">)</span>
+                <span class="n">wr_1</span> <span class="o">=</span> <span class="n">eval_win_rate</span><span class="p">(</span>
+                    <span class="n">env</span><span class="o">=</span><span class="n">env</span><span class="p">,</span>
+                    <span class="n">player_black</span><span class="o">=</span><span class="n">population</span><span class="p">,</span>
+                    <span class="n">player_white</span><span class="o">=</span><span class="n">player_j</span><span class="p">,</span>
+                <span class="p">)</span>
+
+                <span class="n">wr_2</span> <span class="o">=</span> <span class="n">eval_win_rate</span><span class="p">(</span>
+                    <span class="n">env</span><span class="o">=</span><span class="n">env</span><span class="p">,</span>
+                    <span class="n">player_black</span><span class="o">=</span><span class="n">player_j</span><span class="p">,</span>
+                    <span class="n">player_white</span><span class="o">=</span><span class="n">population</span><span class="p">,</span>
+                <span class="p">)</span>
+            <span class="n">new_payoffs</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">wr_1</span> <span class="o">-</span> <span class="n">wr_2</span>
+            <span class="n">new_payoffs</span><span class="p">[</span><span class="n">j</span><span class="p">,</span> <span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">wr_2</span> <span class="o">-</span> <span class="n">wr_1</span>
+
+    <span class="k">return</span> <span class="n">new_payoffs</span>
+
+
+<span class="k">def</span> <span class="nf">_init_payoffs_sp_bw</span><span class="p">(</span><span class="n">env</span><span class="p">,</span> <span class="n">population</span><span class="p">:</span> <span class="n">Population</span><span class="p">):</span>
+    <span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">population</span><span class="p">)</span>
+    <span class="n">new_payoffs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">n</span><span class="p">))</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
+            <span class="k">with</span> <span class="n">population</span><span class="o">.</span><span class="n">fixed_behavioural_strategy</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="n">i</span><span class="p">):</span>
+                <span class="n">player_j</span> <span class="o">=</span> <span class="n">population</span><span class="o">.</span><span class="n">make_behavioural_strategy</span><span class="p">(</span><span class="n">j</span><span class="p">)</span>
+                <span class="n">wr_1</span> <span class="o">=</span> <span class="n">eval_win_rate</span><span class="p">(</span>
+                    <span class="n">env</span><span class="o">=</span><span class="n">env</span><span class="p">,</span>
+                    <span class="n">player_black</span><span class="o">=</span><span class="n">population</span><span class="p">,</span>
+                    <span class="n">player_white</span><span class="o">=</span><span class="n">player_j</span><span class="p">,</span>
+                <span class="p">)</span>
+
+                <span class="n">wr_2</span> <span class="o">=</span> <span class="n">eval_win_rate</span><span class="p">(</span>
+                    <span class="n">env</span><span class="o">=</span><span class="n">env</span><span class="p">,</span>
+                    <span class="n">player_black</span><span class="o">=</span><span class="n">player_j</span><span class="p">,</span>
+                    <span class="n">player_white</span><span class="o">=</span><span class="n">population</span><span class="p">,</span>
+                <span class="p">)</span>
+            <span class="n">new_payoffs</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">wr_1</span> <span class="o">-</span> <span class="mi">1</span>
+            <span class="n">new_payoffs</span><span class="p">[</span><span class="n">j</span><span class="p">,</span> <span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">wr_2</span> <span class="o">-</span> <span class="mi">1</span>
+
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+        <span class="k">with</span> <span class="n">population</span><span class="o">.</span><span class="n">fixed_behavioural_strategy</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="n">i</span><span class="p">):</span>
+            <span class="n">wr</span> <span class="o">=</span> <span class="n">eval_win_rate</span><span class="p">(</span>
+                <span class="n">env</span><span class="o">=</span><span class="n">env</span><span class="p">,</span>
+                <span class="n">player_black</span><span class="o">=</span><span class="n">population</span><span class="p">,</span>
+                <span class="n">player_white</span><span class="o">=</span><span class="n">population</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="n">new_payoffs</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">wr</span> <span class="o">-</span> <span class="mi">1</span>
+    <span class="k">return</span> <span class="n">new_payoffs</span>
+
+
+<div class="viewcode-block" id="get_new_payoffs_sp">
+<a class="viewcode-back" href="../../../gomoku_rl.utils.psro.html#gomoku_rl.utils.psro.get_new_payoffs_sp">[docs]</a>
+<span class="k">def</span> <span class="nf">get_new_payoffs_sp</span><span class="p">(</span>
+    <span class="n">env</span><span class="p">,</span>
+    <span class="n">population</span><span class="p">:</span> <span class="n">Population</span><span class="p">,</span>
+    <span class="n">old_payoffs</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="nb">type</span><span class="p">:</span> <span class="n">PayoffType</span> <span class="o">=</span> <span class="n">PayoffType</span><span class="o">.</span><span class="n">both</span><span class="p">,</span>
+<span class="p">):</span>
+    <span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">population</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">old_payoffs</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="p">(</span>
+            <span class="nb">len</span><span class="p">(</span><span class="n">old_payoffs</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span>
+            <span class="ow">and</span> <span class="n">old_payoffs</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">old_payoffs</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="ow">and</span> <span class="n">old_payoffs</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span> <span class="o">==</span> <span class="n">n</span>
+        <span class="p">)</span>
+    <span class="n">new_payoffs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">n</span><span class="p">))</span>
+    <span class="k">if</span> <span class="n">old_payoffs</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">new_payoffs</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">old_payoffs</span>
+
+    <span class="k">if</span> <span class="nb">type</span> <span class="o">==</span> <span class="n">PayoffType</span><span class="o">.</span><span class="n">both</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="k">with</span> <span class="n">population</span><span class="o">.</span><span class="n">fixed_behavioural_strategy</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="n">n</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
+                <span class="n">player_i</span> <span class="o">=</span> <span class="n">population</span><span class="o">.</span><span class="n">make_behavioural_strategy</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="n">i</span><span class="p">)</span>
+                <span class="n">wr_1</span> <span class="o">=</span> <span class="n">eval_win_rate</span><span class="p">(</span>
+                    <span class="n">env</span><span class="o">=</span><span class="n">env</span><span class="p">,</span>
+                    <span class="n">player_black</span><span class="o">=</span><span class="n">player_i</span><span class="p">,</span>
+                    <span class="n">player_white</span><span class="o">=</span><span class="n">population</span><span class="p">,</span>
+                <span class="p">)</span>
+                <span class="n">wr_2</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">eval_win_rate</span><span class="p">(</span>
+                    <span class="n">env</span><span class="o">=</span><span class="n">env</span><span class="p">,</span>
+                    <span class="n">player_black</span><span class="o">=</span><span class="n">population</span><span class="p">,</span>
+                    <span class="n">player_white</span><span class="o">=</span><span class="n">player_i</span><span class="p">,</span>
+                <span class="p">)</span>
+
+            <span class="c1"># the policy has 50% chance to play black and 50% chance to play white</span>
+            <span class="c1"># so the utility for it is 0.5*(win_rate_black+ win_rate_white)</span>
+            <span class="c1"># we transform it so that it&#39;s zero-sum</span>
+            <span class="n">new_payoffs</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">wr_1</span> <span class="o">+</span> <span class="n">wr_2</span> <span class="o">-</span> <span class="mi">1</span>
+            <span class="n">new_payoffs</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="n">new_payoffs</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+    <span class="k">elif</span> <span class="nb">type</span> <span class="o">==</span> <span class="n">PayoffType</span><span class="o">.</span><span class="n">black_vs_white</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="k">with</span> <span class="n">population</span><span class="o">.</span><span class="n">fixed_behavioural_strategy</span><span class="p">(</span><span class="n">index</span><span class="o">=-</span><span class="mi">1</span><span class="p">):</span>
+                <span class="n">player_i</span> <span class="o">=</span> <span class="n">population</span><span class="o">.</span><span class="n">make_behavioural_strategy</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="n">i</span><span class="p">)</span>
+                <span class="n">wr_1</span> <span class="o">=</span> <span class="n">eval_win_rate</span><span class="p">(</span>
+                    <span class="n">env</span><span class="o">=</span><span class="n">env</span><span class="p">,</span>
+                    <span class="n">player_black</span><span class="o">=</span><span class="n">population</span><span class="p">,</span>
+                    <span class="n">player_white</span><span class="o">=</span><span class="n">player_i</span><span class="p">,</span>
+                <span class="p">)</span>
+
+                <span class="n">wr_2</span> <span class="o">=</span> <span class="n">eval_win_rate</span><span class="p">(</span>
+                    <span class="n">env</span><span class="o">=</span><span class="n">env</span><span class="p">,</span>
+                    <span class="n">player_black</span><span class="o">=</span><span class="n">player_i</span><span class="p">,</span>
+                    <span class="n">player_white</span><span class="o">=</span><span class="n">population</span><span class="p">,</span>
+                <span class="p">)</span>
+            <span class="n">new_payoffs</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">wr_1</span> <span class="o">-</span> <span class="mi">1</span>
+            <span class="n">new_payoffs</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">wr_2</span> <span class="o">-</span> <span class="mi">1</span>
+
+        <span class="k">with</span> <span class="n">population</span><span class="o">.</span><span class="n">fixed_behavioural_strategy</span><span class="p">(</span><span class="n">index</span><span class="o">=-</span><span class="mi">1</span><span class="p">):</span>
+            <span class="n">wr</span> <span class="o">=</span> <span class="n">eval_win_rate</span><span class="p">(</span>
+                <span class="n">env</span><span class="o">=</span><span class="n">env</span><span class="p">,</span>
+                <span class="n">player_black</span><span class="o">=</span><span class="n">population</span><span class="p">,</span>
+                <span class="n">player_white</span><span class="o">=</span><span class="n">population</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="n">new_payoffs</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">wr</span> <span class="o">-</span> <span class="mi">1</span>
+    <span class="k">return</span> <span class="n">new_payoffs</span></div>
+
+
+
+<div class="viewcode-block" id="print_payoffs">
+<a class="viewcode-back" href="../../../gomoku_rl.utils.psro.html#gomoku_rl.utils.psro.print_payoffs">[docs]</a>
+<span class="k">def</span> <span class="nf">print_payoffs</span><span class="p">(</span><span class="n">payoffs</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+    <span class="nb">print</span><span class="p">(</span>
+        <span class="s2">&quot;payoffs:</span><span class="se">\n</span><span class="s2">&quot;</span>
+        <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">item</span><span class="si">:</span><span class="s2">+.3f</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">line</span><span class="p">])</span> <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">payoffs</span><span class="p">])</span>
+    <span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="solve_nash">
+<a class="viewcode-back" href="../../../gomoku_rl.utils.psro.html#gomoku_rl.utils.psro.solve_nash">[docs]</a>
+<span class="k">def</span> <span class="nf">solve_nash</span><span class="p">(</span><span class="n">payoffs</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
+    <span class="n">num_row</span><span class="p">,</span> <span class="n">num_col</span> <span class="o">=</span> <span class="n">payoffs</span><span class="o">.</span><span class="n">shape</span>
+    <span class="n">payoffs_row</span> <span class="o">=</span> <span class="n">payoffs</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">payoffs</span><span class="p">)</span>
+    <span class="n">result_row</span> <span class="o">=</span> <span class="n">linprog</span><span class="p">(</span>
+        <span class="n">c</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">num_row</span><span class="p">),</span>
+        <span class="n">A_ub</span><span class="o">=-</span><span class="n">payoffs_row</span><span class="o">.</span><span class="n">T</span><span class="p">,</span>
+        <span class="n">b_ub</span><span class="o">=-</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">num_col</span><span class="p">),</span>
+        <span class="n">bounds</span><span class="o">=</span><span class="p">[(</span><span class="mi">0</span><span class="p">,</span> <span class="kc">None</span><span class="p">)]</span> <span class="o">*</span> <span class="n">num_row</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">meta_strategy_row</span> <span class="o">=</span> <span class="n">result_row</span><span class="o">.</span><span class="n">x</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">result_row</span><span class="o">.</span><span class="n">x</span><span class="p">)</span>
+
+    <span class="n">payoffs_col</span> <span class="o">=</span> <span class="o">-</span><span class="n">payoffs</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="o">-</span><span class="n">payoffs</span><span class="p">)</span>
+    <span class="n">result_col</span> <span class="o">=</span> <span class="n">linprog</span><span class="p">(</span>
+        <span class="n">c</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">num_col</span><span class="p">),</span>
+        <span class="n">A_ub</span><span class="o">=-</span><span class="n">payoffs_col</span><span class="p">,</span>
+        <span class="n">b_ub</span><span class="o">=-</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">num_row</span><span class="p">),</span>
+        <span class="n">bounds</span><span class="o">=</span><span class="p">[(</span><span class="mi">0</span><span class="p">,</span> <span class="kc">None</span><span class="p">)]</span> <span class="o">*</span> <span class="n">num_col</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">meta_strategy_col</span> <span class="o">=</span> <span class="n">result_col</span><span class="o">.</span><span class="n">x</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">result_col</span><span class="o">.</span><span class="n">x</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">meta_strategy_row</span><span class="p">,</span> <span class="n">meta_strategy_col</span></div>
+
+
+
+<div class="viewcode-block" id="solve_uniform">
+<a class="viewcode-back" href="../../../gomoku_rl.utils.psro.html#gomoku_rl.utils.psro.solve_uniform">[docs]</a>
+<span class="k">def</span> <span class="nf">solve_uniform</span><span class="p">(</span><span class="n">payoffs</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
+    <span class="k">return</span> <span class="p">(</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="n">payoffs</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">/</span> <span class="n">payoffs</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="n">payoffs</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="o">/</span> <span class="n">payoffs</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+    <span class="p">)</span></div>
+
+
+
+<span class="k">def</span> <span class="nf">_solve_last_n</span><span class="p">(</span><span class="n">l</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">n</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">l</span> <span class="o">&lt;</span> <span class="n">n</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="n">l</span><span class="p">)</span> <span class="o">/</span> <span class="n">l</span>
+
+    <span class="n">tmp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="n">l</span><span class="p">)</span>
+    <span class="n">tmp</span><span class="p">[</span><span class="o">-</span><span class="n">n</span><span class="p">:]</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">/</span> <span class="n">n</span>
+    <span class="k">return</span> <span class="n">tmp</span>
+
+
+<div class="viewcode-block" id="solve_last_n">
+<a class="viewcode-back" href="../../../gomoku_rl.utils.psro.html#gomoku_rl.utils.psro.solve_last_n">[docs]</a>
+<span class="k">def</span> <span class="nf">solve_last_n</span><span class="p">(</span><span class="n">payoffs</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">n</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
+    <span class="k">return</span> <span class="p">(</span>
+        <span class="n">_solve_last_n</span><span class="p">(</span><span class="n">payoffs</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">n</span><span class="p">),</span>
+        <span class="n">_solve_last_n</span><span class="p">(</span><span class="n">payoffs</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">n</span><span class="p">),</span>
+    <span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="get_meta_solver">
+<a class="viewcode-back" href="../../../gomoku_rl.utils.psro.html#gomoku_rl.utils.psro.get_meta_solver">[docs]</a>
+<span class="k">def</span> <span class="nf">get_meta_solver</span><span class="p">(</span><span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">_meta_solver_t</span><span class="p">:</span>
+    <span class="n">tmp</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;uniform&quot;</span><span class="p">:</span> <span class="n">solve_uniform</span><span class="p">,</span>  <span class="c1"># fictitious play</span>
+        <span class="s2">&quot;nash&quot;</span><span class="p">:</span> <span class="n">solve_nash</span><span class="p">,</span>  <span class="c1"># double oracle</span>
+        <span class="s2">&quot;iterated_best_response&quot;</span><span class="p">:</span> <span class="n">functools</span><span class="o">.</span><span class="n">partial</span><span class="p">(</span><span class="n">solve_last_n</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span>
+    <span class="p">}</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="n">name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">tmp</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">tmp</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
+    <span class="k">elif</span> <span class="n">name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;last_&quot;</span><span class="p">):</span>
+        <span class="n">n</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">name</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;_&quot;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+        <span class="k">return</span> <span class="n">functools</span><span class="o">.</span><span class="n">partial</span><span class="p">(</span><span class="n">solve_last_n</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="n">n</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
+
+
+
+<div class="viewcode-block" id="calculate_jpc">
+<a class="viewcode-back" href="../../../gomoku_rl.utils.psro.html#gomoku_rl.utils.psro.calculate_jpc">[docs]</a>
+<span class="k">def</span> <span class="nf">calculate_jpc</span><span class="p">(</span><span class="n">payoffs</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+    <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">payoffs</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span> <span class="ow">and</span> <span class="n">payoffs</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">payoffs</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">n</span> <span class="o">=</span> <span class="n">payoffs</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">assert</span> <span class="n">n</span> <span class="o">&gt;</span> <span class="mi">1</span>
+    <span class="n">d</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="n">payoffs</span><span class="p">)</span> <span class="o">/</span> <span class="n">n</span>
+    <span class="n">o</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">payoffs</span><span class="p">)</span> <span class="o">-</span> <span class="n">n</span> <span class="o">*</span> <span class="n">d</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">n</span> <span class="o">*</span> <span class="p">(</span><span class="n">n</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))</span>
+    <span class="n">r</span> <span class="o">=</span> <span class="p">(</span><span class="n">d</span> <span class="o">-</span> <span class="n">o</span><span class="p">)</span> <span class="o">/</span> <span class="n">d</span>
+    <span class="k">return</span> <span class="n">r</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Sicheng He.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

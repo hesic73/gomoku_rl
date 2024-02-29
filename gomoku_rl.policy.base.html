@@ -55,7 +55,7 @@
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="gomoku_rl.html#submodules">Submodules</a></li>
-<li class="toctree-l3"><a class="reference internal" href="gomoku_rl.html#module-contents">Module contents</a></li>
+<li class="toctree-l3"><a class="reference internal" href="gomoku_rl.html#module-gomoku_rl">Module contents</a></li>
 </ul>
 </li>
 </ul>
@@ -89,8 +89,101 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section id="gomoku-rl-policy-base-module">
-<h1>gomoku_rl.policy.base module<a class="headerlink" href="#gomoku-rl-policy-base-module" title="Link to this heading"></a></h1>
+  <section id="module-gomoku_rl.policy.base">
+<span id="gomoku-rl-policy-base-module"></span><h1>gomoku_rl.policy.base module<a class="headerlink" href="#module-gomoku_rl.policy.base" title="Link to this heading"></a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="gomoku_rl.policy.base.Policy">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gomoku_rl.policy.base.</span></span><span class="sig-name descname"><span class="pre">Policy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cfg</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DictConfig</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">action_spec</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DiscreteTensorSpec</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">observation_spec</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">TensorSpec</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">device</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'cuda'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/gomoku_rl/policy/base.html#Policy"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gomoku_rl.policy.base.Policy" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">ABC</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="gomoku_rl.policy.base.Policy.__call__">
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">__call__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tensordict</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">TensorDict</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">TensorDict</span></span></span><a class="reference internal" href="_modules/gomoku_rl/policy/base.html#Policy.__call__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gomoku_rl.policy.base.Policy.__call__" title="Link to this definition"></a></dt>
+<dd><p>Defines the computation performed at every call of the policy.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>tensordict</strong> (<em>TensorDict</em>) – Input tensor dictionary containing at least the observation data.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Output tensor dictionary containing at least the actions to be taken in the environment.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>TensorDict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="gomoku_rl.policy.base.Policy.__init__">
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cfg</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DictConfig</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">action_spec</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DiscreteTensorSpec</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">observation_spec</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">TensorSpec</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">device</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'cuda'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/gomoku_rl/policy/base.html#Policy.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gomoku_rl.policy.base.Policy.__init__" title="Link to this definition"></a></dt>
+<dd><p>Initializes the policy.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>cfg</strong> (<em>DictConfig</em>) – Configuration object containing policy-specific settings.</p></li>
+<li><p><strong>action_spec</strong> (<em>DiscreteTensorSpec</em>) – Specification of the action space.</p></li>
+<li><p><strong>observation_spec</strong> (<em>TensorSpec</em>) – Specification of the observation space.</p></li>
+<li><p><strong>device</strong> – The device (e.g., ‘cuda’ or ‘cpu’) where the policy’s tensors will be allocated. Defaults to ‘cuda’.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="gomoku_rl.policy.base.Policy.eval">
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">eval</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/gomoku_rl/policy/base.html#Policy.eval"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gomoku_rl.policy.base.Policy.eval" title="Link to this definition"></a></dt>
+<dd><p>Sets the policy to evaluation mode.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="gomoku_rl.policy.base.Policy.learn">
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">learn</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">TensorDict</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span></span></span><a class="reference internal" href="_modules/gomoku_rl/policy/base.html#Policy.learn"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gomoku_rl.policy.base.Policy.learn" title="Link to this definition"></a></dt>
+<dd><p>Updates the policy based on a batch of data.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>data</strong> (<em>TensorDict</em>) – A batch of data typically including observations, actions, rewards, and next observations.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A dictionary containing information about the learning step, such as loss values.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="gomoku_rl.policy.base.Policy.load_state_dict">
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">load_state_dict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">state_dict</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/gomoku_rl/policy/base.html#Policy.load_state_dict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gomoku_rl.policy.base.Policy.load_state_dict" title="Link to this definition"></a></dt>
+<dd><p>Loads the policy state from a dictionary.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>state_dict</strong> (<em>Dict</em>) – the state of the policy.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="gomoku_rl.policy.base.Policy.state_dict">
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">state_dict</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span></span></span><a class="reference internal" href="_modules/gomoku_rl/policy/base.html#Policy.state_dict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gomoku_rl.policy.base.Policy.state_dict" title="Link to this definition"></a></dt>
+<dd><p>Returns the state of the policy as a dictionary.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>the state of the policy.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>Dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="gomoku_rl.policy.base.Policy.train">
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">train</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/gomoku_rl/policy/base.html#Policy.train"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gomoku_rl.policy.base.Policy.train" title="Link to this definition"></a></dt>
+<dd><p>Sets the policy to training mode.</p>
+</dd></dl>
+
+</dd></dl>
+
 </section>
 
 
