@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Welcome to gomoku_rl’s documentation! &mdash; gomoku_rl 0.1.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="_static/jquery.js?v=5d32c60e"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="_static/documentation_options.js?v=01f34227"></script>
+        <script src="_static/doctools.js?v=888ff710"></script>
+        <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="gomoku_rl" href="modules.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="#" class="icon icon-home">
+            gomoku_rl
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="modules.html">gomoku_rl</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="#">gomoku_rl</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="#" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Welcome to gomoku_rl’s documentation!</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/index.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="welcome-to-gomoku-rl-s-documentation">
+<h1>Welcome to gomoku_rl’s documentation!<a class="headerlink" href="#welcome-to-gomoku-rl-s-documentation" title="Link to this heading"></a></h1>
+<section id="introduction">
+<h2>Introduction<a class="headerlink" href="#introduction" title="Link to this heading"></a></h2>
+<p><em>gomoku_rl</em> is an open-sourced project that trains agents to play the game of Gomoku through deep reinforcement learning.
+Previous works often rely on variants of AlphaGo/AlphaZero and inefficiently use GPU resources.
+<em>gomoku_rl</em> features GPU-parallelized simulation and leverages recent advancements in <strong>MARL</strong>.
+Starting from random play, a model can achieve human-level performance on a <span class="math notranslate nohighlight">\(15\times15\)</span> board within hours of training on a 3090.</p>
+</section>
+<section id="installation">
+<h2>Installation<a class="headerlink" href="#installation" title="Link to this heading"></a></h2>
+<p>Install <em>gomoku_rl</em> with the following command:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>clone<span class="w"> </span>git@github.com:hesic73/gomoku_rl.git
+<span class="nb">cd</span><span class="w"> </span>gomoku_rl
+conda<span class="w"> </span>create<span class="w"> </span>-n<span class="w"> </span>gomoku_rl<span class="w"> </span><span class="nv">python</span><span class="o">=</span><span class="m">3</span>.11.5
+conda<span class="w"> </span>activate<span class="w"> </span>gomoku_rl
+pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span>.
+</pre></div>
+</div>
+<p>I use python 3.11.5, torch 2.1.0 and <strong>torchrl 0.2.1</strong>. Lower versions of python and torch 1.x should be compatible as well.</p>
+</section>
+<section id="usage">
+<h2>Usage<a class="headerlink" href="#usage" title="Link to this heading"></a></h2>
+<p><em>gomoku_rl</em> uses <cite>hydra</cite> to configure training hyperparameters. You can modify the settings in <cite>cfg/train_InRL.yaml</cite> or override them via the command line:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># override default settings in cfg/train_InRL.yaml</span>
+python<span class="w"> </span>scripts/train_InRL.py<span class="w"> </span><span class="nv">num_env</span><span class="o">=</span><span class="m">1024</span><span class="w"> </span><span class="nv">device</span><span class="o">=</span>cuda<span class="w"> </span><span class="nv">epochs</span><span class="o">=</span><span class="m">3000</span><span class="w"> </span>wandb.mode<span class="o">=</span>online
+<span class="c1"># or simply:</span>
+python<span class="w"> </span>scripts/train_InRL.py.py
+</pre></div>
+</div>
+<p>The default location for saving checkpoints is <cite>wandb/*/files</cite> or <cite>tempfile.gettempdir()</cite> if <cite>wandb.mode==’disabled’</cite>. Modify the output directory by specifying the <cite>run_dir</cite> parameter.</p>
+<p>After training, play Gomoku with your model using the <cite>scripts/demo.py</cite> script:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Install PyQt5</span>
+pip<span class="w"> </span>install<span class="w"> </span>PyQt5
+python<span class="w"> </span>scripts/demo.py<span class="w"> </span><span class="nv">device</span><span class="o">=</span>cpu<span class="w"> </span><span class="nv">grid_size</span><span class="o">=</span><span class="m">56</span><span class="w"> </span><span class="nv">piece_radius</span><span class="o">=</span><span class="m">24</span><span class="w"> </span><span class="nv">checkpoint</span><span class="o">=</span>/model/path
+<span class="c1"># default checkpoint (only for board_size=15)</span>
+python<span class="w"> </span>scripts/demo.py
+</pre></div>
+</div>
+<p>Pretrained models for a <span class="math notranslate nohighlight">\(15\times15\)</span> board are available under  <cite>pretrained_models/15_15/</cite>. Be aware that using the wrong model for the board size will lead to loading errors due to mismatches in AI architectures. In PPO, when <cite>share_network=True</cite>, the actor and the critic could utilize a shared encoding module. At present, a <cite>PPOPolicy</cite> object with a shared encoder cannot load from a checkpoint without sharing.</p>
+<div class="toctree-wrapper compound">
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="modules.html">gomoku_rl</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="gomoku_rl.html">gomoku_rl package</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</section>
+</section>
+<section id="indices-and-tables">
+<h1>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Link to this heading"></a></h1>
+<ul class="simple">
+<li><p><a class="reference internal" href="genindex.html"><span class="std std-ref">Index</span></a></p></li>
+<li><p><a class="reference internal" href="py-modindex.html"><span class="std std-ref">Module Index</span></a></p></li>
+<li><p><a class="reference internal" href="search.html"><span class="std std-ref">Search Page</span></a></p></li>
+</ul>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="modules.html" class="btn btn-neutral float-right" title="gomoku_rl" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Sicheng He.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
