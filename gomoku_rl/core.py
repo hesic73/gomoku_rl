@@ -1,6 +1,4 @@
 import torch
-from typing import Optional
-from torch.cuda import _device_t
 import torch.nn.functional as F
 
 
@@ -10,51 +8,63 @@ def compute_done(
     kernel_vertical: torch.Tensor,
     kernel_diagonal: torch.Tensor,
 ) -> torch.Tensor:
-    """_summary_
+    """Determines if any game has been won in a batch of Gomoku boards.
+
+    Checks for a winning sequence of stones horizontally, vertically, and diagonally.
 
     Args:
-        board (torch.Tensor): (E,board_size,board_size)
-        The value can only be either 0 or 1, indicating the presence of a stone on the board.
-        It must be precisely 1 !!!
+        board (torch.Tensor): The game boards, shaped (E, B, B), with E being the number of environments, 
+                              and B being the board size. Values are 0 (empty), 1 (black stone), or -1 (white stone).
+        kernel_horizontal (torch.Tensor): Horizontal detection kernel, shaped (1, 1, 5, 1).
+        kernel_vertical (torch.Tensor): Vertical detection kernel, shaped (1, 1, 1, 5).
+        kernel_diagonal (torch.Tensor): Diagonal detection kernels, shaped (2, 1, 5, 5), for both diagonals.
 
     Returns:
-        torch.Tensor: done (E,)
+        torch.Tensor: Boolean tensor shaped (E,), indicating if the game is won (True) in each environment.
     """
 
     board = board.unsqueeze(1)  # (E,1,B,B)
 
-    output_horizontal = F.conv2d(input=board, weight=kernel_horizontal)  # (E,1,B-4,B)
+    output_horizontal = F.conv2d(
+        input=board, weight=kernel_horizontal)  # (E,1,B-4,B)
 
-    done_horizontal = (output_horizontal.flatten(start_dim=1) > 4.5).any(dim=-1)  # (E,)
+    done_horizontal = (output_horizontal.flatten(
+        start_dim=1) > 4.5).any(dim=-1)  # (E,)
 
-    output_vertical = F.conv2d(input=board, weight=kernel_vertical)  # (E,1,B,B-4)
+    output_vertical = F.conv2d(
+        input=board, weight=kernel_vertical)  # (E,1,B,B-4)
 
-    done_vertical = (output_vertical.flatten(start_dim=1) > 4.5).any(dim=-1)  # (E,)
+    done_vertical = (output_vertical.flatten(
+        start_dim=1) > 4.5).any(dim=-1)  # (E,)
 
-    output_diagonal = F.conv2d(input=board, weight=kernel_diagonal)  # (E,2,B-4,B-4)
+    output_diagonal = F.conv2d(
+        input=board, weight=kernel_diagonal)  # (E,2,B-4,B-4)
 
-    done_diagonal = (output_diagonal.flatten(start_dim=1) > 4.5).any(dim=-1)  # (E,)
+    done_diagonal = (output_diagonal.flatten(
+        start_dim=1) > 4.5).any(dim=-1)  # (E,)
 
     done = done_horizontal | done_vertical | done_diagonal
 
     return done
 
 
-def turn_to_piece(turn: torch.Tensor) -> torch.Tensor:
-    piece = torch.where(turn == 0, 1, -1)
-    return piece
-
-
 class Gomoku:
     def __init__(
-        self, num_envs: int, board_size: int = 19, device: _device_t = None
-    ) -> None:
+        self, num_envs: int, board_size: int = 15, device=None
+    ):
+        """Initializes a batch of parallel Gomoku game environments.
+
+        Args:
+            num_envs (int): Number of parallel game environments.
+            board_size (int, optional): Side length of the square game board. Defaults to 15.
+            device: Torch device on which the tensors are allocated. Defaults to None (CPU).
+        """
         assert num_envs > 0
         assert board_size >= 5
 
         self.num_envs: int = num_envs
         self.board_size: int = board_size
-        self.device: _device_t = device
+        self.device = device
         # board 0 empty 1 black -1 white
         self.board: torch.Tensor = torch.zeros(
             num_envs,
@@ -79,14 +89,16 @@ class Gomoku:
         )
 
         self.kernel_horizontal = (
-            torch.tensor([1, 1, 1, 1, 1], device=self.device, dtype=torch.float)
+            torch.tensor([1, 1, 1, 1, 1], device=self.device,
+                         dtype=torch.float)
             .unsqueeze(-1)
             .unsqueeze(0)
             .unsqueeze(0)
         )  # (1,1,5,1)
 
         self.kernel_vertical = (
-            torch.tensor([1, 1, 1, 1, 1], device=self.device, dtype=torch.float)
+            torch.tensor([1, 1, 1, 1, 1], device=self.device,
+                         dtype=torch.float)
             .unsqueeze(0)
             .unsqueeze(0)
             .unsqueeze(0)
@@ -115,7 +127,15 @@ class Gomoku:
             1
         )  # (2,1,5,5)
 
-    def to(self, device: _device_t):
+    def to(self, device):
+        """Transfers all internal tensors to the specified device.
+
+        Args:
+            device: The target device.
+
+        Returns:
+            self: The instance with its tensors moved to the new device.
+        """
         self.board.to(device=device)
         self.done.to(device=device)
         self.turn.to(device=device)
@@ -123,39 +143,38 @@ class Gomoku:
         self.last_move.to(device=device)
         return self
 
-    def reset(self, env_ids: Optional[torch.Tensor] = None):
-        """_summary_
+    def reset(self, env_indices: torch.Tensor | None = None):
+        """Resets specified game environments to their initial state.
 
         Args:
-            env_ids (torch.Tensor): (#,)
+            env_indices (torch.Tensor | None, optional): Indices of environments to reset. Resets all if None. Defaults to None.
         """
-        if env_ids is None:
+        if env_indices is None:
             self.board.zero_()
             self.done.zero_()
             self.turn.zero_()
             self.move_count.zero_()
             self.last_move.fill_(-1)
         else:
-            self.board[env_ids] = 0
-            self.done[env_ids] = False
-            self.turn[env_ids] = 0
-            self.move_count[env_ids] = 0
-            self.last_move[env_ids] = -1
+            self.board[env_indices] = 0
+            self.done[env_indices] = False
+            self.turn[env_indices] = 0
+            self.move_count[env_indices] = 0
+            self.last_move[env_indices] = -1
 
     def step(
-        self, action: torch.Tensor, env_indices: Optional[torch.Tensor] = None
+        self, action: torch.Tensor, env_indices: torch.Tensor | None = None
     ) -> tuple[torch.Tensor, torch.Tensor]:
-        """_summary_
+        """Performs actions in specified environments and updates their states.
 
         Args:
-            action (torch.Tensor): (E,) x_i*board_size+y_i
-            env_indices (Optional[torch.Tensor]): (E,)
+            action (torch.Tensor): Actions to be performed, linearly indexed.
+            env_indices (torch.Tensor | None, optional): Indices of environments to update. Updates all if None.
 
         Returns:
-            tuple[torch.Tensor, torch.Tensor]: done (E,), illegal (E,)
-
-            If `env_indices` is not None, the elements of `done` and `illegal` are 0 where `env_indices`==0
-
+            tuple[torch.Tensor, torch.Tensor]: (done_statuses, invalid_actions) where:
+                done_statuses: Boolean tensor indicating if the game ended in each environment.
+                invalid_actions: Boolean tensor indicating if the action was invalid in each environment.
         """
 
         if env_indices is None:
@@ -170,14 +189,15 @@ class Gomoku:
 
         nop = (values_on_board != 0) | (~env_indices)  # (E,)
         inc = torch.logical_not(nop).long()  # (E,)
-        piece = turn_to_piece(self.turn)
+        piece = torch.where(self.turn == 0, 1, -1)
         board_1d_view[
             torch.arange(self.num_envs, device=self.device), action
         ] = torch.where(nop, values_on_board, piece)
         self.move_count = self.move_count + inc
 
         # F.conv2d doesn't support LongTensor on CUDA. So we use float.
-        board_one_side = (self.board == piece.unsqueeze(-1).unsqueeze(-1)).float()
+        board_one_side = (
+            self.board == piece.unsqueeze(-1).unsqueeze(-1)).float()
         self.done = compute_done(
             board_one_side,
             self.kernel_horizontal,
@@ -190,8 +210,14 @@ class Gomoku:
 
         return self.done & env_indices, nop & env_indices
 
-    def get_encoded_board(self):
-        piece = turn_to_piece(self.turn).unsqueeze(-1).unsqueeze(-1)  # (E,1,1)
+    def get_encoded_board(self) -> torch.Tensor:
+        """Encodes the current board state into a tensor format suitable for neural network input.
+        
+        Returns:
+            torch.Tensor: Encoded board state, shaped (E, 3, B, B), with separate channels for the current player's stones, the opponent's stones, and the last move.
+        """
+        piece = torch.where(self.turn == 0, 1, -
+                            1).unsqueeze(-1).unsqueeze(-1)  # (E,1,1)
 
         layer1 = (self.board == piece).float()
         layer2 = (self.board == -piece).float()
@@ -228,19 +254,25 @@ class Gomoku:
         )  # (E,*,B,B)
         return output
 
-    def get_action_mask(self):
+    def get_action_mask(self) -> torch.Tensor:
+        """Generates a mask indicating valid actions for each environment.
+
+        Returns:
+            torch.Tensor: Action mask tensor, shaped (E, B*B), with 1s for valid actions and 0s otherwise.
+        """
         return (self.board == 0).flatten(start_dim=1)
 
     def is_valid(self, action: torch.Tensor) -> torch.Tensor:
-        """_summary_
+        """Checks the validity of the specified actions in each environment.
 
         Args:
-            action (torch.Tensor): (E,)
+            action (torch.Tensor): Actions to be checked, linearly indexed.
 
         Returns:
-            torch.Tensor: (E,)
+            torch.Tensor: Boolean tensor, shaped (E,), indicating the validity of each action.
         """
-        out_of_range = action < 0 | (action >= self.board_size * self.board_size)
+        out_of_range = action < 0 | (
+            action >= self.board_size * self.board_size)
         x = action // self.board_size
         y = action % self.board_size
 
