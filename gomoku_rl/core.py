@@ -163,22 +163,22 @@ class Gomoku:
             self.last_move[env_indices] = -1
 
     def step(
-        self, action: torch.Tensor, env_indices: torch.Tensor | None = None
+        self, action: torch.Tensor, env_mask: torch.Tensor | None = None
     ) -> tuple[torch.Tensor, torch.Tensor]:
-        """Performs actions in specified environments and updates their states.
+        """Performs actions in specified environments and updates their states based on the provided action tensor. If an environment mask is provided, only the environments corresponding to `True` values in the mask are updated; otherwise, all environments are updated.
 
         Args:
-            action (torch.Tensor): Actions to be performed, linearly indexed.
-            env_indices (torch.Tensor | None, optional): Indices of environments to update. Updates all if None.
+            action (torch.Tensor): 1D positions to place a stone, one per environment. Shape: (E,)
+            env_indices (torch.Tensor | None, optional): Boolean mask to select environments for updating. If `None`, updates all. Shape should match environments.
 
         Returns:
-            tuple[torch.Tensor, torch.Tensor]: (done_statuses, invalid_actions) where:
-                done_statuses: Boolean tensor indicating if the game ended in each environment.
-                invalid_actions: Boolean tensor indicating if the action was invalid in each environment.
+            tuple[torch.Tensor, torch.Tensor]: A tuple containing two tensors:
+                - done_statuses: Boolean tensor with `True` where games ended.
+                - invalid_actions: Boolean tensor with `True` for invalid actions in environments.
         """
 
-        if env_indices is None:
-            env_indices = torch.ones_like(action, dtype=torch.bool)
+        if env_mask is None:
+            env_mask = torch.ones_like(action, dtype=torch.bool)
 
         board_1d_view = self.board.view(self.num_envs, -1)
 
@@ -187,7 +187,7 @@ class Gomoku:
             action,
         ]  # (E,)
 
-        nop = (values_on_board != 0) | (~env_indices)  # (E,)
+        nop = (values_on_board != 0) | (~env_mask)  # (E,)
         inc = torch.logical_not(nop).long()  # (E,)
         piece = torch.where(self.turn == 0, 1, -1)
         board_1d_view[
@@ -208,11 +208,11 @@ class Gomoku:
         self.turn = (self.turn + inc) % 2
         self.last_move = torch.where(nop, self.last_move, action)
 
-        return self.done & env_indices, nop & env_indices
+        return self.done & env_mask, nop & env_mask
 
     def get_encoded_board(self) -> torch.Tensor:
         """Encodes the current board state into a tensor format suitable for neural network input.
-        
+
         Returns:
             torch.Tensor: Encoded board state, shaped (E, 3, B, B), with separate channels for the current player's stones, the opponent's stones, and the last move.
         """

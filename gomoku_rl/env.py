@@ -25,6 +25,19 @@ def make_transition(
     tensordict_t: TensorDict,
     tensordict_t_plus_1: TensorDict,
 ) -> TensorDict:
+    """
+    Constructs a transition tensor dictionary for a two-player game by integrating the game state and actions from three consecutive time steps (t-1, t, and t+1).
+    
+    Args:
+        tensordict_t_minus_1 (TensorDict): A tensor dictionary containing the game state and associated information at time t-1.
+        tensordict_t (TensorDict): A tensor dictionary containing the game state and associated information at time t.
+        tensordict_t_plus_1 (TensorDict): A tensor dictionary containing the game state and associated information at time t+1.
+
+    Returns:
+        TensorDict: A new tensor dictionary representing the transition from time t-1 to t+1.
+
+    The function calculates rewards based on the win status at times t and t+1, and flags the transition as done if the game ends at either time t or t+1. The resulting tensor dictionary is structured to facilitate learning from this transition in reinforcement learning algorithms.
+    """
     # if a player wins at time t, its opponent cannot win immediately after reset
     reward: torch.Tensor = (
         tensordict_t.get("win").float() -
