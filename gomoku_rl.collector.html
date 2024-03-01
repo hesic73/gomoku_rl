@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>gomoku_rl.collector module &mdash; gomoku_rl 0.1.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="_static/jquery.js?v=5d32c60e"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="_static/documentation_options.js?v=01f34227"></script>
+        <script src="_static/doctools.js?v=888ff710"></script>
+        <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="gomoku_rl.core module" href="gomoku_rl.core.html" />
+    <link rel="prev" title="gomoku_rl.utils.wandb module" href="gomoku_rl.utils.wandb.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            gomoku_rl
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">gomoku_rl</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="gomoku_rl.html">gomoku_rl package</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="gomoku_rl.html#subpackages">Subpackages</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="gomoku_rl.html#submodules">Submodules</a><ul class="current">
+<li class="toctree-l4 current"><a class="current reference internal" href="#">gomoku_rl.collector module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="gomoku_rl.core.html">gomoku_rl.core module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="gomoku_rl.env.html">gomoku_rl.env module</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="gomoku_rl.html#module-gomoku_rl">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">gomoku_rl</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="modules.html">gomoku_rl</a></li>
+          <li class="breadcrumb-item"><a href="gomoku_rl.html">gomoku_rl package</a></li>
+      <li class="breadcrumb-item active">gomoku_rl.collector module</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/gomoku_rl.collector.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-gomoku_rl.collector">
+<span id="gomoku-rl-collector-module"></span><h1>gomoku_rl.collector module<a class="headerlink" href="#module-gomoku_rl.collector" title="Link to this heading"></a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="gomoku_rl.collector.BlackPlayCollector">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gomoku_rl.collector.</span></span><span class="sig-name descname"><span class="pre">BlackPlayCollector</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">env</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="gomoku_rl.env.html#gomoku_rl.env.GomokuEnv" title="gomoku_rl.env.GomokuEnv"><span class="pre">GomokuEnv</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">policy_black</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Callable</span><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><span class="pre">TensorDict</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">TensorDict</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">policy_white</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Callable</span><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><span class="pre">TensorDict</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">TensorDict</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">out_device</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">augment</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/gomoku_rl/collector.html#BlackPlayCollector"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gomoku_rl.collector.BlackPlayCollector" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#gomoku_rl.collector.Collector" title="gomoku_rl.collector.Collector"><code class="xref py py-class docutils literal notranslate"><span class="pre">Collector</span></code></a></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="gomoku_rl.collector.BlackPlayCollector.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">env</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="gomoku_rl.env.html#gomoku_rl.env.GomokuEnv" title="gomoku_rl.env.GomokuEnv"><span class="pre">GomokuEnv</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">policy_black</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Callable</span><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><span class="pre">TensorDict</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">TensorDict</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">policy_white</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Callable</span><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><span class="pre">TensorDict</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">TensorDict</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">out_device</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">augment</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/gomoku_rl/collector.html#BlackPlayCollector.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gomoku_rl.collector.BlackPlayCollector.__init__" title="Link to this definition"></a></dt>
+<dd><p>Initializes a collector for capturing game transitions where the black player is controlled by a trainable policy against a white player using a fixed policy.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>env</strong> (<a class="reference internal" href="gomoku_rl.env.html#gomoku_rl.env.GomokuEnv" title="gomoku_rl.env.GomokuEnv"><em>GomokuEnv</em></a>) – The game environment where the collection takes place.</p></li>
+<li><p><strong>policy_black</strong> (<em>_policy_t</em>) – The trainable policy used for the black player.</p></li>
+<li><p><strong>policy_white</strong> (<em>_policy_t</em>) – The fixed policy for the white player, simulating a consistent opponent.</p></li>
+<li><p><strong>out_device</strong> – The device (e.g., CPU, GPU) where the collected data will be stored. Defaults to the environment’s device if not specified.</p></li>
+<li><p><strong>augment</strong> (<em>bool</em><em>, </em><em>optional</em>) – Whether to apply data augmentation to the collected transitions, enhancing the dataset’s diversity. Defaults to False.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="gomoku_rl.collector.BlackPlayCollector.reset">
+<span class="sig-name descname"><span class="pre">reset</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/gomoku_rl/collector.html#BlackPlayCollector.reset"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gomoku_rl.collector.BlackPlayCollector.reset" title="Link to this definition"></a></dt>
+<dd><p>Resets the collector’s internal state.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="gomoku_rl.collector.BlackPlayCollector.rollout">
+<span class="sig-name descname"><span class="pre">rollout</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">steps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">TensorDict</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dict</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/gomoku_rl/collector.html#BlackPlayCollector.rollout"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gomoku_rl.collector.BlackPlayCollector.rollout" title="Link to this definition"></a></dt>
+<dd><p>Executes a data collection session over a specified number of game steps, focusing on transitions involving the black player.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>steps</strong> (<em>int</em>) – The total number of steps to collect data for. This will be adjusted to ensure an even number of steps for symmetry in turn-taking.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A tuple containing the collected transitions for the black player and a dictionary with additional information such as the frames per second (fps) achieved during the collection.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tuple[TensorDict, dict]</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="gomoku_rl.collector.Collector">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gomoku_rl.collector.</span></span><span class="sig-name descname"><span class="pre">Collector</span></span><a class="reference internal" href="_modules/gomoku_rl/collector.html#Collector"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gomoku_rl.collector.Collector" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">ABC</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="gomoku_rl.collector.Collector.reset">
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">reset</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/gomoku_rl/collector.html#Collector.reset"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gomoku_rl.collector.Collector.reset" title="Link to this definition"></a></dt>
+<dd><p>Resets the collector’s internal state.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="gomoku_rl.collector.Collector.rollout">
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">rollout</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">steps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">TensorDict</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dict</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/gomoku_rl/collector.html#Collector.rollout"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gomoku_rl.collector.Collector.rollout" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="gomoku_rl.collector.SelfPlayCollector">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gomoku_rl.collector.</span></span><span class="sig-name descname"><span class="pre">SelfPlayCollector</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">env</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="gomoku_rl.env.html#gomoku_rl.env.GomokuEnv" title="gomoku_rl.env.GomokuEnv"><span class="pre">GomokuEnv</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">policy</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Callable</span><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><span class="pre">TensorDict</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">TensorDict</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">out_device</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">augment</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/gomoku_rl/collector.html#SelfPlayCollector"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gomoku_rl.collector.SelfPlayCollector" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#gomoku_rl.collector.Collector" title="gomoku_rl.collector.Collector"><code class="xref py py-class docutils literal notranslate"><span class="pre">Collector</span></code></a></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="gomoku_rl.collector.SelfPlayCollector.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">env</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="gomoku_rl.env.html#gomoku_rl.env.GomokuEnv" title="gomoku_rl.env.GomokuEnv"><span class="pre">GomokuEnv</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">policy</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Callable</span><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><span class="pre">TensorDict</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">TensorDict</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">out_device</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">augment</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/gomoku_rl/collector.html#SelfPlayCollector.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gomoku_rl.collector.SelfPlayCollector.__init__" title="Link to this definition"></a></dt>
+<dd><p>Initializes a collector for self-play data in a Gomoku environment.</p>
+<p>This collector facilitates the collection of game transitions generated through self-play, where both players use the same policy.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>env</strong> (<a class="reference internal" href="gomoku_rl.env.html#gomoku_rl.env.GomokuEnv" title="gomoku_rl.env.GomokuEnv"><em>GomokuEnv</em></a>) – The Gomoku game environment where self-play will be conducted.</p></li>
+<li><p><strong>policy</strong> (<em>_policy_t</em>) – The policy function to be used for both players during self-play.</p></li>
+<li><p><strong>out_device</strong> – The device on which collected data will be stored. If None, uses the device specified by the environment.</p></li>
+<li><p><strong>augment</strong> (<em>bool</em><em>, </em><em>optional</em>) – If True, applies data augmentation to the collected transitions. Defaults to False.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="gomoku_rl.collector.SelfPlayCollector.reset">
+<span class="sig-name descname"><span class="pre">reset</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/gomoku_rl/collector.html#SelfPlayCollector.reset"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gomoku_rl.collector.SelfPlayCollector.reset" title="Link to this definition"></a></dt>
+<dd><p>Resets the collector’s internal state.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="gomoku_rl.collector.SelfPlayCollector.rollout">
+<span class="sig-name descname"><span class="pre">rollout</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">steps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">TensorDict</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dict</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/gomoku_rl/collector.html#SelfPlayCollector.rollout"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gomoku_rl.collector.SelfPlayCollector.rollout" title="Link to this definition"></a></dt>
+<dd><p>Executes a rollout in the environment, collecting data for a specified number of steps.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>steps</strong> (<em>int</em>) – The number of steps to execute in the environment for this rollout.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><dl class="simple">
+<dt>A tuple containing two elements:</dt><dd><ul class="simple">
+<li><p>A TensorDict holding the collected transitions from the rollout. Each transition includes the game state before the action, the action taken, and the resulting state.</p></li>
+<li><p>A dictionary with additional information about the rollout.</p></li>
+</ul>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tuple[TensorDict, dict]</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="gomoku_rl.collector.VersusPlayCollector">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gomoku_rl.collector.</span></span><span class="sig-name descname"><span class="pre">VersusPlayCollector</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">env</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="gomoku_rl.env.html#gomoku_rl.env.GomokuEnv" title="gomoku_rl.env.GomokuEnv"><span class="pre">GomokuEnv</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">policy_black</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Callable</span><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><span class="pre">TensorDict</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">TensorDict</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">policy_white</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Callable</span><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><span class="pre">TensorDict</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">TensorDict</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">out_device</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">augment</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/gomoku_rl/collector.html#VersusPlayCollector"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gomoku_rl.collector.VersusPlayCollector" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#gomoku_rl.collector.Collector" title="gomoku_rl.collector.Collector"><code class="xref py py-class docutils literal notranslate"><span class="pre">Collector</span></code></a></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="gomoku_rl.collector.VersusPlayCollector.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">env</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="gomoku_rl.env.html#gomoku_rl.env.GomokuEnv" title="gomoku_rl.env.GomokuEnv"><span class="pre">GomokuEnv</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">policy_black</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Callable</span><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><span class="pre">TensorDict</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">TensorDict</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">policy_white</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Callable</span><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><span class="pre">TensorDict</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">TensorDict</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">out_device</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">augment</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/gomoku_rl/collector.html#VersusPlayCollector.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gomoku_rl.collector.VersusPlayCollector.__init__" title="Link to this definition"></a></dt>
+<dd><p>Initializes a collector for versus play data in a Gomoku environment, facilitating the collection of game transitions where two players, each using a distinct policy, compete against each other.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>env</strong> (<a class="reference internal" href="gomoku_rl.env.html#gomoku_rl.env.GomokuEnv" title="gomoku_rl.env.GomokuEnv"><em>GomokuEnv</em></a>) – The Gomoku game environment where the two-player game will be conducted.</p></li>
+<li><p><strong>policy_black</strong> (<em>_policy_t</em>) – The policy function to be used for the black player.</p></li>
+<li><p><strong>policy_white</strong> (<em>_policy_t</em>) – The policy function to be used for the white player.</p></li>
+<li><p><strong>out_device</strong> – The device on which collected data will be stored. If None, uses the device specified by the environment.</p></li>
+<li><p><strong>augment</strong> (<em>bool</em><em>, </em><em>optional</em>) – If True, applies data augmentation to the collected transitions. Defaults to False.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="gomoku_rl.collector.VersusPlayCollector.reset">
+<span class="sig-name descname"><span class="pre">reset</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/gomoku_rl/collector.html#VersusPlayCollector.reset"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gomoku_rl.collector.VersusPlayCollector.reset" title="Link to this definition"></a></dt>
+<dd><p>Resets the collector’s internal state.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="gomoku_rl.collector.VersusPlayCollector.rollout">
+<span class="sig-name descname"><span class="pre">rollout</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">steps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">TensorDict</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">TensorDict</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dict</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/gomoku_rl/collector.html#VersusPlayCollector.rollout"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gomoku_rl.collector.VersusPlayCollector.rollout" title="Link to this definition"></a></dt>
+<dd><p>Executes a rollout in the environment, collecting data for a specified number of steps, alternating between the black and white policies.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>steps</strong> (<em>int</em>) – The number of steps to execute in the environment for this rollout. It is adjusted to be an even number to ensure an equal number of actions for both players.</p>
+</dd>
+</dl>
+<p>Returns:
+tuple: A tuple containing three elements:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>A TensorDict of transitions collected for the black player, with each transition representing a game state before the black player’s action, the action taken, and the resulting state.</p></li>
+<li><p>A TensorDict of transitions collected for the white player, structured similarly to the black player’s transitions. Note that for the first step, the white player does not take an action, so their collection starts from the second step.</p></li>
+<li><p>A dictionary containing additional information about the rollout.</p></li>
+</ul>
+</div></blockquote>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="gomoku_rl.collector.WhitePlayCollector">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gomoku_rl.collector.</span></span><span class="sig-name descname"><span class="pre">WhitePlayCollector</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">env</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="gomoku_rl.env.html#gomoku_rl.env.GomokuEnv" title="gomoku_rl.env.GomokuEnv"><span class="pre">GomokuEnv</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">policy_black</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Callable</span><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><span class="pre">TensorDict</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">TensorDict</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">policy_white</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Callable</span><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><span class="pre">TensorDict</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">TensorDict</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">out_device</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">augment</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/gomoku_rl/collector.html#WhitePlayCollector"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gomoku_rl.collector.WhitePlayCollector" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#gomoku_rl.collector.Collector" title="gomoku_rl.collector.Collector"><code class="xref py py-class docutils literal notranslate"><span class="pre">Collector</span></code></a></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="gomoku_rl.collector.WhitePlayCollector.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">env</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="gomoku_rl.env.html#gomoku_rl.env.GomokuEnv" title="gomoku_rl.env.GomokuEnv"><span class="pre">GomokuEnv</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">policy_black</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Callable</span><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><span class="pre">TensorDict</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">TensorDict</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">policy_white</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Callable</span><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><span class="pre">TensorDict</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">TensorDict</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">out_device</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">augment</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/gomoku_rl/collector.html#WhitePlayCollector.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gomoku_rl.collector.WhitePlayCollector.__init__" title="Link to this definition"></a></dt>
+<dd><p>Initializes a collector focused on capturing game transitions from the perspective of the white player, who is controlled by a trainable policy, against a black player using a fixed policy.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>env</strong> (<a class="reference internal" href="gomoku_rl.env.html#gomoku_rl.env.GomokuEnv" title="gomoku_rl.env.GomokuEnv"><em>GomokuEnv</em></a>) – The game environment where the collection takes place.</p></li>
+<li><p><strong>policy_black</strong> (<em>_policy_t</em>) – The fixed policy for the black player, providing a consistent challenge.</p></li>
+<li><p><strong>policy_white</strong> (<em>_policy_t</em>) – The trainable policy used for the white player.</p></li>
+<li><p><strong>out_device</strong> – The device for storing collected data, defaulting to the environment’s device if not specified.</p></li>
+<li><p><strong>augment</strong> (<em>bool</em><em>, </em><em>optional</em>) – Indicates whether to augment the collected transitions to enhance the dataset. Defaults to False.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="gomoku_rl.collector.WhitePlayCollector.reset">
+<span class="sig-name descname"><span class="pre">reset</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/gomoku_rl/collector.html#WhitePlayCollector.reset"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gomoku_rl.collector.WhitePlayCollector.reset" title="Link to this definition"></a></dt>
+<dd><p>Resets the collector’s internal state.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="gomoku_rl.collector.WhitePlayCollector.rollout">
+<span class="sig-name descname"><span class="pre">rollout</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">steps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">TensorDict</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dict</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/gomoku_rl/collector.html#WhitePlayCollector.rollout"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gomoku_rl.collector.WhitePlayCollector.rollout" title="Link to this definition"></a></dt>
+<dd><p>Performs a data collection session, focusing on the game transitions where the white player is active, over a specified number of steps.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>steps</strong> (<em>int</em>) – The number of steps for which data will be collected, adjusted to be even for fairness in gameplay.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A tuple containing the collected transitions for the white player and additional session information, such as collection performance (fps).</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tuple[TensorDict, dict]</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="gomoku_rl.collector.make_transition">
+<span class="sig-prename descclassname"><span class="pre">gomoku_rl.collector.</span></span><span class="sig-name descname"><span class="pre">make_transition</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tensordict_t_minus_1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">TensorDict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tensordict_t</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">TensorDict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tensordict_t_plus_1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">TensorDict</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">TensorDict</span></span></span><a class="reference internal" href="_modules/gomoku_rl/collector.html#make_transition"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gomoku_rl.collector.make_transition" title="Link to this definition"></a></dt>
+<dd><p>Constructs a transition tensor dictionary for a two-player game by integrating the game state and actions from three consecutive time steps (t-1, t, and t+1).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>tensordict_t_minus_1</strong> (<em>TensorDict</em>) – A tensor dictionary containing the game state and associated information at time t-1.</p></li>
+<li><p><strong>tensordict_t</strong> (<em>TensorDict</em>) – A tensor dictionary containing the game state and associated information at time t.</p></li>
+<li><p><strong>tensordict_t_plus_1</strong> (<em>TensorDict</em>) – A tensor dictionary containing the game state and associated information at time t+1.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A new tensor dictionary representing the transition from time t-1 to t+1.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>TensorDict</p>
+</dd>
+</dl>
+<p>The function calculates rewards based on the win status at times t and t+1, and flags the transition as done if the game ends at either time t or t+1. The resulting tensor dictionary is structured to facilitate learning from this transition in reinforcement learning algorithms.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="gomoku_rl.collector.round">
+<span class="sig-prename descclassname"><span class="pre">gomoku_rl.collector.</span></span><span class="sig-name descname"><span class="pre">round</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">env</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="gomoku_rl.env.html#gomoku_rl.env.GomokuEnv" title="gomoku_rl.env.GomokuEnv"><span class="pre">GomokuEnv</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">policy_black</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Callable</span><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><span class="pre">TensorDict</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">TensorDict</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">policy_white</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Callable</span><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><span class="pre">TensorDict</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">TensorDict</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tensordict_t_minus_1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">TensorDict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tensordict_t</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">TensorDict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_black_transitions</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_white_transitions</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/gomoku_rl/collector.html#round"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gomoku_rl.collector.round" title="Link to this definition"></a></dt>
+<dd><p>Executes two sequential steps in the Gomoku environment, applying black and white policies alternately.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>env</strong> (<a class="reference internal" href="gomoku_rl.env.html#gomoku_rl.env.GomokuEnv" title="gomoku_rl.env.GomokuEnv"><em>GomokuEnv</em></a>) – The Gomoku game environment instance.</p></li>
+<li><p><strong>policy_black</strong> (<em>_policy_t</em>) – The policy function for the black player, which determines the action based on the current game state.</p></li>
+<li><p><strong>policy_white</strong> (<em>_policy_t</em>) – The policy function for the white player, similar to policy_black but for the white player.</p></li>
+<li><p><strong>tensordict_t_minus_1</strong> (<em>TensorDict</em>) – The game state tensor dictionary at time t-1, before the white player’s action.</p></li>
+<li><p><strong>tensordict_t</strong> (<em>TensorDict</em>) – The game state tensor dictionary at time t, before the black player’s action.</p></li>
+<li><p><strong>return_black_transitions</strong> (<em>bool</em><em>, </em><em>optional</em>) – If True, returns transition data for the black player. Defaults to True.</p></li>
+<li><p><strong>return_white_transitions</strong> (<em>bool</em><em>, </em><em>optional</em>) – If True, returns transition data for the white player. Defaults to True.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Contains transition data for the black player (if requested), transition data for the white player (if requested), the game state after the white player’s action (t+1), and the game state after the black player’s action (t+2).</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tuple</p>
+</dd>
+</dl>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<ul class="simple">
+<li><p>If the environment is reset at time t-1, the white player won’t make a move at time t. This is different from the black player’s behavior.</p></li>
+<li><p>If the black player wins at time t and the environment is reset, the environment does not take a step at t+1. This affects the validity of the white player’s transition from t-1 to t+1, which is marked invalid where <cite>tensordict_t_minus_1[‘done’]</cite> is True.</p></li>
+</ul>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="gomoku_rl.collector.self_play_step">
+<span class="sig-prename descclassname"><span class="pre">gomoku_rl.collector.</span></span><span class="sig-name descname"><span class="pre">self_play_step</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">env</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="gomoku_rl.env.html#gomoku_rl.env.GomokuEnv" title="gomoku_rl.env.GomokuEnv"><span class="pre">GomokuEnv</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">policy</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Callable</span><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><span class="pre">TensorDict</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">TensorDict</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tensordict_t_minus_1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">TensorDict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tensordict_t</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">TensorDict</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/gomoku_rl/collector.html#self_play_step"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gomoku_rl.collector.self_play_step" title="Link to this definition"></a></dt>
+<dd><p>Executes a single step of self-play in a Gomoku environment using a specified policy.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>env</strong> (<a class="reference internal" href="gomoku_rl.env.html#gomoku_rl.env.GomokuEnv" title="gomoku_rl.env.GomokuEnv"><em>GomokuEnv</em></a>) – The Gomoku game environment instance where the self-play step is executed.</p></li>
+<li><p><strong>policy</strong> (<em>_policy_t</em>) – The policy function to determine the next action based on the current game state.</p></li>
+<li><p><strong>tensordict_t_minus_1</strong> (<em>TensorDict</em>) – The game state tensor dictionary at time t-1.</p></li>
+<li><p><strong>tensordict_t</strong> (<em>TensorDict</em>) – The game state tensor dictionary at time t.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><p>Contains the transition information resulting from the action taken in this step, the game state tensor dictionary at time t (unchanged from the input), and the game state tensor dictionary at time t+1 after the action and potential reset.</p>
+<ul class="simple">
+<li><p>The transition information includes the states at times t-1 and t, the action taken at time t, and the resulting state at time t+1.</p></li>
+<li><p>The unchanged game state tensor dictionary at time t is returned to facilitate chaining of self-play steps or integration with other functions.</p></li>
+<li><p>The updated game state tensor dictionary at time t+1 reflects the new state of the environment after applying the action and potentially resetting the environment if the game concluded in this step.</p></li>
+</ul>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tuple</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="gomoku_rl.utils.wandb.html" class="btn btn-neutral float-left" title="gomoku_rl.utils.wandb module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="gomoku_rl.core.html" class="btn btn-neutral float-right" title="gomoku_rl.core module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Sicheng He.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

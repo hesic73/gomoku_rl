@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>gomoku_rl.collector &mdash; gomoku_rl 0.1.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../_static/documentation_options.js?v=01f34227"></script>
+        <script src="../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            gomoku_rl
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../modules.html">gomoku_rl</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">gomoku_rl</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">gomoku_rl.collector</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for gomoku_rl.collector</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">abc</span>
+<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">defaultdict</span>
+<span class="kn">import</span> <span class="nn">torch</span>
+<span class="kn">from</span> <span class="nn">tensordict</span> <span class="kn">import</span> <span class="n">TensorDict</span>
+
+<span class="kn">import</span> <span class="nn">time</span>
+
+<span class="kn">from</span> <span class="nn">tensordict.nn</span> <span class="kn">import</span> <span class="n">TensorDictModule</span><span class="p">,</span> <span class="n">set_interaction_type</span><span class="p">,</span> <span class="n">InteractionType</span>
+
+
+<span class="kn">from</span> <span class="nn">gomoku_rl.utils.policy</span> <span class="kn">import</span> <span class="n">_policy_t</span>
+<span class="kn">from</span> <span class="nn">gomoku_rl.utils.log</span> <span class="kn">import</span> <span class="n">get_log_func</span>
+<span class="kn">from</span> <span class="nn">gomoku_rl.utils.augment</span> <span class="kn">import</span> <span class="n">augment_transition</span>
+
+<span class="kn">from</span> <span class="nn">.env</span> <span class="kn">import</span> <span class="n">GomokuEnv</span>
+
+
+<div class="viewcode-block" id="make_transition">
+<a class="viewcode-back" href="../../gomoku_rl.collector.html#gomoku_rl.collector.make_transition">[docs]</a>
+<span class="k">def</span> <span class="nf">make_transition</span><span class="p">(</span>
+    <span class="n">tensordict_t_minus_1</span><span class="p">:</span> <span class="n">TensorDict</span><span class="p">,</span>
+    <span class="n">tensordict_t</span><span class="p">:</span> <span class="n">TensorDict</span><span class="p">,</span>
+    <span class="n">tensordict_t_plus_1</span><span class="p">:</span> <span class="n">TensorDict</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TensorDict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Constructs a transition tensor dictionary for a two-player game by integrating the game state and actions from three consecutive time steps (t-1, t, and t+1).</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        tensordict_t_minus_1 (TensorDict): A tensor dictionary containing the game state and associated information at time t-1.</span>
+<span class="sd">        tensordict_t (TensorDict): A tensor dictionary containing the game state and associated information at time t.</span>
+<span class="sd">        tensordict_t_plus_1 (TensorDict): A tensor dictionary containing the game state and associated information at time t+1.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        TensorDict: A new tensor dictionary representing the transition from time t-1 to t+1.</span>
+
+<span class="sd">    The function calculates rewards based on the win status at times t and t+1, and flags the transition as done if the game ends at either time t or t+1. The resulting tensor dictionary is structured to facilitate learning from this transition in reinforcement learning algorithms.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># if a player wins at time t, its opponent cannot win immediately after reset</span>
+    <span class="n">reward</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">tensordict_t</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;win&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">float</span><span class="p">()</span> <span class="o">-</span>
+        <span class="n">tensordict_t_plus_1</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;win&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">float</span><span class="p">()</span>
+    <span class="p">)</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">transition</span><span class="p">:</span> <span class="n">TensorDict</span> <span class="o">=</span> <span class="n">tensordict_t_minus_1</span><span class="o">.</span><span class="n">select</span><span class="p">(</span>
+        <span class="s2">&quot;observation&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;action_mask&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;action&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;sample_log_prob&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;state_value&quot;</span><span class="p">,</span>
+        <span class="n">strict</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">transition</span><span class="o">.</span><span class="n">set</span><span class="p">(</span>
+        <span class="s2">&quot;next&quot;</span><span class="p">,</span>
+        <span class="n">tensordict_t_plus_1</span><span class="o">.</span><span class="n">select</span><span class="p">(</span>
+            <span class="s2">&quot;observation&quot;</span><span class="p">,</span> <span class="s2">&quot;action_mask&quot;</span><span class="p">,</span> <span class="s2">&quot;state_value&quot;</span><span class="p">,</span> <span class="n">strict</span><span class="o">=</span><span class="kc">False</span>
+        <span class="p">),</span>
+    <span class="p">)</span>
+    <span class="n">transition</span><span class="o">.</span><span class="n">set</span><span class="p">((</span><span class="s2">&quot;next&quot;</span><span class="p">,</span> <span class="s2">&quot;reward&quot;</span><span class="p">),</span> <span class="n">reward</span><span class="p">)</span>
+    <span class="n">done</span> <span class="o">=</span> <span class="n">tensordict_t_plus_1</span><span class="p">[</span><span class="s2">&quot;done&quot;</span><span class="p">]</span> <span class="o">|</span> <span class="n">tensordict_t</span><span class="p">[</span><span class="s2">&quot;done&quot;</span><span class="p">]</span>
+    <span class="n">transition</span><span class="o">.</span><span class="n">set</span><span class="p">((</span><span class="s2">&quot;next&quot;</span><span class="p">,</span> <span class="s2">&quot;done&quot;</span><span class="p">),</span> <span class="n">done</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">transition</span></div>
+
+
+
+<div class="viewcode-block" id="round">
+<a class="viewcode-back" href="../../gomoku_rl.collector.html#gomoku_rl.collector.round">[docs]</a>
+<span class="k">def</span> <span class="nf">round</span><span class="p">(</span><span class="n">env</span><span class="p">:</span> <span class="n">GomokuEnv</span><span class="p">,</span>
+          <span class="n">policy_black</span><span class="p">:</span> <span class="n">_policy_t</span><span class="p">,</span>
+          <span class="n">policy_white</span><span class="p">:</span> <span class="n">_policy_t</span><span class="p">,</span>
+          <span class="n">tensordict_t_minus_1</span><span class="p">:</span> <span class="n">TensorDict</span><span class="p">,</span>
+          <span class="n">tensordict_t</span><span class="p">:</span> <span class="n">TensorDict</span><span class="p">,</span>
+          <span class="n">return_black_transitions</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+          <span class="n">return_white_transitions</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Executes two sequential steps in the Gomoku environment, applying black and white policies alternately.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        env (GomokuEnv): The Gomoku game environment instance.</span>
+<span class="sd">        policy_black (_policy_t): The policy function for the black player, which determines the action based on the current game state.</span>
+<span class="sd">        policy_white (_policy_t): The policy function for the white player, similar to policy_black but for the white player.</span>
+<span class="sd">        tensordict_t_minus_1 (TensorDict): The game state tensor dictionary at time t-1, before the white player&#39;s action.</span>
+<span class="sd">        tensordict_t (TensorDict): The game state tensor dictionary at time t, before the black player&#39;s action.</span>
+<span class="sd">        return_black_transitions (bool, optional): If True, returns transition data for the black player. Defaults to True.</span>
+<span class="sd">        return_white_transitions (bool, optional): If True, returns transition data for the white player. Defaults to True.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        tuple: Contains transition data for the black player (if requested), transition data for the white player (if requested), the game state after the white player&#39;s action (t+1), and the game state after the black player&#39;s action (t+2).\</span>
+
+<span class="sd">    Note:</span>
+<span class="sd">        - If the environment is reset at time t-1, the white player won&#39;t make a move at time t. This is different from the black player&#39;s behavior.</span>
+<span class="sd">        - If the black player wins at time t and the environment is reset, the environment does not take a step at t+1. This affects the validity of the white player&#39;s transition from t-1 to t+1, which is marked invalid where `tensordict_t_minus_1[&#39;done&#39;]` is True.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">tensordict_t_plus_1</span> <span class="o">=</span> <span class="n">env</span><span class="o">.</span><span class="n">step_and_maybe_reset</span><span class="p">(</span>
+        <span class="n">tensordict</span><span class="o">=</span><span class="n">tensordict_t</span><span class="p">)</span>
+
+    <span class="k">with</span> <span class="n">set_interaction_type</span><span class="p">(</span><span class="nb">type</span><span class="o">=</span><span class="n">InteractionType</span><span class="o">.</span><span class="n">RANDOM</span><span class="p">):</span>
+        <span class="n">tensordict_t_plus_1</span> <span class="o">=</span> <span class="n">policy_white</span><span class="p">(</span><span class="n">tensordict_t_plus_1</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">return_white_transitions</span><span class="p">:</span>
+        <span class="n">transition_white</span> <span class="o">=</span> <span class="n">make_transition</span><span class="p">(</span>
+            <span class="n">tensordict_t_minus_1</span><span class="p">,</span> <span class="n">tensordict_t</span><span class="p">,</span> <span class="n">tensordict_t_plus_1</span>
+        <span class="p">)</span>
+        <span class="c1"># for player_white, if the env is reset at t-1, he won&#39;t make a move at t</span>
+        <span class="c1"># this is different from player_black</span>
+
+        <span class="c1"># transition_white = transition_white[~tensordict_t_minus_1[&quot;done&quot;]]</span>
+        <span class="c1"># the trick is that we set done=True for computing gae</span>
+        <span class="c1"># after that we just discard these invalid transition</span>
+        <span class="n">invalid</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="o">=</span> <span class="n">tensordict_t_minus_1</span><span class="p">[</span><span class="s2">&quot;done&quot;</span><span class="p">]</span>
+        <span class="c1"># transition_white[&quot;observation&quot;] = (</span>
+        <span class="c1">#     -invalid.float().unsqueeze(-1).unsqueeze(-1).unsqueeze(-1)</span>
+        <span class="c1">#     + (1 - invalid.float()).unsqueeze(-1).unsqueeze(-1).unsqueeze(-1)</span>
+        <span class="c1">#     * transition_white[&quot;observation&quot;]</span>
+        <span class="c1"># )</span>
+        <span class="n">transition_white</span><span class="p">[</span><span class="s2">&quot;next&quot;</span><span class="p">,</span> <span class="s2">&quot;done&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">invalid</span> <span class="o">|</span> <span class="n">transition_white</span><span class="p">[</span><span class="s2">&quot;next&quot;</span><span class="p">,</span> <span class="s2">&quot;done&quot;</span><span class="p">]</span>
+        <span class="p">)</span>
+        <span class="n">transition_white</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="s2">&quot;invalid&quot;</span><span class="p">,</span> <span class="n">invalid</span><span class="p">)</span>
+
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">transition_white</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="c1"># if player_black wins at t (and the env is reset), the env doesn&#39;t take a step at t+1</span>
+    <span class="c1"># this makes no difference to player_black&#39;s transition from t to t+2</span>
+    <span class="c1"># but player_white&#39;s transition from t-1 to t+1 is invalid where tensordict_t_minus_1[&#39;done&#39;]==True</span>
+    <span class="n">tensordict_t_plus_2</span> <span class="o">=</span> <span class="n">env</span><span class="o">.</span><span class="n">step_and_maybe_reset</span><span class="p">(</span>
+        <span class="n">tensordict_t_plus_1</span><span class="p">,</span>
+        <span class="n">env_mask</span><span class="o">=~</span><span class="n">tensordict_t_plus_1</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;done&quot;</span><span class="p">),</span>
+    <span class="p">)</span>
+
+    <span class="k">with</span> <span class="n">set_interaction_type</span><span class="p">(</span><span class="nb">type</span><span class="o">=</span><span class="n">InteractionType</span><span class="o">.</span><span class="n">RANDOM</span><span class="p">):</span>
+        <span class="n">tensordict_t_plus_2</span> <span class="o">=</span> <span class="n">policy_black</span><span class="p">(</span><span class="n">tensordict_t_plus_2</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">return_black_transitions</span><span class="p">:</span>
+        <span class="n">transition_black</span> <span class="o">=</span> <span class="n">make_transition</span><span class="p">(</span>
+            <span class="n">tensordict_t</span><span class="p">,</span> <span class="n">tensordict_t_plus_1</span><span class="p">,</span> <span class="n">tensordict_t_plus_2</span>
+        <span class="p">)</span>
+        <span class="n">transition_black</span><span class="o">.</span><span class="n">set</span><span class="p">(</span>
+            <span class="s2">&quot;invalid&quot;</span><span class="p">,</span>
+            <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">env</span><span class="o">.</span><span class="n">num_envs</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">env</span><span class="o">.</span><span class="n">device</span><span class="p">,</span>
+                        <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">bool</span><span class="p">),</span>
+        <span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">transition_black</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">return</span> <span class="p">(</span>
+        <span class="n">transition_black</span><span class="p">,</span>
+        <span class="n">transition_white</span><span class="p">,</span>
+        <span class="n">tensordict_t_plus_1</span><span class="p">,</span>
+        <span class="n">tensordict_t_plus_2</span><span class="p">,</span>
+    <span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="self_play_step">
+<a class="viewcode-back" href="../../gomoku_rl.collector.html#gomoku_rl.collector.self_play_step">[docs]</a>
+<span class="k">def</span> <span class="nf">self_play_step</span><span class="p">(</span>
+    <span class="n">env</span><span class="p">:</span> <span class="n">GomokuEnv</span><span class="p">,</span>
+    <span class="n">policy</span><span class="p">:</span> <span class="n">_policy_t</span><span class="p">,</span>
+    <span class="n">tensordict_t_minus_1</span><span class="p">:</span> <span class="n">TensorDict</span><span class="p">,</span>
+    <span class="n">tensordict_t</span><span class="p">:</span> <span class="n">TensorDict</span><span class="p">,</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Executes a single step of self-play in a Gomoku environment using a specified policy.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        env (GomokuEnv): The Gomoku game environment instance where the self-play step is executed.</span>
+<span class="sd">        policy (_policy_t): The policy function to determine the next action based on the current game state.</span>
+<span class="sd">        tensordict_t_minus_1 (TensorDict):  The game state tensor dictionary at time t-1.</span>
+<span class="sd">        tensordict_t (TensorDict): The game state tensor dictionary at time t.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        tuple: Contains the transition information resulting from the action taken in this step, the game state tensor dictionary at time t (unchanged from the input), and the game state tensor dictionary at time t+1 after the action and potential reset.</span>
+
+<span class="sd">        - The transition information includes the states at times t-1 and t, the action taken at time t, and the resulting state at time t+1.</span>
+<span class="sd">        - The unchanged game state tensor dictionary at time t is returned to facilitate chaining of self-play steps or integration with other functions.</span>
+<span class="sd">        - The updated game state tensor dictionary at time t+1 reflects the new state of the environment after applying the action and potentially resetting the environment if the game concluded in this step.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">tensordict_t_plus_1</span> <span class="o">=</span> <span class="n">env</span><span class="o">.</span><span class="n">step_and_maybe_reset</span><span class="p">(</span>
+        <span class="n">tensordict</span><span class="o">=</span><span class="n">tensordict_t</span>
+    <span class="p">)</span>
+    <span class="k">with</span> <span class="n">set_interaction_type</span><span class="p">(</span><span class="nb">type</span><span class="o">=</span><span class="n">InteractionType</span><span class="o">.</span><span class="n">RANDOM</span><span class="p">):</span>
+        <span class="n">tensordict_t_plus_1</span> <span class="o">=</span> <span class="n">policy</span><span class="p">(</span><span class="n">tensordict_t_plus_1</span><span class="p">)</span>
+    <span class="n">transition</span> <span class="o">=</span> <span class="n">make_transition</span><span class="p">(</span>
+        <span class="n">tensordict_t_minus_1</span><span class="p">,</span> <span class="n">tensordict_t</span><span class="p">,</span> <span class="n">tensordict_t_plus_1</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="p">(</span>
+        <span class="n">transition</span><span class="p">,</span>
+        <span class="n">tensordict_t</span><span class="p">,</span>
+        <span class="n">tensordict_t_plus_1</span><span class="p">,</span>
+    <span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="Collector">
+<a class="viewcode-back" href="../../gomoku_rl.collector.html#gomoku_rl.collector.Collector">[docs]</a>
+<span class="k">class</span> <span class="nc">Collector</span><span class="p">(</span><span class="n">abc</span><span class="o">.</span><span class="n">ABC</span><span class="p">):</span>
+<div class="viewcode-block" id="Collector.rollout">
+<a class="viewcode-back" href="../../gomoku_rl.collector.html#gomoku_rl.collector.Collector.rollout">[docs]</a>
+    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">rollout</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">steps</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">TensorDict</span><span class="p">,</span> <span class="nb">dict</span><span class="p">]:</span>
+        <span class="o">...</span></div>
+
+
+<div class="viewcode-block" id="Collector.reset">
+<a class="viewcode-back" href="../../gomoku_rl.collector.html#gomoku_rl.collector.Collector.reset">[docs]</a>
+    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">reset</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Resets the collector&#39;s internal state.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="o">...</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="SelfPlayCollector">
+<a class="viewcode-back" href="../../gomoku_rl.collector.html#gomoku_rl.collector.SelfPlayCollector">[docs]</a>
+<span class="k">class</span> <span class="nc">SelfPlayCollector</span><span class="p">(</span><span class="n">Collector</span><span class="p">):</span>
+<div class="viewcode-block" id="SelfPlayCollector.__init__">
+<a class="viewcode-back" href="../../gomoku_rl.collector.html#gomoku_rl.collector.SelfPlayCollector.__init__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">env</span><span class="p">:</span> <span class="n">GomokuEnv</span><span class="p">,</span> <span class="n">policy</span><span class="p">:</span> <span class="n">_policy_t</span><span class="p">,</span> <span class="n">out_device</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">augment</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initializes a collector for self-play data in a Gomoku environment.</span>
+
+<span class="sd">        This collector facilitates the collection of game transitions generated through self-play, where both players use the same policy.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            env (GomokuEnv): The Gomoku game environment where self-play will be conducted.</span>
+<span class="sd">            policy (_policy_t): The policy function to be used for both players during self-play.</span>
+<span class="sd">            out_device: The device on which collected data will be stored. If None, uses the device specified by the environment.</span>
+<span class="sd">            augment (bool, optional): If True, applies data augmentation to the collected transitions. Defaults to False.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_env</span> <span class="o">=</span> <span class="n">env</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_policy</span> <span class="o">=</span> <span class="n">policy</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_out_device</span> <span class="o">=</span> <span class="n">out_device</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">_env</span><span class="o">.</span><span class="n">device</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_augment</span> <span class="o">=</span> <span class="n">augment</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_t</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_t_minus_1</span> <span class="o">=</span> <span class="kc">None</span></div>
+
+
+<div class="viewcode-block" id="SelfPlayCollector.reset">
+<a class="viewcode-back" href="../../gomoku_rl.collector.html#gomoku_rl.collector.SelfPlayCollector.reset">[docs]</a>
+    <span class="k">def</span> <span class="nf">reset</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_env</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_t</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_t_minus_1</span> <span class="o">=</span> <span class="kc">None</span></div>
+
+
+<div class="viewcode-block" id="SelfPlayCollector.rollout">
+<a class="viewcode-back" href="../../gomoku_rl.collector.html#gomoku_rl.collector.SelfPlayCollector.rollout">[docs]</a>
+    <span class="nd">@torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">()</span>
+    <span class="k">def</span> <span class="nf">rollout</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">steps</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">TensorDict</span><span class="p">,</span> <span class="nb">dict</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Executes a rollout in the environment, collecting data for a specified number of steps.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            steps (int): The number of steps to execute in the environment for this rollout.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            tuple[TensorDict, dict]: A tuple containing two elements:</span>
+<span class="sd">                - A TensorDict holding the collected transitions from the rollout. Each transition includes the game state before the action, the action taken, and the resulting state.</span>
+<span class="sd">                - A dictionary with additional information about the rollout.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">info</span><span class="p">:</span> <span class="n">defaultdict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_env</span><span class="o">.</span><span class="n">set_post_step</span><span class="p">(</span><span class="n">get_log_func</span><span class="p">(</span><span class="n">info</span><span class="p">))</span>
+
+        <span class="n">tensordicts</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="n">start</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">perf_counter</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_t_minus_1</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_t</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_t_minus_1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_env</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
+            <span class="k">with</span> <span class="n">set_interaction_type</span><span class="p">(</span><span class="nb">type</span><span class="o">=</span><span class="n">InteractionType</span><span class="o">.</span><span class="n">RANDOM</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_t_minus_1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_policy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_t_minus_1</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_env</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_t_minus_1</span><span class="p">)</span>
+            <span class="k">with</span> <span class="n">set_interaction_type</span><span class="p">(</span><span class="nb">type</span><span class="o">=</span><span class="n">InteractionType</span><span class="o">.</span><span class="n">RANDOM</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_policy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_t</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">steps</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="p">(</span>
+                <span class="n">transition</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_t_minus_1</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_t</span><span class="p">,</span>
+            <span class="p">)</span> <span class="o">=</span> <span class="n">self_play_step</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_env</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_policy</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_t_minus_1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_t</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_augment</span><span class="p">:</span>
+                <span class="n">transition</span> <span class="o">=</span> <span class="n">augment_transition</span><span class="p">(</span><span class="n">transition</span><span class="p">)</span>
+
+            <span class="n">tensordicts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">transition</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_out_device</span><span class="p">))</span>
+
+        <span class="n">end</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">perf_counter</span><span class="p">()</span>
+        <span class="n">fps</span> <span class="o">=</span> <span class="p">(</span><span class="n">steps</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_env</span><span class="o">.</span><span class="n">num_envs</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">end</span> <span class="o">-</span> <span class="n">start</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_env</span><span class="o">.</span><span class="n">set_post_step</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
+
+        <span class="n">tensordicts</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">tensordicts</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="n">info</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="s2">&quot;fps&quot;</span><span class="p">:</span> <span class="n">fps</span><span class="p">})</span>
+
+        <span class="k">return</span> <span class="n">tensordicts</span><span class="p">,</span> <span class="nb">dict</span><span class="p">(</span><span class="n">info</span><span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="VersusPlayCollector">
+<a class="viewcode-back" href="../../gomoku_rl.collector.html#gomoku_rl.collector.VersusPlayCollector">[docs]</a>
+<span class="k">class</span> <span class="nc">VersusPlayCollector</span><span class="p">(</span><span class="n">Collector</span><span class="p">):</span>
+<div class="viewcode-block" id="VersusPlayCollector.__init__">
+<a class="viewcode-back" href="../../gomoku_rl.collector.html#gomoku_rl.collector.VersusPlayCollector.__init__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">env</span><span class="p">:</span> <span class="n">GomokuEnv</span><span class="p">,</span> <span class="n">policy_black</span><span class="p">:</span> <span class="n">_policy_t</span><span class="p">,</span> <span class="n">policy_white</span><span class="p">:</span> <span class="n">_policy_t</span><span class="p">,</span> <span class="n">out_device</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">augment</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initializes a collector for versus play data in a Gomoku environment, facilitating the collection of game transitions where two players, each using a distinct policy, compete against each other.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            env (GomokuEnv): The Gomoku game environment where the two-player game will be conducted.</span>
+<span class="sd">            policy_black (_policy_t): The policy function to be used for the black player.</span>
+<span class="sd">            policy_white (_policy_t): The policy function to be used for the white player.</span>
+<span class="sd">            out_device: The device on which collected data will be stored. If None, uses the device specified by the environment.</span>
+<span class="sd">            augment (bool, optional): If True, applies data augmentation to the collected transitions. Defaults to False.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_env</span> <span class="o">=</span> <span class="n">env</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_policy_black</span> <span class="o">=</span> <span class="n">policy_black</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_policy_white</span> <span class="o">=</span> <span class="n">policy_white</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_out_device</span> <span class="o">=</span> <span class="n">out_device</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">_env</span><span class="o">.</span><span class="n">device</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_augment</span> <span class="o">=</span> <span class="n">augment</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_t_minus_1</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_t</span> <span class="o">=</span> <span class="kc">None</span></div>
+
+
+<div class="viewcode-block" id="VersusPlayCollector.reset">
+<a class="viewcode-back" href="../../gomoku_rl.collector.html#gomoku_rl.collector.VersusPlayCollector.reset">[docs]</a>
+    <span class="k">def</span> <span class="nf">reset</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_env</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_t_minus_1</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_t</span> <span class="o">=</span> <span class="kc">None</span></div>
+
+
+<div class="viewcode-block" id="VersusPlayCollector.rollout">
+<a class="viewcode-back" href="../../gomoku_rl.collector.html#gomoku_rl.collector.VersusPlayCollector.rollout">[docs]</a>
+    <span class="nd">@torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">()</span>
+    <span class="k">def</span> <span class="nf">rollout</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">steps</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">TensorDict</span><span class="p">,</span> <span class="n">TensorDict</span><span class="p">,</span> <span class="nb">dict</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Executes a rollout in the environment, collecting data for a specified number of steps, alternating between the black and white policies.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            steps (int): The number of steps to execute in the environment for this rollout. It is adjusted to be an even number to ensure an equal number of actions for both players.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">        tuple: A tuple containing three elements:</span>
+<span class="sd">            - A TensorDict of transitions collected for the black player, with each transition representing a game state before the black player&#39;s action, the action taken, and the resulting state.</span>
+<span class="sd">            - A TensorDict of transitions collected for the white player, structured similarly to the black player&#39;s transitions. Note that for the first step, the white player does not take an action, so their collection starts from the second step.</span>
+<span class="sd">            - A dictionary containing additional information about the rollout.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">steps</span> <span class="o">=</span> <span class="p">(</span><span class="n">steps</span><span class="o">//</span><span class="mi">2</span><span class="p">)</span><span class="o">*</span><span class="mi">2</span>
+
+        <span class="n">info</span><span class="p">:</span> <span class="n">defaultdict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_env</span><span class="o">.</span><span class="n">set_post_step</span><span class="p">(</span><span class="n">get_log_func</span><span class="p">(</span><span class="n">info</span><span class="p">))</span>
+
+        <span class="n">blacks</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">whites</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="n">start</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">perf_counter</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_t_minus_1</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_t</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_t_minus_1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_env</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_env</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">_t_minus_1</span><span class="o">.</span><span class="n">update</span><span class="p">(</span>
+                <span class="p">{</span>
+                    <span class="s2">&quot;done&quot;</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">_env</span><span class="o">.</span><span class="n">num_envs</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">bool</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_env</span><span class="o">.</span><span class="n">device</span>
+                    <span class="p">),</span>
+                    <span class="s2">&quot;win&quot;</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">_env</span><span class="o">.</span><span class="n">num_envs</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">bool</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_env</span><span class="o">.</span><span class="n">device</span>
+                    <span class="p">),</span>
+                <span class="p">}</span>
+            <span class="p">)</span>  <span class="c1"># here we set it to True</span>
+            <span class="k">with</span> <span class="n">set_interaction_type</span><span class="p">(</span><span class="nb">type</span><span class="o">=</span><span class="n">InteractionType</span><span class="o">.</span><span class="n">RANDOM</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_policy_black</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_t</span><span class="p">)</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">_t</span> <span class="o">.</span><span class="n">update</span><span class="p">(</span>
+                <span class="p">{</span>
+                    <span class="s2">&quot;done&quot;</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">_env</span><span class="o">.</span><span class="n">num_envs</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">bool</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_env</span><span class="o">.</span><span class="n">device</span>
+                    <span class="p">),</span>
+                    <span class="s2">&quot;win&quot;</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">_env</span><span class="o">.</span><span class="n">num_envs</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">bool</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_env</span><span class="o">.</span><span class="n">device</span>
+                    <span class="p">),</span>
+                <span class="p">}</span>
+            <span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">steps</span><span class="o">//</span><span class="mi">2</span><span class="p">):</span>
+            <span class="p">(</span>
+                <span class="n">transition_black</span><span class="p">,</span>
+                <span class="n">transition_white</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_t_minus_1</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_t</span><span class="p">,</span>
+            <span class="p">)</span> <span class="o">=</span> <span class="nb">round</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_env</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_policy_black</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_policy_white</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_t_minus_1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_t</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_augment</span><span class="p">:</span>
+                <span class="n">transition_black</span> <span class="o">=</span> <span class="n">augment_transition</span><span class="p">(</span><span class="n">transition_black</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">i</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">transition_white</span> <span class="o">=</span> <span class="n">augment_transition</span><span class="p">(</span><span class="n">transition_white</span><span class="p">)</span>
+
+            <span class="n">blacks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">transition_black</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_out_device</span><span class="p">))</span>
+            <span class="k">if</span> <span class="n">i</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">whites</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">transition_white</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_out_device</span><span class="p">))</span>
+
+        <span class="n">blacks</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">blacks</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span> <span class="k">if</span> <span class="n">blacks</span> <span class="k">else</span> <span class="kc">None</span>
+        <span class="n">whites</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">whites</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span> <span class="k">if</span> <span class="n">whites</span> <span class="k">else</span> <span class="kc">None</span>
+
+        <span class="n">end</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">perf_counter</span><span class="p">()</span>
+        <span class="n">fps</span> <span class="o">=</span> <span class="p">(</span><span class="n">steps</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_env</span><span class="o">.</span><span class="n">num_envs</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">end</span> <span class="o">-</span> <span class="n">start</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_env</span><span class="o">.</span><span class="n">set_post_step</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
+
+        <span class="n">info</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="s2">&quot;fps&quot;</span><span class="p">:</span> <span class="n">fps</span><span class="p">})</span>
+
+        <span class="k">return</span> <span class="n">blacks</span><span class="p">,</span> <span class="n">whites</span><span class="p">,</span> <span class="nb">dict</span><span class="p">(</span><span class="n">info</span><span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="BlackPlayCollector">
+<a class="viewcode-back" href="../../gomoku_rl.collector.html#gomoku_rl.collector.BlackPlayCollector">[docs]</a>
+<span class="k">class</span> <span class="nc">BlackPlayCollector</span><span class="p">(</span><span class="n">Collector</span><span class="p">):</span>
+<div class="viewcode-block" id="BlackPlayCollector.__init__">
+<a class="viewcode-back" href="../../gomoku_rl.collector.html#gomoku_rl.collector.BlackPlayCollector.__init__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">env</span><span class="p">:</span> <span class="n">GomokuEnv</span><span class="p">,</span> <span class="n">policy_black</span><span class="p">:</span> <span class="n">_policy_t</span><span class="p">,</span> <span class="n">policy_white</span><span class="p">:</span> <span class="n">_policy_t</span><span class="p">,</span> <span class="n">out_device</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">augment</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initializes a collector for capturing game transitions where the black player is controlled by a trainable policy against a white player using a fixed policy.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            env (GomokuEnv): The game environment where the collection takes place.</span>
+<span class="sd">            policy_black (_policy_t): The trainable policy used for the black player.</span>
+<span class="sd">            policy_white (_policy_t): The fixed policy for the white player, simulating a consistent opponent.</span>
+<span class="sd">            out_device: The device (e.g., CPU, GPU) where the collected data will be stored. Defaults to the environment&#39;s device if not specified.</span>
+<span class="sd">            augment (bool, optional): Whether to apply data augmentation to the collected transitions, enhancing the dataset&#39;s diversity. Defaults to False.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_env</span> <span class="o">=</span> <span class="n">env</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_policy_black</span> <span class="o">=</span> <span class="n">policy_black</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_policy_white</span> <span class="o">=</span> <span class="n">policy_white</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_out_device</span> <span class="o">=</span> <span class="n">out_device</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">_env</span><span class="o">.</span><span class="n">device</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_augment</span> <span class="o">=</span> <span class="n">augment</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_t_minus_1</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_t</span> <span class="o">=</span> <span class="kc">None</span></div>
+
+
+<div class="viewcode-block" id="BlackPlayCollector.reset">
+<a class="viewcode-back" href="../../gomoku_rl.collector.html#gomoku_rl.collector.BlackPlayCollector.reset">[docs]</a>
+    <span class="k">def</span> <span class="nf">reset</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_env</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_t_minus_1</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_t</span> <span class="o">=</span> <span class="kc">None</span></div>
+
+
+<div class="viewcode-block" id="BlackPlayCollector.rollout">
+<a class="viewcode-back" href="../../gomoku_rl.collector.html#gomoku_rl.collector.BlackPlayCollector.rollout">[docs]</a>
+    <span class="nd">@torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">()</span>
+    <span class="k">def</span> <span class="nf">rollout</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">steps</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">TensorDict</span><span class="p">,</span> <span class="nb">dict</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Executes a data collection session over a specified number of game steps, focusing on transitions involving the black player.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            steps (int): The total number of steps to collect data for. This will be adjusted to ensure an even number of steps for symmetry in turn-taking.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            tuple[TensorDict, dict]: A tuple containing the collected transitions for the black player and a dictionary with additional information such as the frames per second (fps) achieved during the collection.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">steps</span> <span class="o">=</span> <span class="p">(</span><span class="n">steps</span><span class="o">//</span><span class="mi">2</span><span class="p">)</span><span class="o">*</span><span class="mi">2</span>
+
+        <span class="n">info</span><span class="p">:</span> <span class="n">defaultdict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_env</span><span class="o">.</span><span class="n">set_post_step</span><span class="p">(</span><span class="n">get_log_func</span><span class="p">(</span><span class="n">info</span><span class="p">))</span>
+
+        <span class="n">blacks</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="n">start</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">perf_counter</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_t_minus_1</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_t</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_t_minus_1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_env</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_env</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">_t_minus_1</span><span class="o">.</span><span class="n">update</span><span class="p">(</span>
+                <span class="p">{</span>
+                    <span class="s2">&quot;done&quot;</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">_env</span><span class="o">.</span><span class="n">num_envs</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">bool</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_env</span><span class="o">.</span><span class="n">device</span>
+                    <span class="p">),</span>
+                    <span class="s2">&quot;win&quot;</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">_env</span><span class="o">.</span><span class="n">num_envs</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">bool</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_env</span><span class="o">.</span><span class="n">device</span>
+                    <span class="p">),</span>
+                <span class="p">}</span>
+            <span class="p">)</span>  <span class="c1"># here we set it to True</span>
+            <span class="k">with</span> <span class="n">set_interaction_type</span><span class="p">(</span><span class="nb">type</span><span class="o">=</span><span class="n">InteractionType</span><span class="o">.</span><span class="n">RANDOM</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_policy_black</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_t</span><span class="p">)</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">_t</span> <span class="o">.</span><span class="n">update</span><span class="p">(</span>
+                <span class="p">{</span>
+                    <span class="s2">&quot;done&quot;</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">_env</span><span class="o">.</span><span class="n">num_envs</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">bool</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_env</span><span class="o">.</span><span class="n">device</span>
+                    <span class="p">),</span>
+                    <span class="s2">&quot;win&quot;</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">_env</span><span class="o">.</span><span class="n">num_envs</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">bool</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_env</span><span class="o">.</span><span class="n">device</span>
+                    <span class="p">),</span>
+                <span class="p">}</span>
+            <span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">steps</span><span class="o">//</span><span class="mi">2</span><span class="p">):</span>
+            <span class="p">(</span>
+                <span class="n">transition_black</span><span class="p">,</span>
+                <span class="n">transition_white</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_t_minus_1</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_t</span><span class="p">,</span>
+            <span class="p">)</span> <span class="o">=</span> <span class="nb">round</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_env</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_policy_black</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_policy_white</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_t_minus_1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_t</span><span class="p">,</span> <span class="n">return_black_transitions</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">return_white_transitions</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_augment</span><span class="p">:</span>
+                <span class="n">transition_black</span> <span class="o">=</span> <span class="n">augment_transition</span><span class="p">(</span><span class="n">transition_black</span><span class="p">)</span>
+
+            <span class="n">blacks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">transition_black</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_out_device</span><span class="p">))</span>
+
+        <span class="n">blacks</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">blacks</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span> <span class="k">if</span> <span class="n">blacks</span> <span class="k">else</span> <span class="kc">None</span>
+
+        <span class="n">end</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">perf_counter</span><span class="p">()</span>
+        <span class="n">fps</span> <span class="o">=</span> <span class="p">(</span><span class="n">steps</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_env</span><span class="o">.</span><span class="n">num_envs</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">end</span> <span class="o">-</span> <span class="n">start</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_env</span><span class="o">.</span><span class="n">set_post_step</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
+
+        <span class="n">info</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="s2">&quot;fps&quot;</span><span class="p">:</span> <span class="n">fps</span><span class="p">})</span>
+
+        <span class="k">return</span> <span class="n">blacks</span><span class="p">,</span> <span class="nb">dict</span><span class="p">(</span><span class="n">info</span><span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="WhitePlayCollector">
+<a class="viewcode-back" href="../../gomoku_rl.collector.html#gomoku_rl.collector.WhitePlayCollector">[docs]</a>
+<span class="k">class</span> <span class="nc">WhitePlayCollector</span><span class="p">(</span><span class="n">Collector</span><span class="p">):</span>
+<div class="viewcode-block" id="WhitePlayCollector.__init__">
+<a class="viewcode-back" href="../../gomoku_rl.collector.html#gomoku_rl.collector.WhitePlayCollector.__init__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">env</span><span class="p">:</span> <span class="n">GomokuEnv</span><span class="p">,</span> <span class="n">policy_black</span><span class="p">:</span> <span class="n">_policy_t</span><span class="p">,</span> <span class="n">policy_white</span><span class="p">:</span> <span class="n">_policy_t</span><span class="p">,</span> <span class="n">out_device</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">augment</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initializes a collector focused on capturing game transitions from the perspective of the white player, who is controlled by a trainable policy, against a black player using a fixed policy.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            env (GomokuEnv): The game environment where the collection takes place.</span>
+<span class="sd">            policy_black (_policy_t): The fixed policy for the black player, providing a consistent challenge.</span>
+<span class="sd">            policy_white (_policy_t): The trainable policy used for the white player.</span>
+<span class="sd">            out_device: The device for storing collected data, defaulting to the environment&#39;s device if not specified.</span>
+<span class="sd">            augment (bool, optional): Indicates whether to augment the collected transitions to enhance the dataset. Defaults to False.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_env</span> <span class="o">=</span> <span class="n">env</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_policy_black</span> <span class="o">=</span> <span class="n">policy_black</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_policy_white</span> <span class="o">=</span> <span class="n">policy_white</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_out_device</span> <span class="o">=</span> <span class="n">out_device</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">_env</span><span class="o">.</span><span class="n">device</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_augment</span> <span class="o">=</span> <span class="n">augment</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_t_minus_1</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_t</span> <span class="o">=</span> <span class="kc">None</span></div>
+
+
+<div class="viewcode-block" id="WhitePlayCollector.reset">
+<a class="viewcode-back" href="../../gomoku_rl.collector.html#gomoku_rl.collector.WhitePlayCollector.reset">[docs]</a>
+    <span class="k">def</span> <span class="nf">reset</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_env</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_t_minus_1</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_t</span> <span class="o">=</span> <span class="kc">None</span></div>
+
+
+<div class="viewcode-block" id="WhitePlayCollector.rollout">
+<a class="viewcode-back" href="../../gomoku_rl.collector.html#gomoku_rl.collector.WhitePlayCollector.rollout">[docs]</a>
+    <span class="nd">@torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">()</span>
+    <span class="k">def</span> <span class="nf">rollout</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">steps</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">TensorDict</span><span class="p">,</span> <span class="nb">dict</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Performs a data collection session, focusing on the game transitions where the white player is active, over a specified number of steps.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            steps (int): The number of steps for which data will be collected, adjusted to be even for fairness in gameplay.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            tuple[TensorDict, dict]: A tuple containing the collected transitions for the white player and additional session information, such as collection performance (fps).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">steps</span> <span class="o">=</span> <span class="p">(</span><span class="n">steps</span><span class="o">//</span><span class="mi">2</span><span class="p">)</span><span class="o">*</span><span class="mi">2</span>
+
+        <span class="n">info</span><span class="p">:</span> <span class="n">defaultdict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_env</span><span class="o">.</span><span class="n">set_post_step</span><span class="p">(</span><span class="n">get_log_func</span><span class="p">(</span><span class="n">info</span><span class="p">))</span>
+
+        <span class="n">whites</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="n">start</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">perf_counter</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_t_minus_1</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_t</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_t_minus_1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_env</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_env</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">_t_minus_1</span><span class="o">.</span><span class="n">update</span><span class="p">(</span>
+                <span class="p">{</span>
+                    <span class="s2">&quot;done&quot;</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">_env</span><span class="o">.</span><span class="n">num_envs</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">bool</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_env</span><span class="o">.</span><span class="n">device</span>
+                    <span class="p">),</span>
+                    <span class="s2">&quot;win&quot;</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">_env</span><span class="o">.</span><span class="n">num_envs</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">bool</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_env</span><span class="o">.</span><span class="n">device</span>
+                    <span class="p">),</span> <span class="s2">&quot;action&quot;</span><span class="p">:</span> <span class="o">-</span><span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">_env</span><span class="o">.</span><span class="n">num_envs</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">long</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_env</span><span class="o">.</span><span class="n">device</span>
+                    <span class="p">),</span>  <span class="c1"># placeholder or the action key will not appear in the stacked tensordict.</span>
+                <span class="p">}</span>
+            <span class="p">)</span>  <span class="c1"># here we set it to True</span>
+            <span class="k">with</span> <span class="n">set_interaction_type</span><span class="p">(</span><span class="nb">type</span><span class="o">=</span><span class="n">InteractionType</span><span class="o">.</span><span class="n">RANDOM</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_policy_black</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_t</span><span class="p">)</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">_t</span> <span class="o">.</span><span class="n">update</span><span class="p">(</span>
+                <span class="p">{</span>
+                    <span class="s2">&quot;done&quot;</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">_env</span><span class="o">.</span><span class="n">num_envs</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">bool</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_env</span><span class="o">.</span><span class="n">device</span>
+                    <span class="p">),</span>
+                    <span class="s2">&quot;win&quot;</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">_env</span><span class="o">.</span><span class="n">num_envs</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">bool</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_env</span><span class="o">.</span><span class="n">device</span>
+                    <span class="p">),</span>
+                <span class="p">}</span>
+            <span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">steps</span><span class="o">//</span><span class="mi">2</span><span class="p">):</span>
+            <span class="p">(</span>
+                <span class="n">transition_black</span><span class="p">,</span>
+                <span class="n">transition_white</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_t_minus_1</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_t</span><span class="p">,</span>
+            <span class="p">)</span> <span class="o">=</span> <span class="nb">round</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_env</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_policy_black</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_policy_white</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_t_minus_1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_t</span><span class="p">,</span> <span class="n">return_black_transitions</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">return_white_transitions</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_augment</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">i</span> <span class="o">!=</span> <span class="mi">0</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">transition_white</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">transition_white</span> <span class="o">=</span> <span class="n">augment_transition</span><span class="p">(</span><span class="n">transition_white</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">i</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">whites</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">transition_white</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_out_device</span><span class="p">))</span>
+
+        <span class="n">whites</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">whites</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span> <span class="k">if</span> <span class="n">whites</span> <span class="k">else</span> <span class="kc">None</span>
+
+        <span class="n">end</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">perf_counter</span><span class="p">()</span>
+        <span class="n">fps</span> <span class="o">=</span> <span class="p">(</span><span class="n">steps</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_env</span><span class="o">.</span><span class="n">num_envs</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">end</span> <span class="o">-</span> <span class="n">start</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_env</span><span class="o">.</span><span class="n">set_post_step</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
+
+        <span class="n">info</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="s2">&quot;fps&quot;</span><span class="p">:</span> <span class="n">fps</span><span class="p">})</span>
+
+        <span class="k">return</span> <span class="n">whites</span><span class="p">,</span> <span class="nb">dict</span><span class="p">(</span><span class="n">info</span><span class="p">)</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Sicheng He.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -55,6 +55,7 @@
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="#submodules">Submodules</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="gomoku_rl.collector.html">gomoku_rl.collector module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="gomoku_rl.core.html">gomoku_rl.core module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="gomoku_rl.env.html">gomoku_rl.env module</a></li>
 </ul>
@@ -186,7 +187,6 @@
 <li class="toctree-l3"><a class="reference internal" href="gomoku_rl.utils.misc.html">gomoku_rl.utils.misc module</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="gomoku_rl.utils.misc.html#gomoku_rl.utils.misc.add_prefix"><code class="docutils literal notranslate"><span class="pre">add_prefix()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="gomoku_rl.utils.misc.html#gomoku_rl.utils.misc.get_kwargs"><code class="docutils literal notranslate"><span class="pre">get_kwargs()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="gomoku_rl.utils.misc.html#gomoku_rl.utils.misc.no_nan_in_tensordict"><code class="docutils literal notranslate"><span class="pre">no_nan_in_tensordict()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="gomoku_rl.utils.misc.html#gomoku_rl.utils.misc.set_seed"><code class="docutils literal notranslate"><span class="pre">set_seed()</span></code></a></li>
 </ul>
 </li>
@@ -226,6 +226,15 @@
 <li class="toctree-l4"><a class="reference internal" href="gomoku_rl.utils.sampler.html#gomoku_rl.utils.sampler.SequentialSampler"><code class="docutils literal notranslate"><span class="pre">SequentialSampler</span></code></a></li>
 </ul>
 </li>
+<li class="toctree-l3"><a class="reference internal" href="gomoku_rl.utils.test.html">gomoku_rl.utils.test module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="gomoku_rl.utils.test.html#gomoku_rl.utils.test.Type"><code class="docutils literal notranslate"><span class="pre">Type</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="gomoku_rl.utils.test.html#gomoku_rl.utils.test.assert_layer_transition"><code class="docutils literal notranslate"><span class="pre">assert_layer_transition()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="gomoku_rl.utils.test.html#gomoku_rl.utils.test.assert_observation"><code class="docutils literal notranslate"><span class="pre">assert_observation()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="gomoku_rl.utils.test.html#gomoku_rl.utils.test.assert_tensor_1d_all"><code class="docutils literal notranslate"><span class="pre">assert_tensor_1d_all()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="gomoku_rl.utils.test.html#gomoku_rl.utils.test.assert_transition"><code class="docutils literal notranslate"><span class="pre">assert_transition()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="gomoku_rl.utils.test.html#gomoku_rl.utils.test.no_nan_in_tensordict"><code class="docutils literal notranslate"><span class="pre">no_nan_in_tensordict()</span></code></a></li>
+</ul>
+</li>
 <li class="toctree-l3"><a class="reference internal" href="gomoku_rl.utils.visual.html">gomoku_rl.utils.visual module</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="gomoku_rl.utils.visual.html#gomoku_rl.utils.visual.annotate_heatmap"><code class="docutils literal notranslate"><span class="pre">annotate_heatmap()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="gomoku_rl.utils.visual.html#gomoku_rl.utils.visual.heatmap"><code class="docutils literal notranslate"><span class="pre">heatmap()</span></code></a></li>
@@ -249,6 +258,41 @@
 <h2>Submodules<a class="headerlink" href="#submodules" title="Link to this heading"></a></h2>
 <div class="toctree-wrapper compound">
 <ul>
+<li class="toctree-l1"><a class="reference internal" href="gomoku_rl.collector.html">gomoku_rl.collector module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="gomoku_rl.collector.html#gomoku_rl.collector.BlackPlayCollector"><code class="docutils literal notranslate"><span class="pre">BlackPlayCollector</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="gomoku_rl.collector.html#gomoku_rl.collector.BlackPlayCollector.__init__"><code class="docutils literal notranslate"><span class="pre">BlackPlayCollector.__init__()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="gomoku_rl.collector.html#gomoku_rl.collector.BlackPlayCollector.reset"><code class="docutils literal notranslate"><span class="pre">BlackPlayCollector.reset()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="gomoku_rl.collector.html#gomoku_rl.collector.BlackPlayCollector.rollout"><code class="docutils literal notranslate"><span class="pre">BlackPlayCollector.rollout()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="gomoku_rl.collector.html#gomoku_rl.collector.Collector"><code class="docutils literal notranslate"><span class="pre">Collector</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="gomoku_rl.collector.html#gomoku_rl.collector.Collector.reset"><code class="docutils literal notranslate"><span class="pre">Collector.reset()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="gomoku_rl.collector.html#gomoku_rl.collector.Collector.rollout"><code class="docutils literal notranslate"><span class="pre">Collector.rollout()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="gomoku_rl.collector.html#gomoku_rl.collector.SelfPlayCollector"><code class="docutils literal notranslate"><span class="pre">SelfPlayCollector</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="gomoku_rl.collector.html#gomoku_rl.collector.SelfPlayCollector.__init__"><code class="docutils literal notranslate"><span class="pre">SelfPlayCollector.__init__()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="gomoku_rl.collector.html#gomoku_rl.collector.SelfPlayCollector.reset"><code class="docutils literal notranslate"><span class="pre">SelfPlayCollector.reset()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="gomoku_rl.collector.html#gomoku_rl.collector.SelfPlayCollector.rollout"><code class="docutils literal notranslate"><span class="pre">SelfPlayCollector.rollout()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="gomoku_rl.collector.html#gomoku_rl.collector.VersusPlayCollector"><code class="docutils literal notranslate"><span class="pre">VersusPlayCollector</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="gomoku_rl.collector.html#gomoku_rl.collector.VersusPlayCollector.__init__"><code class="docutils literal notranslate"><span class="pre">VersusPlayCollector.__init__()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="gomoku_rl.collector.html#gomoku_rl.collector.VersusPlayCollector.reset"><code class="docutils literal notranslate"><span class="pre">VersusPlayCollector.reset()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="gomoku_rl.collector.html#gomoku_rl.collector.VersusPlayCollector.rollout"><code class="docutils literal notranslate"><span class="pre">VersusPlayCollector.rollout()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="gomoku_rl.collector.html#gomoku_rl.collector.WhitePlayCollector"><code class="docutils literal notranslate"><span class="pre">WhitePlayCollector</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="gomoku_rl.collector.html#gomoku_rl.collector.WhitePlayCollector.__init__"><code class="docutils literal notranslate"><span class="pre">WhitePlayCollector.__init__()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="gomoku_rl.collector.html#gomoku_rl.collector.WhitePlayCollector.reset"><code class="docutils literal notranslate"><span class="pre">WhitePlayCollector.reset()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="gomoku_rl.collector.html#gomoku_rl.collector.WhitePlayCollector.rollout"><code class="docutils literal notranslate"><span class="pre">WhitePlayCollector.rollout()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="gomoku_rl.collector.html#gomoku_rl.collector.make_transition"><code class="docutils literal notranslate"><span class="pre">make_transition()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="gomoku_rl.collector.html#gomoku_rl.collector.round"><code class="docutils literal notranslate"><span class="pre">round()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="gomoku_rl.collector.html#gomoku_rl.collector.self_play_step"><code class="docutils literal notranslate"><span class="pre">self_play_step()</span></code></a></li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="gomoku_rl.core.html">gomoku_rl.core module</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="gomoku_rl.core.html#gomoku_rl.core.Gomoku"><code class="docutils literal notranslate"><span class="pre">Gomoku</span></code></a><ul>
 <li class="toctree-l3"><a class="reference internal" href="gomoku_rl.core.html#gomoku_rl.core.Gomoku.__init__"><code class="docutils literal notranslate"><span class="pre">Gomoku.__init__()</span></code></a></li>
@@ -265,22 +309,17 @@
 </li>
 <li class="toctree-l1"><a class="reference internal" href="gomoku_rl.env.html">gomoku_rl.env module</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="gomoku_rl.env.html#gomoku_rl.env.GomokuEnv"><code class="docutils literal notranslate"><span class="pre">GomokuEnv</span></code></a><ul>
-<li class="toctree-l3"><a class="reference internal" href="gomoku_rl.env.html#gomoku_rl.env.GomokuEnv._step"><code class="docutils literal notranslate"><span class="pre">GomokuEnv._step()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="gomoku_rl.env.html#gomoku_rl.env.GomokuEnv._step_and_maybe_reset"><code class="docutils literal notranslate"><span class="pre">GomokuEnv._step_and_maybe_reset()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="gomoku_rl.env.html#gomoku_rl.env.GomokuEnv.__init__"><code class="docutils literal notranslate"><span class="pre">GomokuEnv.__init__()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="gomoku_rl.env.html#gomoku_rl.env.GomokuEnv.batch_size"><code class="docutils literal notranslate"><span class="pre">GomokuEnv.batch_size</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="gomoku_rl.env.html#gomoku_rl.env.GomokuEnv.board_size"><code class="docutils literal notranslate"><span class="pre">GomokuEnv.board_size</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="gomoku_rl.env.html#gomoku_rl.env.GomokuEnv.device"><code class="docutils literal notranslate"><span class="pre">GomokuEnv.device</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="gomoku_rl.env.html#gomoku_rl.env.GomokuEnv.num_envs"><code class="docutils literal notranslate"><span class="pre">GomokuEnv.num_envs</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="gomoku_rl.env.html#gomoku_rl.env.GomokuEnv.reset"><code class="docutils literal notranslate"><span class="pre">GomokuEnv.reset()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="gomoku_rl.env.html#gomoku_rl.env.GomokuEnv.reset_rollout"><code class="docutils literal notranslate"><span class="pre">GomokuEnv.reset_rollout()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="gomoku_rl.env.html#gomoku_rl.env.GomokuEnv.rollout"><code class="docutils literal notranslate"><span class="pre">GomokuEnv.rollout()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="gomoku_rl.env.html#gomoku_rl.env.GomokuEnv.rollout_fixed_opponent"><code class="docutils literal notranslate"><span class="pre">GomokuEnv.rollout_fixed_opponent()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="gomoku_rl.env.html#gomoku_rl.env.GomokuEnv.rollout_player_black"><code class="docutils literal notranslate"><span class="pre">GomokuEnv.rollout_player_black()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="gomoku_rl.env.html#gomoku_rl.env.GomokuEnv.rollout_player_white"><code class="docutils literal notranslate"><span class="pre">GomokuEnv.rollout_player_white()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="gomoku_rl.env.html#gomoku_rl.env.GomokuEnv.rollout_self_play"><code class="docutils literal notranslate"><span class="pre">GomokuEnv.rollout_self_play()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="gomoku_rl.env.html#gomoku_rl.env.GomokuEnv.set_post_step"><code class="docutils literal notranslate"><span class="pre">GomokuEnv.set_post_step()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="gomoku_rl.env.html#gomoku_rl.env.GomokuEnv.step"><code class="docutils literal notranslate"><span class="pre">GomokuEnv.step()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="gomoku_rl.env.html#gomoku_rl.env.GomokuEnv.step_and_maybe_reset"><code class="docutils literal notranslate"><span class="pre">GomokuEnv.step_and_maybe_reset()</span></code></a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="gomoku_rl.env.html#gomoku_rl.env.make_transition"><code class="docutils literal notranslate"><span class="pre">make_transition()</span></code></a></li>
 </ul>
 </li>
 </ul>

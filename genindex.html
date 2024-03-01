@@ -92,6 +92,7 @@
  | <a href="#T"><strong>T</strong></a>
  | <a href="#U"><strong>U</strong></a>
  | <a href="#V"><strong>V</strong></a>
+ | <a href="#W"><strong>W</strong></a>
  
 </div>
 <h2 id="_">_</h2>
@@ -99,18 +100,22 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="gomoku_rl.policy.base.html#gomoku_rl.policy.base.Policy.__call__">__call__() (gomoku_rl.policy.base.Policy method)</a>
 </li>
-      <li><a href="gomoku_rl.core.html#gomoku_rl.core.Gomoku.__init__">__init__() (gomoku_rl.core.Gomoku method)</a>
+      <li><a href="gomoku_rl.collector.html#gomoku_rl.collector.BlackPlayCollector.__init__">__init__() (gomoku_rl.collector.BlackPlayCollector method)</a>
 
       <ul>
+        <li><a href="gomoku_rl.collector.html#gomoku_rl.collector.SelfPlayCollector.__init__">(gomoku_rl.collector.SelfPlayCollector method)</a>
+</li>
+        <li><a href="gomoku_rl.collector.html#gomoku_rl.collector.VersusPlayCollector.__init__">(gomoku_rl.collector.VersusPlayCollector method)</a>
+</li>
+        <li><a href="gomoku_rl.collector.html#gomoku_rl.collector.WhitePlayCollector.__init__">(gomoku_rl.collector.WhitePlayCollector method)</a>
+</li>
+        <li><a href="gomoku_rl.core.html#gomoku_rl.core.Gomoku.__init__">(gomoku_rl.core.Gomoku method)</a>
+</li>
+        <li><a href="gomoku_rl.env.html#gomoku_rl.env.GomokuEnv.__init__">(gomoku_rl.env.GomokuEnv method)</a>
+</li>
         <li><a href="gomoku_rl.policy.base.html#gomoku_rl.policy.base.Policy.__init__">(gomoku_rl.policy.base.Policy method)</a>
 </li>
       </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="gomoku_rl.env.html#gomoku_rl.env.GomokuEnv._step">_step() (gomoku_rl.env.GomokuEnv method)</a>
-</li>
-      <li><a href="gomoku_rl.env.html#gomoku_rl.env.GomokuEnv._step_and_maybe_reset">_step_and_maybe_reset() (gomoku_rl.env.GomokuEnv method)</a>
-</li>
   </ul></td>
 </tr></table>
 
@@ -125,13 +130,21 @@
 </li>
       <li><a href="gomoku_rl.utils.misc.html#gomoku_rl.utils.misc.add_prefix">add_prefix() (in module gomoku_rl.utils.misc)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="gomoku_rl.utils.elo.html#gomoku_rl.utils.elo.Elo.addPlayer">addPlayer() (gomoku_rl.utils.elo.Elo method)</a>
 </li>
       <li><a href="gomoku_rl.utils.visual.html#gomoku_rl.utils.visual.annotate_heatmap">annotate_heatmap() (in module gomoku_rl.utils.visual)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="gomoku_rl.utils.augment.html#gomoku_rl.utils.augment.AntiDiagonalFlip">AntiDiagonalFlip (class in gomoku_rl.utils.augment)</a>
+</li>
+      <li><a href="gomoku_rl.utils.test.html#gomoku_rl.utils.test.assert_layer_transition">assert_layer_transition() (in module gomoku_rl.utils.test)</a>
+</li>
+      <li><a href="gomoku_rl.utils.test.html#gomoku_rl.utils.test.assert_observation">assert_observation() (in module gomoku_rl.utils.test)</a>
+</li>
+      <li><a href="gomoku_rl.utils.test.html#gomoku_rl.utils.test.assert_tensor_1d_all">assert_tensor_1d_all() (in module gomoku_rl.utils.test)</a>
+</li>
+      <li><a href="gomoku_rl.utils.test.html#gomoku_rl.utils.test.assert_transition">assert_transition() (in module gomoku_rl.utils.test)</a>
 </li>
       <li><a href="gomoku_rl.utils.augment.html#gomoku_rl.utils.augment.augment_transition">augment_transition() (in module gomoku_rl.utils.augment)</a>
 </li>
@@ -143,10 +156,14 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="gomoku_rl.env.html#gomoku_rl.env.GomokuEnv.batch_size">batch_size (gomoku_rl.env.GomokuEnv property)</a>
 </li>
+      <li><a href="gomoku_rl.utils.test.html#gomoku_rl.utils.test.Type.black">black (gomoku_rl.utils.test.Type attribute)</a>
+</li>
       <li><a href="gomoku_rl.utils.psro.html#gomoku_rl.utils.psro.PayoffType.black_vs_white">black_vs_white (gomoku_rl.utils.psro.PayoffType attribute)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="gomoku_rl.collector.html#gomoku_rl.collector.BlackPlayCollector">BlackPlayCollector (class in gomoku_rl.collector)</a>
+</li>
       <li><a href="gomoku_rl.env.html#gomoku_rl.env.GomokuEnv.board_size">board_size (gomoku_rl.env.GomokuEnv property)</a>
 </li>
       <li><a href="gomoku_rl.utils.psro.html#gomoku_rl.utils.psro.PayoffType.both">both (gomoku_rl.utils.psro.PayoffType attribute)</a>
@@ -158,6 +175,8 @@
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="gomoku_rl.utils.psro.html#gomoku_rl.utils.psro.calculate_jpc">calculate_jpc() (in module gomoku_rl.utils.psro)</a>
+</li>
+      <li><a href="gomoku_rl.collector.html#gomoku_rl.collector.Collector">Collector (class in gomoku_rl.collector)</a>
 </li>
       <li><a href="gomoku_rl.core.html#gomoku_rl.core.compute_done">compute_done() (in module gomoku_rl.core)</a>
 </li>
@@ -276,6 +295,13 @@
 
       <ul>
         <li><a href="gomoku_rl.html#module-gomoku_rl">module</a>
+</li>
+      </ul></li>
+      <li>
+    gomoku_rl.collector
+
+      <ul>
+        <li><a href="gomoku_rl.collector.html#module-gomoku_rl.collector">module</a>
 </li>
       </ul></li>
       <li>
@@ -428,6 +454,13 @@
 </li>
       </ul></li>
       <li>
+    gomoku_rl.utils.test
+
+      <ul>
+        <li><a href="gomoku_rl.utils.test.html#module-gomoku_rl.utils.test">module</a>
+</li>
+      </ul></li>
+      <li>
     gomoku_rl.utils.visual
 
       <ul>
@@ -553,7 +586,7 @@
 </li>
       <li><a href="gomoku_rl.policy.common.html#gomoku_rl.policy.common.make_ppo_actor">make_ppo_actor() (in module gomoku_rl.policy.common)</a>
 </li>
-      <li><a href="gomoku_rl.env.html#gomoku_rl.env.make_transition">make_transition() (in module gomoku_rl.env)</a>
+      <li><a href="gomoku_rl.collector.html#gomoku_rl.collector.make_transition">make_transition() (in module gomoku_rl.collector)</a>
 </li>
       <li><a href="gomoku_rl.utils.augment.html#gomoku_rl.utils.augment.AntiDiagonalFlip.map_board">map_board() (gomoku_rl.utils.augment.AntiDiagonalFlip method)</a>
 
@@ -589,11 +622,15 @@
       </ul></li>
       <li><a href="gomoku_rl.utils.log.html#gomoku_rl.utils.log.Mean">Mean (class in gomoku_rl.utils.log)</a>
 </li>
+      <li><a href="gomoku_rl.utils.test.html#gomoku_rl.utils.test.Type.mixed">mixed (gomoku_rl.utils.test.Type attribute)</a>
+</li>
       <li>
     module
 
       <ul>
         <li><a href="gomoku_rl.html#module-gomoku_rl">gomoku_rl</a>
+</li>
+        <li><a href="gomoku_rl.collector.html#module-gomoku_rl.collector">gomoku_rl.collector</a>
 </li>
         <li><a href="gomoku_rl.core.html#module-gomoku_rl.core">gomoku_rl.core</a>
 </li>
@@ -637,6 +674,8 @@
 </li>
         <li><a href="gomoku_rl.utils.sampler.html#module-gomoku_rl.utils.sampler">gomoku_rl.utils.sampler</a>
 </li>
+        <li><a href="gomoku_rl.utils.test.html#module-gomoku_rl.utils.test">gomoku_rl.utils.test</a>
+</li>
         <li><a href="gomoku_rl.utils.visual.html#module-gomoku_rl.utils.visual">gomoku_rl.utils.visual</a>
 </li>
         <li><a href="gomoku_rl.utils.wandb.html#module-gomoku_rl.utils.wandb">gomoku_rl.utils.wandb</a>
@@ -652,7 +691,7 @@
 <h2 id="N">N</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="gomoku_rl.utils.misc.html#gomoku_rl.utils.misc.no_nan_in_tensordict">no_nan_in_tensordict() (in module gomoku_rl.utils.misc)</a>
+      <li><a href="gomoku_rl.utils.test.html#gomoku_rl.utils.test.no_nan_in_tensordict">no_nan_in_tensordict() (in module gomoku_rl.utils.test)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
@@ -694,33 +733,45 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="gomoku_rl.utils.sampler.html#gomoku_rl.utils.sampler.SequentialSampler.ran_out">ran_out (gomoku_rl.utils.sampler.SequentialSampler property)</a>
 </li>
-      <li><a href="gomoku_rl.core.html#gomoku_rl.core.Gomoku.reset">reset() (gomoku_rl.core.Gomoku method)</a>
+      <li><a href="gomoku_rl.collector.html#gomoku_rl.collector.BlackPlayCollector.reset">reset() (gomoku_rl.collector.BlackPlayCollector method)</a>
 
       <ul>
+        <li><a href="gomoku_rl.collector.html#gomoku_rl.collector.Collector.reset">(gomoku_rl.collector.Collector method)</a>
+</li>
+        <li><a href="gomoku_rl.collector.html#gomoku_rl.collector.SelfPlayCollector.reset">(gomoku_rl.collector.SelfPlayCollector method)</a>
+</li>
+        <li><a href="gomoku_rl.collector.html#gomoku_rl.collector.VersusPlayCollector.reset">(gomoku_rl.collector.VersusPlayCollector method)</a>
+</li>
+        <li><a href="gomoku_rl.collector.html#gomoku_rl.collector.WhitePlayCollector.reset">(gomoku_rl.collector.WhitePlayCollector method)</a>
+</li>
+        <li><a href="gomoku_rl.core.html#gomoku_rl.core.Gomoku.reset">(gomoku_rl.core.Gomoku method)</a>
+</li>
         <li><a href="gomoku_rl.env.html#gomoku_rl.env.GomokuEnv.reset">(gomoku_rl.env.GomokuEnv method)</a>
 </li>
         <li><a href="gomoku_rl.utils.psro.html#gomoku_rl.utils.psro.ConvergedIndicator.reset">(gomoku_rl.utils.psro.ConvergedIndicator method)</a>
 </li>
       </ul></li>
-      <li><a href="gomoku_rl.env.html#gomoku_rl.env.GomokuEnv.reset_rollout">reset_rollout() (gomoku_rl.env.GomokuEnv method)</a>
-</li>
       <li><a href="gomoku_rl.utils.module.html#gomoku_rl.utils.module.ResidualBlock">ResidualBlock (class in gomoku_rl.utils.module)</a>
-</li>
-      <li><a href="gomoku_rl.utils.module.html#gomoku_rl.utils.module.ResidualTower">ResidualTower (class in gomoku_rl.utils.module)</a>
-</li>
-      <li><a href="gomoku_rl.env.html#gomoku_rl.env.GomokuEnv.rollout">rollout() (gomoku_rl.env.GomokuEnv method)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="gomoku_rl.env.html#gomoku_rl.env.GomokuEnv.rollout_fixed_opponent">rollout_fixed_opponent() (gomoku_rl.env.GomokuEnv method)</a>
+      <li><a href="gomoku_rl.utils.module.html#gomoku_rl.utils.module.ResidualTower">ResidualTower (class in gomoku_rl.utils.module)</a>
 </li>
-      <li><a href="gomoku_rl.env.html#gomoku_rl.env.GomokuEnv.rollout_player_black">rollout_player_black() (gomoku_rl.env.GomokuEnv method)</a>
+      <li><a href="gomoku_rl.collector.html#gomoku_rl.collector.BlackPlayCollector.rollout">rollout() (gomoku_rl.collector.BlackPlayCollector method)</a>
+
+      <ul>
+        <li><a href="gomoku_rl.collector.html#gomoku_rl.collector.Collector.rollout">(gomoku_rl.collector.Collector method)</a>
 </li>
-      <li><a href="gomoku_rl.env.html#gomoku_rl.env.GomokuEnv.rollout_player_white">rollout_player_white() (gomoku_rl.env.GomokuEnv method)</a>
+        <li><a href="gomoku_rl.collector.html#gomoku_rl.collector.SelfPlayCollector.rollout">(gomoku_rl.collector.SelfPlayCollector method)</a>
 </li>
-      <li><a href="gomoku_rl.env.html#gomoku_rl.env.GomokuEnv.rollout_self_play">rollout_self_play() (gomoku_rl.env.GomokuEnv method)</a>
+        <li><a href="gomoku_rl.collector.html#gomoku_rl.collector.VersusPlayCollector.rollout">(gomoku_rl.collector.VersusPlayCollector method)</a>
 </li>
+        <li><a href="gomoku_rl.collector.html#gomoku_rl.collector.WhitePlayCollector.rollout">(gomoku_rl.collector.WhitePlayCollector method)</a>
+</li>
+      </ul></li>
       <li><a href="gomoku_rl.utils.augment.html#gomoku_rl.utils.augment.Rotation">Rotation (class in gomoku_rl.utils.augment)</a>
+</li>
+      <li><a href="gomoku_rl.collector.html#gomoku_rl.collector.round">round() (in module gomoku_rl.collector)</a>
 </li>
       <li><a href="gomoku_rl.runner.base.html#gomoku_rl.runner.base.Runner.run">run() (gomoku_rl.runner.base.Runner method)</a>
 
@@ -744,11 +795,17 @@
         <li><a href="gomoku_rl.utils.sampler.html#gomoku_rl.utils.sampler.SequentialSampler.sample">(gomoku_rl.utils.sampler.SequentialSampler method)</a>
 </li>
       </ul></li>
+      <li><a href="gomoku_rl.collector.html#gomoku_rl.collector.self_play_step">self_play_step() (in module gomoku_rl.collector)</a>
+</li>
+      <li><a href="gomoku_rl.collector.html#gomoku_rl.collector.SelfPlayCollector">SelfPlayCollector (class in gomoku_rl.collector)</a>
+</li>
       <li><a href="gomoku_rl.utils.sampler.html#gomoku_rl.utils.sampler.SequentialSampler">SequentialSampler (class in gomoku_rl.utils.sampler)</a>
 </li>
       <li><a href="gomoku_rl.utils.psro.html#gomoku_rl.utils.psro.PSROPolicyWrapper.set_meta_policy">set_meta_policy() (gomoku_rl.utils.psro.PSROPolicyWrapper method)</a>
 </li>
       <li><a href="gomoku_rl.utils.psro.html#gomoku_rl.utils.psro.PSROPolicyWrapper.set_oracle_mode">set_oracle_mode() (gomoku_rl.utils.psro.PSROPolicyWrapper method)</a>
+</li>
+      <li><a href="gomoku_rl.env.html#gomoku_rl.env.GomokuEnv.set_post_step">set_post_step() (gomoku_rl.env.GomokuEnv method)</a>
 </li>
       <li><a href="gomoku_rl.utils.misc.html#gomoku_rl.utils.misc.set_seed">set_seed() (in module gomoku_rl.utils.misc)</a>
 </li>
@@ -771,6 +828,12 @@
 </li>
       </ul></li>
       <li><a href="gomoku_rl.core.html#gomoku_rl.core.Gomoku.step">step() (gomoku_rl.core.Gomoku method)</a>
+
+      <ul>
+        <li><a href="gomoku_rl.env.html#gomoku_rl.env.GomokuEnv.step">(gomoku_rl.env.GomokuEnv method)</a>
+</li>
+      </ul></li>
+      <li><a href="gomoku_rl.env.html#gomoku_rl.env.GomokuEnv.step_and_maybe_reset">step_and_maybe_reset() (gomoku_rl.env.GomokuEnv method)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -793,6 +856,8 @@
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="gomoku_rl.utils.augment.html#gomoku_rl.utils.augment.Transform">Transform (class in gomoku_rl.utils.augment)</a>
+</li>
+      <li><a href="gomoku_rl.utils.test.html#gomoku_rl.utils.test.Type">Type (class in gomoku_rl.utils.test)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -824,7 +889,21 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="gomoku_rl.utils.module.html#gomoku_rl.utils.module.ValueNet">ValueNet (class in gomoku_rl.utils.module)</a>
 </li>
+      <li><a href="gomoku_rl.collector.html#gomoku_rl.collector.VersusPlayCollector">VersusPlayCollector (class in gomoku_rl.collector)</a>
+</li>
       <li><a href="gomoku_rl.utils.augment.html#gomoku_rl.utils.augment.VerticalFlip">VerticalFlip (class in gomoku_rl.utils.augment)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="W">W</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="gomoku_rl.utils.test.html#gomoku_rl.utils.test.Type.white">white (gomoku_rl.utils.test.Type attribute)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="gomoku_rl.collector.html#gomoku_rl.collector.WhitePlayCollector">WhitePlayCollector (class in gomoku_rl.collector)</a>
 </li>
   </ul></td>
 </tr></table>

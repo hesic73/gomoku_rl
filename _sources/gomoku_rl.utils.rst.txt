@@ -16,6 +16,7 @@ Submodules
    gomoku_rl.utils.policy
    gomoku_rl.utils.psro
    gomoku_rl.utils.sampler
+   gomoku_rl.utils.test
    gomoku_rl.utils.visual
    gomoku_rl.utils.wandb
 

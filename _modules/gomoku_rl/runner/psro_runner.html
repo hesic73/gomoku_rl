@@ -96,12 +96,15 @@
 <span class="kn">import</span> <span class="nn">wandb</span>
 <span class="kn">import</span> <span class="nn">torch</span>
 
+<span class="kn">from</span> <span class="nn">gomoku_rl.collector</span> <span class="kn">import</span> <span class="n">VersusPlayCollector</span><span class="p">,</span> <span class="n">BlackPlayCollector</span><span class="p">,</span> <span class="n">WhitePlayCollector</span>
+
 
 <div class="viewcode-block" id="PSRORunner">
 <a class="viewcode-back" href="../../../gomoku_rl.runner.psro_runner.html#gomoku_rl.runner.psro_runner.PSRORunner">[docs]</a>
 <span class="k">class</span> <span class="nc">PSRORunner</span><span class="p">(</span><span class="n">Runner</span><span class="p">):</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cfg</span><span class="p">:</span> <span class="n">DictConfig</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">cfg</span><span class="p">)</span>
+
         <span class="n">ci_kwargs</span> <span class="o">=</span> <span class="n">get_kwargs</span><span class="p">(</span>
             <span class="n">cfg</span><span class="p">,</span>
             <span class="s2">&quot;mean_threshold&quot;</span><span class="p">,</span>
@@ -150,19 +153,21 @@
         <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">meta_solver</span> <span class="o">=</span> <span class="n">get_meta_solver</span><span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;meta_solver&quot;</span><span class="p">,</span> <span class="s2">&quot;uniform&quot;</span><span class="p">))</span>
 
+        <span class="bp">self</span><span class="o">.</span><span class="n">collector</span> <span class="o">=</span> <span class="n">VersusPlayCollector</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">env</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">player_0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">player_1</span><span class="p">,</span> <span class="n">out_device</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+            <span class="s2">&quot;out_device&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span> <span class="n">augment</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;augment&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">),)</span>
+
     <span class="k">def</span> <span class="nf">_epoch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">epoch</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">learning_player_id</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">player_1</span><span class="o">.</span><span class="n">sample</span><span class="p">()</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">player_0</span><span class="o">.</span><span class="n">sample</span><span class="p">()</span>
-        <span class="n">data_0</span><span class="p">,</span> <span class="n">data_1</span><span class="p">,</span> <span class="n">info</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">env</span><span class="o">.</span><span class="n">rollout</span><span class="p">(</span>
-            <span class="n">rounds</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">rounds</span><span class="p">,</span>
-            <span class="n">player_black</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">player_0</span><span class="p">,</span>
-            <span class="n">player_white</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">player_1</span><span class="p">,</span>
-            <span class="n">augment</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;augment&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">),</span>
-            <span class="n">return_black_transitions</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">learning_player_id</span> <span class="o">==</span> <span class="mi">0</span><span class="p">,</span>
-            <span class="n">return_white_transitions</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">learning_player_id</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">,</span>
+        <span class="n">data_0</span><span class="p">,</span> <span class="n">data_1</span><span class="p">,</span> <span class="n">info</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">collector</span><span class="o">.</span><span class="n">rollout</span><span class="p">(</span>
+            <span class="n">steps</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">steps</span>
         <span class="p">)</span>
+
+        <span class="n">info</span> <span class="o">=</span> <span class="n">add_prefix</span><span class="p">(</span><span class="n">info</span><span class="p">,</span> <span class="s2">&quot;versus_play/&quot;</span><span class="p">)</span>
+        <span class="n">info</span><span class="p">[</span><span class="s1">&#39;fps&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">info</span><span class="p">[</span><span class="s1">&#39;versus_play/fps&#39;</span><span class="p">]</span>
+        <span class="k">del</span> <span class="n">info</span><span class="p">[</span><span class="s1">&#39;versus_play/fps&#39;</span><span class="p">]</span>
 
         <span class="n">info</span><span class="o">.</span><span class="n">update</span><span class="p">(</span>
             <span class="p">{</span>
@@ -209,7 +214,7 @@
             <span class="k">else</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">info</span><span class="p">[</span><span class="s2">&quot;eval/black_vs_white&quot;</span><span class="p">])</span>
         <span class="p">)</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">converged_indicator</span><span class="o">.</span><span class="n">converged</span><span class="p">():</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">env</span><span class="o">.</span><span class="n">reset_rollout</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">collector</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">converged_indicator</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">learning_player_id</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">player_0</span><span class="o">.</span><span class="n">set_oracle_mode</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
@@ -230,7 +235,8 @@
                     <span class="n">old_payoffs</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">payoffs</span><span class="p">,</span>
                 <span class="p">)</span>
                 <span class="nb">print</span><span class="p">(</span><span class="nb">repr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">payoffs</span><span class="p">))</span>
-                <span class="n">meta_policy_0</span><span class="p">,</span> <span class="n">meta_policy_1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">meta_solver</span><span class="p">(</span><span class="n">payoffs</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">payoffs</span><span class="p">)</span>
+                <span class="n">meta_policy_0</span><span class="p">,</span> <span class="n">meta_policy_1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">meta_solver</span><span class="p">(</span>
+                    <span class="n">payoffs</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">payoffs</span><span class="p">)</span>
                 <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
                     <span class="sa">f</span><span class="s2">&quot;Meta Policy: Black </span><span class="si">{</span><span class="n">meta_policy_0</span><span class="si">}</span><span class="s2">, White </span><span class="si">{</span><span class="n">meta_policy_1</span><span class="si">}</span><span class="s2">&quot;</span>
                 <span class="p">)</span>
@@ -268,7 +274,6 @@
 <span class="k">class</span> <span class="nc">PSROSPRunner</span><span class="p">(</span><span class="n">SPRunner</span><span class="p">):</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cfg</span><span class="p">:</span> <span class="n">DictConfig</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">cfg</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">env_2</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">env</span><span class="p">)</span>
         <span class="n">ci_kwargs</span> <span class="o">=</span> <span class="n">get_kwargs</span><span class="p">(</span>
             <span class="n">cfg</span><span class="p">,</span>
             <span class="s2">&quot;mean_threshold&quot;</span><span class="p">,</span>
@@ -283,7 +288,8 @@
             <span class="n">_policy</span> <span class="o">=</span> <span class="p">[]</span>
             <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">population_dir</span><span class="p">):</span>
                 <span class="n">tmp</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">policy</span><span class="p">)</span>
-                <span class="n">tmp</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">population_dir</span><span class="p">,</span> <span class="n">p</span><span class="p">)))</span>
+                <span class="n">tmp</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">load</span><span class="p">(</span>
+                    <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">population_dir</span><span class="p">,</span> <span class="n">p</span><span class="p">)))</span>
                 <span class="n">tmp</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
                 <span class="n">_policy</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">tmp</span><span class="p">)</span>
         <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;checkpoint&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">):</span>
@@ -314,31 +320,33 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">meta_policy_black</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">meta_policy_white</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span>
 
+        <span class="bp">self</span><span class="o">.</span><span class="n">collector_black</span> <span class="o">=</span> <span class="n">BlackPlayCollector</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">env</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">policy</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">population</span><span class="p">,</span> <span class="n">out_device</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+            <span class="s2">&quot;out_device&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span> <span class="n">augment</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;augment&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">),)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">collector_white</span> <span class="o">=</span> <span class="n">WhitePlayCollector</span><span class="p">(</span><span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">env</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">population</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">policy</span><span class="p">,</span>  <span class="n">out_device</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+            <span class="s2">&quot;out_device&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span> <span class="n">augment</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;augment&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">),)</span>
+
     <span class="k">def</span> <span class="nf">_epoch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">epoch</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
         <span class="n">info</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">meta_policy_white</span><span class="p">)</span>
         <span class="n">info</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="s2">&quot;pure_strategy_white&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">_idx</span><span class="p">})</span>
-        <span class="n">data1</span><span class="p">,</span> <span class="n">info1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">env</span><span class="o">.</span><span class="n">rollout_player_black</span><span class="p">(</span>
-            <span class="n">rounds</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">rounds</span><span class="p">,</span>
-            <span class="n">player</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">policy</span><span class="p">,</span>
-            <span class="n">opponent</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">population</span><span class="p">,</span>
-            <span class="n">augment</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;augment&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">),</span>
-            <span class="n">out_device</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;out_device&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
+        <span class="n">data1</span><span class="p">,</span> <span class="n">info1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">collector_black</span><span class="o">.</span><span class="n">rollout</span><span class="p">(</span>
+            <span class="n">steps</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">steps</span>
         <span class="p">)</span>
-        <span class="n">info</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">info1</span><span class="p">)</span>
+        <span class="n">info</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">add_prefix</span><span class="p">(</span><span class="n">info1</span><span class="p">,</span> <span class="s2">&quot;black_play/&quot;</span><span class="p">))</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">meta_policy_black</span><span class="p">)</span>
         <span class="n">info</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="s2">&quot;pure_strategy_black&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">_idx</span><span class="p">})</span>
-        <span class="n">data2</span><span class="p">,</span> <span class="n">info2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">env_2</span><span class="o">.</span><span class="n">rollout_player_white</span><span class="p">(</span>
-            <span class="n">rounds</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">rounds</span><span class="p">,</span>
-            <span class="n">player</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">policy</span><span class="p">,</span>
-            <span class="n">opponent</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">population</span><span class="p">,</span>
-            <span class="n">augment</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;augment&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">),</span>
-            <span class="n">out_device</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;out_device&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
+        <span class="n">data2</span><span class="p">,</span> <span class="n">info2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">collector_white</span><span class="o">.</span><span class="n">rollout</span><span class="p">(</span>
+            <span class="n">steps</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">steps</span>
         <span class="p">)</span>
-        <span class="n">info</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">info2</span><span class="p">)</span>
+        <span class="n">info</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">add_prefix</span><span class="p">(</span><span class="n">info2</span><span class="p">,</span> <span class="s2">&quot;white_play/&quot;</span><span class="p">))</span>
         <span class="n">data</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span><span class="n">data1</span><span class="p">,</span> <span class="n">data2</span><span class="p">],</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
-        <span class="n">info</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">add_prefix</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">policy</span><span class="o">.</span><span class="n">learn</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">to_tensordict</span><span class="p">()),</span> <span class="s2">&quot;policy/&quot;</span><span class="p">))</span>
+        <span class="n">info</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">add_prefix</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">policy</span><span class="o">.</span><span class="n">learn</span><span class="p">(</span>
+            <span class="n">data</span><span class="o">.</span><span class="n">to_tensordict</span><span class="p">()),</span> <span class="s2">&quot;policy/&quot;</span><span class="p">))</span>
         <span class="k">del</span> <span class="n">data</span>
+
+        <span class="n">info</span><span class="p">[</span><span class="s1">&#39;fps&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">info</span><span class="p">[</span><span class="s1">&#39;black_play/fps&#39;</span><span class="p">]</span><span class="o">+</span><span class="n">info</span><span class="p">[</span><span class="s1">&#39;white_play/fps&#39;</span><span class="p">])</span><span class="o">/</span><span class="mi">2</span>
+        <span class="k">del</span> <span class="n">info</span><span class="p">[</span><span class="s1">&#39;black_play/fps&#39;</span><span class="p">]</span>
+        <span class="k">del</span> <span class="n">info</span><span class="p">[</span><span class="s1">&#39;white_play/fps&#39;</span><span class="p">]</span>
 
         <span class="n">info</span><span class="o">.</span><span class="n">update</span><span class="p">(</span>
             <span class="p">{</span>

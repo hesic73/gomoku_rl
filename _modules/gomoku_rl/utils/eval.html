@@ -109,7 +109,7 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="n">tensordict</span> <span class="o">=</span> <span class="n">player_white</span><span class="p">(</span><span class="n">tensordict</span><span class="p">)</span>
         <span class="c1"># In new episodes the players may play the opposite color, but these episodes are not used for evaluation</span>
-        <span class="n">tensordict</span> <span class="o">=</span> <span class="n">env</span><span class="o">.</span><span class="n">_step_and_maybe_reset</span><span class="p">(</span><span class="n">tensordict</span><span class="p">)</span>
+        <span class="n">tensordict</span> <span class="o">=</span> <span class="n">env</span><span class="o">.</span><span class="n">step_and_maybe_reset</span><span class="p">(</span><span class="n">tensordict</span><span class="p">)</span>
 
         <span class="n">done</span> <span class="o">=</span> <span class="n">tensordict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;done&quot;</span><span class="p">)</span>
 

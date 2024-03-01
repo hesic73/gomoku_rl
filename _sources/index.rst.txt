@@ -67,10 +67,3 @@ Pretrained models for a :math:`15\times15` board are available under  `pretraine
 
    modules
 
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
