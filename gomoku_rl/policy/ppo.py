@@ -120,6 +120,8 @@ class PPOPolicy(Policy):
         if invalid is not None:
             data = data[~invalid]
 
+        data=data.reshape(-1)
+
         self.train()
         loss_objectives = []
         loss_critics = []

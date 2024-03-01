@@ -3,30 +3,30 @@ from omegaconf import DictConfig
 from .base import SPRunner, Runner
 from gomoku_rl.utils.misc import add_prefix
 from gomoku_rl.utils.eval import eval_win_rate
+from gomoku_rl.collector import SelfPlayCollector, VersusPlayCollector
 import torch
 
 
 class IndependentRLRunner(Runner):
     def __init__(self, cfg: DictConfig) -> None:
         super().__init__(cfg)
+        self.steps = cfg.get("steps", -1)
+        self._collector = VersusPlayCollector(
+            self.env, self.policy_black, self.policy_white, out_device=self.cfg.get("out_device", None), augment=self.cfg.get("augment", False),)
 
     def _epoch(self, epoch: int) -> dict[str, Any]:
-        data_black, data_white, info = self.env.rollout(
-            rounds=self.rounds,
-            player_black=self.policy_black,
-            player_white=self.policy_white,
-            augment=self.cfg.get("augment", False),
-            out_device=self.cfg.get("out_device", None),
-        )
+        data_black, data_white, info = self._collector.rollout(self.steps)
         info.update(
             add_prefix(
-                self.policy_black.learn(data_black.to_tensordict()), "policy_black/"
+                self.policy_black.learn(
+                    data_black.to_tensordict()), "policy_black/"
             )
         )
         del data_black
         info.update(
             add_prefix(
-                self.policy_white.learn(data_white.to_tensordict()), "policy_white/"
+                self.policy_white.learn(
+                    data_white.to_tensordict()), "policy_white/"
             )
         )
         del data_white
@@ -74,15 +74,14 @@ class IndependentRLRunner(Runner):
 class IndependentRLSPRunner(SPRunner):
     def __init__(self, cfg: DictConfig) -> None:
         super().__init__(cfg)
+        self.steps: int = cfg.get("steps", -1)
+        self._collector = SelfPlayCollector(self.env, self.policy, out_device=self.cfg.get(
+            "out_device", None), augment=self.cfg.get("augment", False),)
 
     def _epoch(self, epoch: int) -> dict[str, Any]:
-        data, info = self.env.rollout_self_play(
-            steps=self.steps,
-            player=self.policy,
-            augment=self.cfg.get("augment", False),
-            out_device=self.cfg.get("out_device", None),
-        )
-        info.update(add_prefix(self.policy.learn(data.to_tensordict()), "policy/"))
+        data, info = self._collector.rollout(self.steps)
+        info.update(add_prefix(self.policy.learn(
+            data.to_tensordict()), "policy/"))
         del data
 
         if epoch % 50 == 0 and epoch != 0:

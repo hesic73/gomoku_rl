@@ -1,3 +1,4 @@
+from torch.optim import Optimizer, Adam, AdamW
 import torch
 import torch.nn as nn
 from torch.nn import Parameter
@@ -166,6 +167,8 @@ def make_ppo_ac(
 
 
 def make_dataset_naive(tensordict: TensorDict, batch_size: int):
+    tensordict=tensordict.reshape(-1)
+    assert tensordict.shape[0] >= batch_size
     tensordict = tensordict.reshape(-1)
     perm = torch.randperm(
         (tensordict.shape[0] // batch_size) * batch_size,
@@ -173,9 +176,6 @@ def make_dataset_naive(tensordict: TensorDict, batch_size: int):
     ).reshape(-1, batch_size)
     for indices in perm:
         yield tensordict[indices]
-
-
-from torch.optim import Optimizer, Adam, AdamW
 
 
 def get_optimizer(cfg: DictConfig, params: Iterable[Parameter]) -> Optimizer:

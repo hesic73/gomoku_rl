@@ -3,7 +3,6 @@ python scripts/train_InRL.py \
     white_checkpoint= \
     num_envs=1024 \
     board_size=8 \
-    rounds=32 \
+    steps=64 \
     epochs=100 \
-    algo=dqn \
     wandb.mode=disabled \

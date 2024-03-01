@@ -30,7 +30,6 @@ class Runner(abc.ABC):
         set_seed(seed)
 
         self.epochs: int = cfg.get("epochs")
-        self.rounds: int = cfg.get("rounds")
         self.save_interval: int = cfg.get("save_interval", -1)
 
         self.policy_black = get_policy(
@@ -91,7 +90,8 @@ class Runner(abc.ABC):
                 device=self.env.device,
             )
             logging.info(f"Baseline:{ckpts[0]}")
-            baseline.load_state_dict(torch.load(ckpts[0], map_location=self.cfg.device))
+            baseline.load_state_dict(torch.load(
+                ckpts[0], map_location=self.cfg.device))
             baseline.eval()
             return baseline
         else:
@@ -128,7 +128,7 @@ class Runner(abc.ABC):
 
             pbar.set_postfix(
                 {
-                    "fps": self.env._fps,
+                    "fps": info['fps'],
                 }
             )
 
@@ -162,11 +162,7 @@ class SPRunner(abc.ABC):
         set_seed(seed)
 
         self.epochs: int = cfg.get("epochs")
-        self.rounds: int = cfg.get("rounds", -1)
-        self.steps: int = cfg.get("steps", -1)
-        assert (self.rounds != -1 and self.steps == -1) or (
-            self.rounds == -1 and self.steps != -1
-        )
+
         self.save_interval: int = cfg.get("save_interval", -1)
 
         self.policy = get_policy(
@@ -215,7 +211,8 @@ class SPRunner(abc.ABC):
                 device=self.env.device,
             )
             logging.info(f"Baseline:{ckpts[0]}")
-            baseline.load_state_dict(torch.load(ckpts[0], map_location=self.cfg.device))
+            baseline.load_state_dict(torch.load(
+                ckpts[0], map_location=self.cfg.device))
             baseline.eval()
             return baseline
         else:
@@ -248,7 +245,7 @@ class SPRunner(abc.ABC):
 
             pbar.set_postfix(
                 {
-                    "fps": self.env._fps,
+                    "fps": info['fps'],
                 }
             )
 

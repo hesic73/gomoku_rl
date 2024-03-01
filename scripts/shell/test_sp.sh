@@ -3,5 +3,6 @@ python scripts/train_InRL_sp.py \
     board_size=8 \
     steps=64 \
     epochs=100 \
-    algo=dqn \
-#    wandb.mode=disabled \
+    algo=ppo \
+    algo.batch_size=512 \
+    wandb.mode=disabled \

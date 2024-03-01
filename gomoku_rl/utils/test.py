@@ -1,13 +1,6 @@
-from gomoku_rl.env import GomokuEnv
-from gomoku_rl.utils.policy import uniform_policy
-from gomoku_rl.utils.misc import no_nan_in_tensordict, set_seed
-from tensordict import TensorDict
 import torch
-import random
-import numpy as np
-from tqdm import tqdm
 import enum
-from gomoku_rl.policy.common import make_dataset_naive
+from tensordict import TensorDict
 
 
 class Type(enum.Enum):
@@ -52,6 +45,15 @@ def assert_layer_transition(
     )
 
 
+def no_nan_in_tensordict(tensordict: TensorDict):
+    for n, t in tensordict.items(include_nested=True, leaves_only=True):
+        if not isinstance(t, torch.Tensor):
+            continue
+        if torch.isnan(t).any():
+            return False
+    return True
+
+
 def assert_transition(tensordict: TensorDict, type: Type):
     assert no_nan_in_tensordict(tensordict)
     done: torch.Tensor = tensordict["next", "done"]
@@ -78,56 +80,3 @@ def assert_transition(tensordict: TensorDict, type: Type):
     assert_tensor_1d_all(
         torch.isclose(layer1, next_observation[:, 0]).all(-1).all(-1) | done
     )
-
-
-def test_rollout():
-    device = "cuda:0"
-    num_envs = 256
-    board_size = 10
-    seed = 1234
-    set_seed(seed)
-    env = GomokuEnv(num_envs=num_envs, board_size=board_size, device=device)
-    transitions_black, transitions_white, info = env.rollout(
-        50,
-        player_black=uniform_policy,
-        player_white=uniform_policy,
-        augment=False,
-    )
-
-    for transition in tqdm(
-        make_dataset_naive(transitions_white, batch_size=1024),
-        total=16,
-    ):
-        # _debug_print(transition[59])
-        assert_transition(transition, type=Type.white)
-
-    for transition in tqdm(
-        make_dataset_naive(transitions_black, batch_size=1024),
-        total=16,
-    ):
-        assert_transition(transition, type=Type.black)
-
-
-def test_rollout_fixed_opponent():
-    device = "cuda:0"
-    num_envs = 256
-    board_size = 10
-    seed = 1234
-    set_seed(seed)
-    env = GomokuEnv(num_envs=num_envs, board_size=board_size, device=device)
-
-    transitions, info = env.rollout_fixed_opponent(
-        50,
-        player=uniform_policy,
-        opponent=uniform_policy,
-    )
-    for transition in tqdm(
-        make_dataset_naive(transitions, batch_size=1024),
-        total=16,
-    ):
-        assert_transition(transition, type=Type.mixed)
-
-
-if __name__ == "__main__":
-    # test_rollout()
-    test_rollout_fixed_opponent()

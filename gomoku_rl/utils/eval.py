@@ -33,7 +33,7 @@ def _eval_win_rate(env: GomokuEnv, player_black: _policy_t, player_white: _polic
         else:
             tensordict = player_white(tensordict)
         # In new episodes the players may play the opposite color, but these episodes are not used for evaluation
-        tensordict = env._step_and_maybe_reset(tensordict)
+        tensordict = env.step_and_maybe_reset(tensordict)
 
         done = tensordict.get("done")
 
