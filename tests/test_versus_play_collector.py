@@ -1,5 +1,3 @@
-
-
 from gomoku_rl.policy.common import make_dataset_naive
 from gomoku_rl.env import GomokuEnv
 from gomoku_rl.utils.policy import uniform_policy

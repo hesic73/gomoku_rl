@@ -23,10 +23,13 @@ from gomoku_rl.utils.eval import eval_win_rate
 import wandb
 import torch
 
+from gomoku_rl.collector import VersusPlayCollector, BlackPlayCollector, WhitePlayCollector
+
 
 class PSRORunner(Runner):
     def __init__(self, cfg: DictConfig) -> None:
         super().__init__(cfg)
+
         ci_kwargs = get_kwargs(
             cfg,
             "mean_threshold",
@@ -75,19 +78,21 @@ class PSRORunner(Runner):
         )
         self.meta_solver = get_meta_solver(cfg.get("meta_solver", "uniform"))
 
+        self.collector = VersusPlayCollector(self.env, self.player_0, self.player_1, out_device=self.cfg.get(
+            "out_device", None), augment=self.cfg.get("augment", False),)
+
     def _epoch(self, epoch: int) -> dict[str, Any]:
         if self.learning_player_id == 0:
             self.player_1.sample()
         else:
             self.player_0.sample()
-        data_0, data_1, info = self.env.rollout(
-            rounds=self.rounds,
-            player_black=self.player_0,
-            player_white=self.player_1,
-            augment=self.cfg.get("augment", False),
-            return_black_transitions=self.learning_player_id == 0,
-            return_white_transitions=self.learning_player_id != 0,
+        data_0, data_1, info = self.collector.rollout(
+            steps=self.steps
         )
+
+        info = add_prefix(info, "versus_play/")
+        info['fps'] = info['versus_play/fps']
+        del info['versus_play/fps']
 
         info.update(
             {
@@ -134,7 +139,7 @@ class PSRORunner(Runner):
             else (1 - info["eval/black_vs_white"])
         )
         if self.converged_indicator.converged():
-            self.env.reset_rollout()
+            self.collector.reset()
             self.converged_indicator.reset()
             if self.learning_player_id == 0:
                 self.player_0.set_oracle_mode(False)
@@ -155,7 +160,8 @@ class PSRORunner(Runner):
                     old_payoffs=self.payoffs,
                 )
                 print(repr(self.payoffs))
-                meta_policy_0, meta_policy_1 = self.meta_solver(payoffs=self.payoffs)
+                meta_policy_0, meta_policy_1 = self.meta_solver(
+                    payoffs=self.payoffs)
                 logging.info(
                     f"Meta Policy: Black {meta_policy_0}, White {meta_policy_1}"
                 )
@@ -190,7 +196,6 @@ class PSRORunner(Runner):
 class PSROSPRunner(SPRunner):
     def __init__(self, cfg: DictConfig) -> None:
         super().__init__(cfg)
-        self.env_2 = copy.deepcopy(self.env)
         ci_kwargs = get_kwargs(
             cfg,
             "mean_threshold",
@@ -205,7 +210,8 @@ class PSROSPRunner(SPRunner):
             _policy = []
             for p in os.listdir(population_dir):
                 tmp = copy.deepcopy(self.policy)
-                tmp.load_state_dict(torch.load(os.path.join(population_dir, p)))
+                tmp.load_state_dict(torch.load(
+                    os.path.join(population_dir, p)))
                 tmp.eval()
                 _policy.append(tmp)
         elif self.cfg.get("checkpoint", None):
@@ -236,31 +242,33 @@ class PSROSPRunner(SPRunner):
         else:
             self.meta_policy_black, self.meta_policy_white = None, None
 
+        self.collector_black = BlackPlayCollector(self.env, self.policy, self.population, out_device=self.cfg.get(
+            "out_device", None), augment=self.cfg.get("augment", False),)
+        self.collector_white = WhitePlayCollector(copy.deepcopy(self.env), self.population, self.policy,  out_device=self.cfg.get(
+            "out_device", None), augment=self.cfg.get("augment", False),)
+
     def _epoch(self, epoch: int) -> dict[str, Any]:
         info = {}
         self.population.sample(self.meta_policy_white)
         info.update({"pure_strategy_white": self.population._idx})
-        data1, info1 = self.env.rollout_player_black(
-            rounds=self.rounds,
-            player=self.policy,
-            opponent=self.population,
-            augment=self.cfg.get("augment", False),
-            out_device=self.cfg.get("out_device", None),
+        data1, info1 = self.collector_black.rollout(
+            steps=self.steps
         )
-        info.update(info1)
+        info.update(add_prefix(info1, "black_play/"))
         self.population.sample(self.meta_policy_black)
         info.update({"pure_strategy_black": self.population._idx})
-        data2, info2 = self.env_2.rollout_player_white(
-            rounds=self.rounds,
-            player=self.policy,
-            opponent=self.population,
-            augment=self.cfg.get("augment", False),
-            out_device=self.cfg.get("out_device", None),
+        data2, info2 = self.collector_white.rollout(
+            steps=self.steps
         )
-        info.update(info2)
+        info.update(add_prefix(info2, "white_play/"))
         data = torch.cat([data1, data2], dim=-1)
-        info.update(add_prefix(self.policy.learn(data.to_tensordict()), "policy/"))
+        info.update(add_prefix(self.policy.learn(
+            data.to_tensordict()), "policy/"))
         del data
+
+        info['fps'] = (info['black_play/fps']+info['white_play/fps'])/2
+        del info['black_play/fps']
+        del info['white_play/fps']
 
         info.update(
             {

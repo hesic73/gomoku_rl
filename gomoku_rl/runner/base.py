@@ -30,6 +30,7 @@ class Runner(abc.ABC):
         set_seed(seed)
 
         self.epochs: int = cfg.get("epochs")
+        self.steps = cfg.steps
         self.save_interval: int = cfg.get("save_interval", -1)
 
         self.policy_black = get_policy(
@@ -162,7 +163,7 @@ class SPRunner(abc.ABC):
         set_seed(seed)
 
         self.epochs: int = cfg.get("epochs")
-
+        self.steps: int = cfg.steps
         self.save_interval: int = cfg.get("save_interval", -1)
 
         self.policy = get_policy(

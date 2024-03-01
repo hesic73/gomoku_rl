@@ -8,7 +8,7 @@ run_dir:
 augment: false
 
 epochs: 1000
-rounds: 64
+steps: 128
 save_interval: 250
 
 # psro

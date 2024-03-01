@@ -10,12 +10,14 @@ import torch
 class IndependentRLRunner(Runner):
     def __init__(self, cfg: DictConfig) -> None:
         super().__init__(cfg)
-        self.steps = cfg.get("steps", -1)
         self._collector = VersusPlayCollector(
             self.env, self.policy_black, self.policy_white, out_device=self.cfg.get("out_device", None), augment=self.cfg.get("augment", False),)
 
     def _epoch(self, epoch: int) -> dict[str, Any]:
         data_black, data_white, info = self._collector.rollout(self.steps)
+        info = add_prefix(info, "versus_play/")
+        info['fps'] = info['versus_play/fps']
+        del info['versus_play/fps']
         info.update(
             add_prefix(
                 self.policy_black.learn(
@@ -74,12 +76,14 @@ class IndependentRLRunner(Runner):
 class IndependentRLSPRunner(SPRunner):
     def __init__(self, cfg: DictConfig) -> None:
         super().__init__(cfg)
-        self.steps: int = cfg.get("steps", -1)
         self._collector = SelfPlayCollector(self.env, self.policy, out_device=self.cfg.get(
             "out_device", None), augment=self.cfg.get("augment", False),)
 
     def _epoch(self, epoch: int) -> dict[str, Any]:
         data, info = self._collector.rollout(self.steps)
+        info = add_prefix(info, "self_play/")
+        info['fps'] = info['self_play/fps']
+        del info['self_play/fps']
         info.update(add_prefix(self.policy.learn(
             data.to_tensordict()), "policy/"))
         del data

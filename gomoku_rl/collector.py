@@ -303,7 +303,7 @@ class VersusPlayCollector(Collector):
         self._t = None
 
     @torch.no_grad()
-    def rollout(self, steps: int) -> tuple[TensorDict, dict]:
+    def rollout(self, steps: int) -> tuple[TensorDict, TensorDict, dict]:
         """Executes a rollout in the environment, collecting data for a specified number of steps, alternating between the black and white policies.
 
         Args:
@@ -383,3 +383,206 @@ class VersusPlayCollector(Collector):
         info.update({"fps": fps})
 
         return blacks, whites, dict(info)
+
+
+class BlackPlayCollector(Collector):
+    def __init__(self, env: GomokuEnv, policy_black: _policy_t, policy_white: _policy_t, out_device=None, augment: bool = False):
+        """
+        Initializes a collector for capturing game transitions where the black player is controlled by a trainable policy against a white player using a fixed policy.
+
+        Args:
+            env (GomokuEnv): The game environment where the collection takes place.
+            policy_black (_policy_t): The trainable policy used for the black player.
+            policy_white (_policy_t): The fixed policy for the white player, simulating a consistent opponent.
+            out_device: The device (e.g., CPU, GPU) where the collected data will be stored. Defaults to the environment's device if not specified.
+            augment (bool, optional): Whether to apply data augmentation to the collected transitions, enhancing the dataset's diversity. Defaults to False.
+        """
+        self._env = env
+        self._policy_black = policy_black
+        self._policy_white = policy_white
+        self._out_device = out_device or self._env.device
+        self._augment = augment
+
+        self._t_minus_1 = None
+        self._t = None
+
+    def reset(self):
+        self._env.reset()
+        self._t_minus_1 = None
+        self._t = None
+
+    @torch.no_grad()
+    def rollout(self, steps: int) -> tuple[TensorDict, dict]:
+        """
+        Executes a data collection session over a specified number of game steps, focusing on transitions involving the black player.
+
+        Args:
+            steps (int): The total number of steps to collect data for. This will be adjusted to ensure an even number of steps for symmetry in turn-taking.
+
+        Returns:
+            tuple[TensorDict, dict]: A tuple containing the collected transitions for the black player and a dictionary with additional information such as the frames per second (fps) achieved during the collection.
+        """
+
+        steps = (steps//2)*2
+
+        info: defaultdict[str, float] = defaultdict(float)
+        self._env.set_post_step(get_log_func(info))
+
+        blacks = []
+
+        start = time.perf_counter()
+
+        if self._t_minus_1 is None and self._t is None:
+            self._t_minus_1 = self._env.reset()
+            self._t = self._env.reset()
+
+            self._t_minus_1.update(
+                {
+                    "done": torch.ones(
+                        self._env.num_envs, dtype=torch.bool, device=self._env.device
+                    ),
+                    "win": torch.zeros(
+                        self._env.num_envs, dtype=torch.bool, device=self._env.device
+                    ),
+                }
+            )  # here we set it to True
+            with set_interaction_type(type=InteractionType.RANDOM):
+                self._t = self._policy_black(self._t)
+
+            self._t .update(
+                {
+                    "done": torch.zeros(
+                        self._env.num_envs, dtype=torch.bool, device=self._env.device
+                    ),
+                    "win": torch.zeros(
+                        self._env.num_envs, dtype=torch.bool, device=self._env.device
+                    ),
+                }
+            )
+
+        for i in range(steps//2):
+            (
+                transition_black,
+                transition_white,
+                self._t_minus_1,
+                self._t,
+            ) = round(self._env, self._policy_black, self._policy_white, self._t_minus_1, self._t, return_black_transitions=True, return_white_transitions=False)
+
+            if self._augment:
+                transition_black = augment_transition(transition_black)
+
+            blacks.append(transition_black.to(self._out_device))
+
+        blacks = torch.stack(blacks, dim=-1) if blacks else None
+
+        end = time.perf_counter()
+        fps = (steps * self._env.num_envs) / (end - start)
+
+        self._env.set_post_step(None)
+
+        info.update({"fps": fps})
+
+        return blacks, dict(info)
+
+
+class WhitePlayCollector(Collector):
+    def __init__(self, env: GomokuEnv, policy_black: _policy_t, policy_white: _policy_t, out_device=None, augment: bool = False):
+        """
+        Initializes a collector focused on capturing game transitions from the perspective of the white player, who is controlled by a trainable policy, against a black player using a fixed policy.
+
+        Args:
+            env (GomokuEnv): The game environment where the collection takes place.
+            policy_black (_policy_t): The fixed policy for the black player, providing a consistent challenge.
+            policy_white (_policy_t): The trainable policy used for the white player.
+            out_device: The device for storing collected data, defaulting to the environment's device if not specified.
+            augment (bool, optional): Indicates whether to augment the collected transitions to enhance the dataset. Defaults to False.
+        """
+        self._env = env
+        self._policy_black = policy_black
+        self._policy_white = policy_white
+        self._out_device = out_device or self._env.device
+        self._augment = augment
+
+        self._t_minus_1 = None
+        self._t = None
+
+    def reset(self):
+        self._env.reset()
+        self._t_minus_1 = None
+        self._t = None
+
+    @torch.no_grad()
+    def rollout(self, steps: int) -> tuple[TensorDict, dict]:
+        """
+        Performs a data collection session, focusing on the game transitions where the white player is active, over a specified number of steps.
+
+        Args:
+            steps (int): The number of steps for which data will be collected, adjusted to be even for fairness in gameplay.
+
+        Returns:
+            tuple[TensorDict, dict]: A tuple containing the collected transitions for the white player and additional session information, such as collection performance (fps).
+        """
+        steps = (steps//2)*2
+
+        info: defaultdict[str, float] = defaultdict(float)
+        self._env.set_post_step(get_log_func(info))
+
+        whites = []
+
+        start = time.perf_counter()
+
+        if self._t_minus_1 is None and self._t is None:
+            self._t_minus_1 = self._env.reset()
+            self._t = self._env.reset()
+
+            self._t_minus_1.update(
+                {
+                    "done": torch.ones(
+                        self._env.num_envs, dtype=torch.bool, device=self._env.device
+                    ),
+                    "win": torch.zeros(
+                        self._env.num_envs, dtype=torch.bool, device=self._env.device
+                    ), "action": -torch.ones(
+                        self._env.num_envs, dtype=torch.long, device=self._env.device
+                    ),  # placeholder or the action key will not appear in the stacked tensordict.
+                }
+            )  # here we set it to True
+            with set_interaction_type(type=InteractionType.RANDOM):
+                self._t = self._policy_black(self._t)
+
+            self._t .update(
+                {
+                    "done": torch.zeros(
+                        self._env.num_envs, dtype=torch.bool, device=self._env.device
+                    ),
+                    "win": torch.zeros(
+                        self._env.num_envs, dtype=torch.bool, device=self._env.device
+                    ),
+                }
+            )
+
+        for i in range(steps//2):
+            (
+                transition_black,
+                transition_white,
+                self._t_minus_1,
+                self._t,
+            ) = round(self._env, self._policy_black, self._policy_white, self._t_minus_1, self._t, return_black_transitions=False, return_white_transitions=True)
+
+            if self._augment:
+                if i != 0 and len(transition_white) > 0:
+                    transition_white = augment_transition(transition_white)
+
+            if i != 0:
+                whites.append(transition_white.to(self._out_device))
+
+        whites = torch.stack(whites, dim=-1) if whites else None
+
+        end = time.perf_counter()
+        fps = (steps * self._env.num_envs) / (end - start)
+
+        self._env.set_post_step(None)
+
+        info.update({"fps": fps})
+
+        return whites, dict(info)
