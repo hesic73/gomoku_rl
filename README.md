@@ -4,6 +4,12 @@
 
 ![](/assets//images/screenshot_0.gif)
 
+## TO DO
+
+- [x] Restructure the code to decouple rollout functionality from `GomokuEnv`.
+- [ ] Enhance documentaion.
+- [ ] Further improvement
+
 ## Introduction
 
 *gomoku_rl* is an open-sourced project that trains agents to play the game of Gomoku through deep reinforcement learning. Previous works often rely on variants of AlphaGo/AlphaZero and inefficiently use GPU resources. Notably, many existing projects are limited to small boards, with only a few exceptions. [[1]](#refer-anchor-1) incorporates curriculum learning and other enhancements;  [[2]](#refer-anchor-2)  and  [[3]](#refer-anchor-3)  collect transitions from multiple environments and also parallelize MCTS execution. In contrast, *gomoku_rl* features GPU-parallelized simulation and leverages recent advancements in **MARL**. Starting from random play, a model can achieve human-level performance on a $15\times15$ board within hours of training on a 3090.
@@ -45,6 +51,10 @@ python scripts/demo.py
 
 Pretrained models for a $15\times15$ board are available under  `pretrained_models/15_15/`. Be aware that using the wrong model for the board size will lead to loading errors due to mismatches in AI architectures. In PPO, when `share_network=True`, the actor and the critic could utilize a shared encoding module. At present, a `PPOPolicy` object with a shared encoder cannot load from a checkpoint without sharing.
 
+## Documentation
+
+https://hesic73.github.io/gomoku_rl/
+
 ## GUI
 
 **Note:  for deployment, we opt for `torch.jit.ScriptModule` instead of `torch.nn.Module`.** The `*.pt` files used in `scripts/train_*.py` are state dicts of a `torch.nn.Module` and cannot be directly utilized in this context.
@@ -83,47 +93,6 @@ cmake --build . --config Release
 
 Free-style Gomoku is a two-player zero-sum extensive-form game. Two players alternatively place black and white stones on a board and the first who forms an unbroken line of five or more stones of his color wins. In the context of Multi-Agent Reinforcement Learning (MARL), two agents learn in the environment competitively. During each agent's turn, its observation is the (encoded) current board state, and its action is the selection of a position on the board to place a stone. We use action masking to prevent illegal moves. Winning rewards the agent with +1, while losing incurs a penalty of -1. 
 
-
-## API
-
-### Policy
-In general, policies are expected to be of the type `Callable[[Tensordict,], Tensordict]`. Here, `Tensordict` is a class with dictionary-like properties inherited from tensors (refer to [https://github.com/pytorch/tensordict](https://github.com/pytorch/tensordict)). The input `Tensordict` contains `observation` and `action_mask`. As described in [1], `observation` has a shape of [\*, 3, B, B], where $B$ denotes the board size. Similarly, `action_mask` has a shape of [\*, B^2]. The expected output `action` should have a shape of [\*,] within the range of [0, B^2).
-
-Like in [tianshou](https://github.com/thu-ml/tianshou), a `Policy` interface is defined. See `gomoku_rl/policy/base.py` for more information.
-
-
-### GomokuEnv
-
-`GomokuEnv` comprises `num_envs` independent Gomoku environments, compatible with both CPU and CUDA. It effortlessly attains $10^5$ fps, enabling the concurrent execution of thousands of environments. It provides high level APIs such as `GomokuEnv.rollout` and `GomokuEnv.rollout_self_play`.
-
-Example:
-
-```python
-from gomoku_rl import GomokuEnv
-from gomoku_rl.utils.policy import uniform_policy
-from pprint import pprint
-
-
-def main():
-    env = GomokuEnv(num_envs=128, board_size=10, device="cuda")
-
-    transitions_black, transitions_white, info = env.rollout(
-        rounds=50,
-        player_black=uniform_policy,
-        player_white=uniform_policy,
-        augment=False,
-    )
-
-    print(transitions_black)
-
-    pprint(dict(info))
-
-
-if __name__ == "__main__":
-    main()
-
-```
-
 ## Limitations
 
 - Constrained to Free-style Gomoku support only.
@@ -150,11 +119,6 @@ if __name__ == "__main__":
 
 - [5] [What Matters In On-Policy Reinforcement Learning? A Large-Scale Empirical Study](https://arxiv.org/pdf/2006.05990.pdf)
 
-
-## TO DO
-
-- [ ] Restructure the code to decouple rollout functionality from `GomokuEnv`.
-- [ ] Enhance documentaion.
 
 
 ## Citation

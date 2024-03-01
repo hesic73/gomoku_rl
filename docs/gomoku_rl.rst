@@ -17,6 +17,7 @@ Submodules
 .. toctree::
    :maxdepth: 4
 
+   gomoku_rl.collector
    gomoku_rl.core
    gomoku_rl.env
 
