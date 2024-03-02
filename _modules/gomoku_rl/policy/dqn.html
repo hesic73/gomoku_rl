@@ -43,7 +43,7 @@
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">gomoku_rl</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../gomoku_rl.html">gomoku_rl package</a></li>
 </ul>
 
         </div>
@@ -113,9 +113,9 @@
 
 
 
-<div class="viewcode-block" id="DQNPolicy">
-<a class="viewcode-back" href="../../../gomoku_rl.policy.dqn.html#gomoku_rl.policy.dqn.DQNPolicy">[docs]</a>
-<span class="k">class</span> <span class="nc">DQNPolicy</span><span class="p">(</span><span class="n">Policy</span><span class="p">):</span>
+<div class="viewcode-block" id="DQN">
+<a class="viewcode-back" href="../../../gomoku_rl.policy.dqn.html#gomoku_rl.policy.dqn.DQN">[docs]</a>
+<span class="k">class</span> <span class="nc">DQN</span><span class="p">(</span><span class="n">Policy</span><span class="p">):</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">cfg</span><span class="p">:</span> <span class="n">DictConfig</span><span class="p">,</span>
@@ -175,8 +175,8 @@
             <span class="c1"># print(self.actor_explore.module[-1].eps)</span>
             <span class="k">return</span> <span class="n">tensordict</span>
 
-<div class="viewcode-block" id="DQNPolicy.learn">
-<a class="viewcode-back" href="../../../gomoku_rl.policy.dqn.html#gomoku_rl.policy.dqn.DQNPolicy.learn">[docs]</a>
+<div class="viewcode-block" id="DQN.learn">
+<a class="viewcode-back" href="../../../gomoku_rl.policy.dqn.html#gomoku_rl.policy.dqn.DQN.learn">[docs]</a>
     <span class="k">def</span> <span class="nf">learn</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">TensorDict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">:</span>
         <span class="n">invalid</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;invalid&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">invalid</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
@@ -214,22 +214,22 @@
         <span class="p">}</span></div>
 
 
-<div class="viewcode-block" id="DQNPolicy.eval">
-<a class="viewcode-back" href="../../../gomoku_rl.policy.dqn.html#gomoku_rl.policy.dqn.DQNPolicy.eval">[docs]</a>
+<div class="viewcode-block" id="DQN.eval">
+<a class="viewcode-back" href="../../../gomoku_rl.policy.dqn.html#gomoku_rl.policy.dqn.DQN.eval">[docs]</a>
     <span class="k">def</span> <span class="nf">eval</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">actor</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_eval</span> <span class="o">=</span> <span class="kc">True</span></div>
 
 
-<div class="viewcode-block" id="DQNPolicy.train">
-<a class="viewcode-back" href="../../../gomoku_rl.policy.dqn.html#gomoku_rl.policy.dqn.DQNPolicy.train">[docs]</a>
+<div class="viewcode-block" id="DQN.train">
+<a class="viewcode-back" href="../../../gomoku_rl.policy.dqn.html#gomoku_rl.policy.dqn.DQN.train">[docs]</a>
     <span class="k">def</span> <span class="nf">train</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">actor</span><span class="o">.</span><span class="n">train</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_eval</span> <span class="o">=</span> <span class="kc">False</span></div>
 
 
-<div class="viewcode-block" id="DQNPolicy.state_dict">
-<a class="viewcode-back" href="../../../gomoku_rl.policy.dqn.html#gomoku_rl.policy.dqn.DQNPolicy.state_dict">[docs]</a>
+<div class="viewcode-block" id="DQN.state_dict">
+<a class="viewcode-back" href="../../../gomoku_rl.policy.dqn.html#gomoku_rl.policy.dqn.DQN.state_dict">[docs]</a>
     <span class="k">def</span> <span class="nf">state_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">:</span>
         <span class="c1"># Resuming training will become impossible if the parameters of the loss_module are discarded.</span>
         <span class="k">return</span> <span class="p">{</span>
@@ -238,8 +238,8 @@
         <span class="p">}</span></div>
 
 
-<div class="viewcode-block" id="DQNPolicy.load_state_dict">
-<a class="viewcode-back" href="../../../gomoku_rl.policy.dqn.html#gomoku_rl.policy.dqn.DQNPolicy.load_state_dict">[docs]</a>
+<div class="viewcode-block" id="DQN.load_state_dict">
+<a class="viewcode-back" href="../../../gomoku_rl.policy.dqn.html#gomoku_rl.policy.dqn.DQN.load_state_dict">[docs]</a>
     <span class="k">def</span> <span class="nf">load_state_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state_dict</span><span class="p">:</span> <span class="n">Dict</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">actor</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">state_dict</span><span class="p">[</span><span class="s2">&quot;actor&quot;</span><span class="p">])</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">loss_module</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">state_dict</span><span class="p">[</span><span class="s2">&quot;loss&quot;</span><span class="p">])</span>

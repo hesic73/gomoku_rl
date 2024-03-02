@@ -46,18 +46,19 @@
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
 <ul class="current">
-<li class="toctree-l1 current"><a class="reference internal" href="modules.html">gomoku_rl</a><ul class="current">
-<li class="toctree-l2 current"><a class="reference internal" href="gomoku_rl.html">gomoku_rl package</a><ul class="current">
-<li class="toctree-l3 current"><a class="reference internal" href="gomoku_rl.html#subpackages">Subpackages</a><ul class="current">
-<li class="toctree-l4 current"><a class="reference internal" href="gomoku_rl.policy.html">gomoku_rl.policy package</a></li>
-<li class="toctree-l4"><a class="reference internal" href="gomoku_rl.runner.html">gomoku_rl.runner package</a></li>
-<li class="toctree-l4"><a class="reference internal" href="gomoku_rl.utils.html">gomoku_rl.utils package</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="gomoku_rl.html">gomoku_rl package</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="gomoku_rl.html#subpackages">Subpackages</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="gomoku_rl.policy.html">gomoku_rl.policy package</a><ul class="current">
+<li class="toctree-l4 current"><a class="reference internal" href="gomoku_rl.policy.html#submodules">Submodules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="gomoku_rl.policy.html#module-gomoku_rl.policy">Module contents</a></li>
 </ul>
 </li>
-<li class="toctree-l3"><a class="reference internal" href="gomoku_rl.html#submodules">Submodules</a></li>
-<li class="toctree-l3"><a class="reference internal" href="gomoku_rl.html#module-gomoku_rl">Module contents</a></li>
+<li class="toctree-l3"><a class="reference internal" href="gomoku_rl.runner.html">gomoku_rl.runner package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="gomoku_rl.utils.html">gomoku_rl.utils package</a></li>
 </ul>
 </li>
+<li class="toctree-l2"><a class="reference internal" href="gomoku_rl.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="gomoku_rl.html#module-gomoku_rl">Module contents</a></li>
 </ul>
 </li>
 </ul>
@@ -76,7 +77,6 @@
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
       <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
-          <li class="breadcrumb-item"><a href="modules.html">gomoku_rl</a></li>
           <li class="breadcrumb-item"><a href="gomoku_rl.html">gomoku_rl package</a></li>
           <li class="breadcrumb-item"><a href="gomoku_rl.policy.html">gomoku_rl.policy package</a></li>
       <li class="breadcrumb-item active">gomoku_rl.policy.dqn module</li>
@@ -92,18 +92,18 @@
   <section id="module-gomoku_rl.policy.dqn">
 <span id="gomoku-rl-policy-dqn-module"></span><h1>gomoku_rl.policy.dqn module<a class="headerlink" href="#module-gomoku_rl.policy.dqn" title="Link to this heading"></a></h1>
 <dl class="py class">
-<dt class="sig sig-object py" id="gomoku_rl.policy.dqn.DQNPolicy">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gomoku_rl.policy.dqn.</span></span><span class="sig-name descname"><span class="pre">DQNPolicy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cfg</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DictConfig</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">action_spec</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DiscreteTensorSpec</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">observation_spec</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">TensorSpec</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">device</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">device</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'cuda'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/gomoku_rl/policy/dqn.html#DQNPolicy"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gomoku_rl.policy.dqn.DQNPolicy" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="gomoku_rl.policy.dqn.DQN">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gomoku_rl.policy.dqn.</span></span><span class="sig-name descname"><span class="pre">DQN</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cfg</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DictConfig</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">action_spec</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DiscreteTensorSpec</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">observation_spec</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">TensorSpec</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">device</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">device</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'cuda'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/gomoku_rl/policy/dqn.html#DQN"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gomoku_rl.policy.dqn.DQN" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="gomoku_rl.policy.base.html#gomoku_rl.policy.base.Policy" title="gomoku_rl.policy.base.Policy"><code class="xref py py-class docutils literal notranslate"><span class="pre">Policy</span></code></a></p>
 <dl class="py method">
-<dt class="sig sig-object py" id="gomoku_rl.policy.dqn.DQNPolicy.eval">
-<span class="sig-name descname"><span class="pre">eval</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/gomoku_rl/policy/dqn.html#DQNPolicy.eval"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gomoku_rl.policy.dqn.DQNPolicy.eval" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="gomoku_rl.policy.dqn.DQN.eval">
+<span class="sig-name descname"><span class="pre">eval</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/gomoku_rl/policy/dqn.html#DQN.eval"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gomoku_rl.policy.dqn.DQN.eval" title="Link to this definition"></a></dt>
 <dd><p>Sets the policy to evaluation mode.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="gomoku_rl.policy.dqn.DQNPolicy.learn">
-<span class="sig-name descname"><span class="pre">learn</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">TensorDict</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span></span></span><a class="reference internal" href="_modules/gomoku_rl/policy/dqn.html#DQNPolicy.learn"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gomoku_rl.policy.dqn.DQNPolicy.learn" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="gomoku_rl.policy.dqn.DQN.learn">
+<span class="sig-name descname"><span class="pre">learn</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">TensorDict</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span></span></span><a class="reference internal" href="_modules/gomoku_rl/policy/dqn.html#DQN.learn"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gomoku_rl.policy.dqn.DQN.learn" title="Link to this definition"></a></dt>
 <dd><p>Updates the policy based on a batch of data.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -119,8 +119,8 @@
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="gomoku_rl.policy.dqn.DQNPolicy.load_state_dict">
-<span class="sig-name descname"><span class="pre">load_state_dict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">state_dict</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/gomoku_rl/policy/dqn.html#DQNPolicy.load_state_dict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gomoku_rl.policy.dqn.DQNPolicy.load_state_dict" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="gomoku_rl.policy.dqn.DQN.load_state_dict">
+<span class="sig-name descname"><span class="pre">load_state_dict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">state_dict</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/gomoku_rl/policy/dqn.html#DQN.load_state_dict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gomoku_rl.policy.dqn.DQN.load_state_dict" title="Link to this definition"></a></dt>
 <dd><p>Loads the policy state from a dictionary.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -130,8 +130,8 @@
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="gomoku_rl.policy.dqn.DQNPolicy.state_dict">
-<span class="sig-name descname"><span class="pre">state_dict</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span></span></span><a class="reference internal" href="_modules/gomoku_rl/policy/dqn.html#DQNPolicy.state_dict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gomoku_rl.policy.dqn.DQNPolicy.state_dict" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="gomoku_rl.policy.dqn.DQN.state_dict">
+<span class="sig-name descname"><span class="pre">state_dict</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span></span></span><a class="reference internal" href="_modules/gomoku_rl/policy/dqn.html#DQN.state_dict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gomoku_rl.policy.dqn.DQN.state_dict" title="Link to this definition"></a></dt>
 <dd><p>Returns the state of the policy as a dictionary.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
@@ -144,8 +144,8 @@
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="gomoku_rl.policy.dqn.DQNPolicy.train">
-<span class="sig-name descname"><span class="pre">train</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/gomoku_rl/policy/dqn.html#DQNPolicy.train"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gomoku_rl.policy.dqn.DQNPolicy.train" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="gomoku_rl.policy.dqn.DQN.train">
+<span class="sig-name descname"><span class="pre">train</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/gomoku_rl/policy/dqn.html#DQN.train"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gomoku_rl.policy.dqn.DQN.train" title="Link to this definition"></a></dt>
 <dd><p>Sets the policy to training mode.</p>
 </dd></dl>
 

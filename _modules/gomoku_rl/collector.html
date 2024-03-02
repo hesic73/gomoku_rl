@@ -43,7 +43,7 @@
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../../modules.html">gomoku_rl</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../gomoku_rl.html">gomoku_rl package</a></li>
 </ul>
 
         </div>
@@ -360,6 +360,11 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">_t</span><span class="p">,</span>
             <span class="p">)</span> <span class="o">=</span> <span class="n">self_play_step</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_env</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_policy</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_t_minus_1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_t</span><span class="p">)</span>
 
+            <span class="c1"># truncate the last transition</span>
+            <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="n">steps</span><span class="o">-</span><span class="mi">2</span><span class="p">:</span>
+                <span class="n">transition</span><span class="p">[</span><span class="s2">&quot;next&quot;</span><span class="p">,</span> <span class="s2">&quot;done&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span>
+                    <span class="n">transition</span><span class="p">[</span><span class="s2">&quot;next&quot;</span><span class="p">,</span> <span class="s2">&quot;done&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">bool</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">transition</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_augment</span><span class="p">:</span>
                 <span class="n">transition</span> <span class="o">=</span> <span class="n">augment_transition</span><span class="p">(</span><span class="n">transition</span><span class="p">)</span>
 
@@ -423,10 +428,10 @@
 <span class="sd">            steps (int): The number of steps to execute in the environment for this rollout. It is adjusted to be an even number to ensure an equal number of actions for both players.</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">        tuple: A tuple containing three elements:</span>
-<span class="sd">            - A TensorDict of transitions collected for the black player, with each transition representing a game state before the black player&#39;s action, the action taken, and the resulting state.</span>
-<span class="sd">            - A TensorDict of transitions collected for the white player, structured similarly to the black player&#39;s transitions. Note that for the first step, the white player does not take an action, so their collection starts from the second step.</span>
-<span class="sd">            - A dictionary containing additional information about the rollout.</span>
+<span class="sd">            tuple: A tuple containing three elements:</span>
+<span class="sd">                - A TensorDict of transitions collected for the black player, with each transition representing a game state before the black player&#39;s action, the action taken, and the resulting state.</span>
+<span class="sd">                - A TensorDict of transitions collected for the white player, structured similarly to the black player&#39;s transitions. Note that for the first step, the white player does not take an action, so their collection starts from the second step.</span>
+<span class="sd">                - A dictionary containing additional information about the rollout.</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
 
@@ -475,6 +480,13 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">_t_minus_1</span><span class="p">,</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_t</span><span class="p">,</span>
             <span class="p">)</span> <span class="o">=</span> <span class="nb">round</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_env</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_policy_black</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_policy_white</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_t_minus_1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_t</span><span class="p">)</span>
+
+            <span class="c1"># truncate the last transition</span>
+            <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="n">steps</span><span class="o">//</span><span class="mi">2</span><span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+                <span class="n">transition_black</span><span class="p">[</span><span class="s2">&quot;next&quot;</span><span class="p">,</span> <span class="s2">&quot;done&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span>
+                    <span class="n">transition_black</span><span class="p">[</span><span class="s2">&quot;next&quot;</span><span class="p">,</span> <span class="s2">&quot;done&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">bool</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">transition_black</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+                <span class="n">transition_white</span><span class="p">[</span><span class="s2">&quot;next&quot;</span><span class="p">,</span> <span class="s2">&quot;done&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span>
+                    <span class="n">transition_white</span><span class="p">[</span><span class="s2">&quot;next&quot;</span><span class="p">,</span> <span class="s2">&quot;done&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">bool</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">transition_white</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
 
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_augment</span><span class="p">:</span>
                 <span class="n">transition_black</span> <span class="o">=</span> <span class="n">augment_transition</span><span class="p">(</span><span class="n">transition_black</span><span class="p">)</span>
@@ -593,6 +605,11 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">_t</span><span class="p">,</span>
             <span class="p">)</span> <span class="o">=</span> <span class="nb">round</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_env</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_policy_black</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_policy_white</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_t_minus_1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_t</span><span class="p">,</span> <span class="n">return_black_transitions</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">return_white_transitions</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 
+            <span class="c1"># truncate the last transition</span>
+            <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="n">steps</span><span class="o">//</span><span class="mi">2</span><span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+                <span class="n">transition_black</span><span class="p">[</span><span class="s2">&quot;next&quot;</span><span class="p">,</span> <span class="s2">&quot;done&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span>
+                    <span class="n">transition_black</span><span class="p">[</span><span class="s2">&quot;next&quot;</span><span class="p">,</span> <span class="s2">&quot;done&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">bool</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">transition_black</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_augment</span><span class="p">:</span>
                 <span class="n">transition_black</span> <span class="o">=</span> <span class="n">augment_transition</span><span class="p">(</span><span class="n">transition_black</span><span class="p">)</span>
 
@@ -705,6 +722,11 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">_t_minus_1</span><span class="p">,</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_t</span><span class="p">,</span>
             <span class="p">)</span> <span class="o">=</span> <span class="nb">round</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_env</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_policy_black</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_policy_white</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_t_minus_1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_t</span><span class="p">,</span> <span class="n">return_black_transitions</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">return_white_transitions</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+            <span class="c1"># truncate the last transition</span>
+            <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="n">steps</span><span class="o">//</span><span class="mi">2</span><span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+                <span class="n">transition_white</span><span class="p">[</span><span class="s2">&quot;next&quot;</span><span class="p">,</span> <span class="s2">&quot;done&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span>
+                    <span class="n">transition_white</span><span class="p">[</span><span class="s2">&quot;next&quot;</span><span class="p">,</span> <span class="s2">&quot;done&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">bool</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">transition_white</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
 
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_augment</span><span class="p">:</span>
                 <span class="k">if</span> <span class="n">i</span> <span class="o">!=</span> <span class="mi">0</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">transition_white</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>

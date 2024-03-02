@@ -46,18 +46,25 @@
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
 <ul class="current">
-<li class="toctree-l1 current"><a class="reference internal" href="modules.html">gomoku_rl</a><ul class="current">
-<li class="toctree-l2 current"><a class="reference internal" href="gomoku_rl.html">gomoku_rl package</a><ul class="current">
-<li class="toctree-l3"><a class="reference internal" href="gomoku_rl.html#subpackages">Subpackages</a></li>
-<li class="toctree-l3 current"><a class="reference internal" href="gomoku_rl.html#submodules">Submodules</a><ul class="current">
-<li class="toctree-l4 current"><a class="current reference internal" href="#">gomoku_rl.collector module</a></li>
-<li class="toctree-l4"><a class="reference internal" href="gomoku_rl.core.html">gomoku_rl.core module</a></li>
-<li class="toctree-l4"><a class="reference internal" href="gomoku_rl.env.html">gomoku_rl.env module</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="gomoku_rl.html">gomoku_rl package</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="gomoku_rl.html#subpackages">Subpackages</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="gomoku_rl.html#submodules">Submodules</a><ul class="current">
+<li class="toctree-l3 current"><a class="current reference internal" href="#">gomoku_rl.collector module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#gomoku_rl.collector.BlackPlayCollector"><code class="docutils literal notranslate"><span class="pre">BlackPlayCollector</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#gomoku_rl.collector.Collector"><code class="docutils literal notranslate"><span class="pre">Collector</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#gomoku_rl.collector.SelfPlayCollector"><code class="docutils literal notranslate"><span class="pre">SelfPlayCollector</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#gomoku_rl.collector.VersusPlayCollector"><code class="docutils literal notranslate"><span class="pre">VersusPlayCollector</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#gomoku_rl.collector.WhitePlayCollector"><code class="docutils literal notranslate"><span class="pre">WhitePlayCollector</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#gomoku_rl.collector.make_transition"><code class="docutils literal notranslate"><span class="pre">make_transition()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#gomoku_rl.collector.round"><code class="docutils literal notranslate"><span class="pre">round()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#gomoku_rl.collector.self_play_step"><code class="docutils literal notranslate"><span class="pre">self_play_step()</span></code></a></li>
 </ul>
 </li>
-<li class="toctree-l3"><a class="reference internal" href="gomoku_rl.html#module-gomoku_rl">Module contents</a></li>
+<li class="toctree-l3"><a class="reference internal" href="gomoku_rl.core.html">gomoku_rl.core module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="gomoku_rl.env.html">gomoku_rl.env module</a></li>
 </ul>
 </li>
+<li class="toctree-l2"><a class="reference internal" href="gomoku_rl.html#module-gomoku_rl">Module contents</a></li>
 </ul>
 </li>
 </ul>
@@ -76,7 +83,6 @@
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
       <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
-          <li class="breadcrumb-item"><a href="modules.html">gomoku_rl</a></li>
           <li class="breadcrumb-item"><a href="gomoku_rl.html">gomoku_rl package</a></li>
       <li class="breadcrumb-item active">gomoku_rl.collector module</li>
       <li class="wy-breadcrumbs-aside">
@@ -241,16 +247,21 @@
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>steps</strong> (<em>int</em>) – The number of steps to execute in the environment for this rollout. It is adjusted to be an even number to ensure an equal number of actions for both players.</p>
 </dd>
-</dl>
-<p>Returns:
-tuple: A tuple containing three elements:</p>
-<blockquote>
-<div><ul class="simple">
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><dl class="simple">
+<dt>A tuple containing three elements:</dt><dd><ul class="simple">
 <li><p>A TensorDict of transitions collected for the black player, with each transition representing a game state before the black player’s action, the action taken, and the resulting state.</p></li>
 <li><p>A TensorDict of transitions collected for the white player, structured similarly to the black player’s transitions. Note that for the first step, the white player does not take an action, so their collection starts from the second step.</p></li>
 <li><p>A dictionary containing additional information about the rollout.</p></li>
 </ul>
-</div></blockquote>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tuple</p>
+</dd>
+</dl>
 </dd></dl>
 
 </dd></dl>

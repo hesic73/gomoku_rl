@@ -43,7 +43,7 @@
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="modules.html">gomoku_rl</a></li>
+<li class="toctree-l1"><a class="reference internal" href="gomoku_rl.html">gomoku_rl package</a></li>
 </ul>
 
         </div>
@@ -206,7 +206,7 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="gomoku_rl.utils.wandb.html#gomoku_rl.utils.wandb.dict_flatten">dict_flatten() (in module gomoku_rl.utils.wandb)</a>
 </li>
-      <li><a href="gomoku_rl.policy.dqn.html#gomoku_rl.policy.dqn.DQNPolicy">DQNPolicy (class in gomoku_rl.policy.dqn)</a>
+      <li><a href="gomoku_rl.policy.dqn.html#gomoku_rl.policy.dqn.DQN">DQN (class in gomoku_rl.policy.dqn)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -219,9 +219,9 @@
       <li><a href="gomoku_rl.policy.base.html#gomoku_rl.policy.base.Policy.eval">eval() (gomoku_rl.policy.base.Policy method)</a>
 
       <ul>
-        <li><a href="gomoku_rl.policy.dqn.html#gomoku_rl.policy.dqn.DQNPolicy.eval">(gomoku_rl.policy.dqn.DQNPolicy method)</a>
+        <li><a href="gomoku_rl.policy.dqn.html#gomoku_rl.policy.dqn.DQN.eval">(gomoku_rl.policy.dqn.DQN method)</a>
 </li>
-        <li><a href="gomoku_rl.policy.ppo.html#gomoku_rl.policy.ppo.PPOPolicy.eval">(gomoku_rl.policy.ppo.PPOPolicy method)</a>
+        <li><a href="gomoku_rl.policy.ppo.html#gomoku_rl.policy.ppo.PPO.eval">(gomoku_rl.policy.ppo.PPO method)</a>
 </li>
         <li><a href="gomoku_rl.utils.psro.html#gomoku_rl.utils.psro.PSROPolicyWrapper.eval">(gomoku_rl.utils.psro.PSROPolicyWrapper method)</a>
 </li>
@@ -551,9 +551,9 @@
       <li><a href="gomoku_rl.policy.base.html#gomoku_rl.policy.base.Policy.learn">learn() (gomoku_rl.policy.base.Policy method)</a>
 
       <ul>
-        <li><a href="gomoku_rl.policy.dqn.html#gomoku_rl.policy.dqn.DQNPolicy.learn">(gomoku_rl.policy.dqn.DQNPolicy method)</a>
+        <li><a href="gomoku_rl.policy.dqn.html#gomoku_rl.policy.dqn.DQN.learn">(gomoku_rl.policy.dqn.DQN method)</a>
 </li>
-        <li><a href="gomoku_rl.policy.ppo.html#gomoku_rl.policy.ppo.PPOPolicy.learn">(gomoku_rl.policy.ppo.PPOPolicy method)</a>
+        <li><a href="gomoku_rl.policy.ppo.html#gomoku_rl.policy.ppo.PPO.learn">(gomoku_rl.policy.ppo.PPO method)</a>
 </li>
       </ul></li>
   </ul></td>
@@ -561,9 +561,9 @@
       <li><a href="gomoku_rl.policy.base.html#gomoku_rl.policy.base.Policy.load_state_dict">load_state_dict() (gomoku_rl.policy.base.Policy method)</a>
 
       <ul>
-        <li><a href="gomoku_rl.policy.dqn.html#gomoku_rl.policy.dqn.DQNPolicy.load_state_dict">(gomoku_rl.policy.dqn.DQNPolicy method)</a>
+        <li><a href="gomoku_rl.policy.dqn.html#gomoku_rl.policy.dqn.DQN.load_state_dict">(gomoku_rl.policy.dqn.DQN method)</a>
 </li>
-        <li><a href="gomoku_rl.policy.ppo.html#gomoku_rl.policy.ppo.PPOPolicy.load_state_dict">(gomoku_rl.policy.ppo.PPOPolicy method)</a>
+        <li><a href="gomoku_rl.policy.ppo.html#gomoku_rl.policy.ppo.PPO.load_state_dict">(gomoku_rl.policy.ppo.PPO method)</a>
 </li>
       </ul></li>
   </ul></td>
@@ -715,7 +715,7 @@
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="gomoku_rl.policy.ppo.html#gomoku_rl.policy.ppo.PPOPolicy">PPOPolicy (class in gomoku_rl.policy.ppo)</a>
+      <li><a href="gomoku_rl.policy.ppo.html#gomoku_rl.policy.ppo.PPO">PPO (class in gomoku_rl.policy.ppo)</a>
 </li>
       <li><a href="gomoku_rl.utils.psro.html#gomoku_rl.utils.psro.print_payoffs">print_payoffs() (in module gomoku_rl.utils.psro)</a>
 </li>
@@ -732,6 +732,8 @@
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="gomoku_rl.utils.sampler.html#gomoku_rl.utils.sampler.SequentialSampler.ran_out">ran_out (gomoku_rl.utils.sampler.SequentialSampler property)</a>
+</li>
+      <li><a href="gomoku_rl.policy.base.html#gomoku_rl.policy.base.Policy.REGISTRY">REGISTRY (gomoku_rl.policy.base.Policy attribute)</a>
 </li>
       <li><a href="gomoku_rl.collector.html#gomoku_rl.collector.BlackPlayCollector.reset">reset() (gomoku_rl.collector.BlackPlayCollector method)</a>
 
@@ -822,9 +824,9 @@
       <li><a href="gomoku_rl.policy.base.html#gomoku_rl.policy.base.Policy.state_dict">state_dict() (gomoku_rl.policy.base.Policy method)</a>
 
       <ul>
-        <li><a href="gomoku_rl.policy.dqn.html#gomoku_rl.policy.dqn.DQNPolicy.state_dict">(gomoku_rl.policy.dqn.DQNPolicy method)</a>
+        <li><a href="gomoku_rl.policy.dqn.html#gomoku_rl.policy.dqn.DQN.state_dict">(gomoku_rl.policy.dqn.DQN method)</a>
 </li>
-        <li><a href="gomoku_rl.policy.ppo.html#gomoku_rl.policy.ppo.PPOPolicy.state_dict">(gomoku_rl.policy.ppo.PPOPolicy method)</a>
+        <li><a href="gomoku_rl.policy.ppo.html#gomoku_rl.policy.ppo.PPO.state_dict">(gomoku_rl.policy.ppo.PPO method)</a>
 </li>
       </ul></li>
       <li><a href="gomoku_rl.core.html#gomoku_rl.core.Gomoku.step">step() (gomoku_rl.core.Gomoku method)</a>
@@ -846,9 +848,9 @@
       <li><a href="gomoku_rl.policy.base.html#gomoku_rl.policy.base.Policy.train">train() (gomoku_rl.policy.base.Policy method)</a>
 
       <ul>
-        <li><a href="gomoku_rl.policy.dqn.html#gomoku_rl.policy.dqn.DQNPolicy.train">(gomoku_rl.policy.dqn.DQNPolicy method)</a>
+        <li><a href="gomoku_rl.policy.dqn.html#gomoku_rl.policy.dqn.DQN.train">(gomoku_rl.policy.dqn.DQN method)</a>
 </li>
-        <li><a href="gomoku_rl.policy.ppo.html#gomoku_rl.policy.ppo.PPOPolicy.train">(gomoku_rl.policy.ppo.PPOPolicy method)</a>
+        <li><a href="gomoku_rl.policy.ppo.html#gomoku_rl.policy.ppo.PPO.train">(gomoku_rl.policy.ppo.PPO method)</a>
 </li>
         <li><a href="gomoku_rl.utils.psro.html#gomoku_rl.utils.psro.PSROPolicyWrapper.train">(gomoku_rl.utils.psro.PSROPolicyWrapper method)</a>
 </li>

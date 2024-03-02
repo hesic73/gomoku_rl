@@ -22,7 +22,7 @@
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="gomoku_rl" href="modules.html" /> 
+    <link rel="next" title="gomoku_rl package" href="gomoku_rl.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -46,7 +46,7 @@
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="modules.html">gomoku_rl</a></li>
+<li class="toctree-l1"><a class="reference internal" href="gomoku_rl.html">gomoku_rl package</a></li>
 </ul>
 
         </div>
@@ -112,12 +112,53 @@ python<span class="w"> </span>scripts/demo.py<span class="w"> </span><span class
 python<span class="w"> </span>scripts/demo.py
 </pre></div>
 </div>
-<p>Pretrained models for a <span class="math notranslate nohighlight">\(15\times15\)</span> board are available under  <cite>pretrained_models/15_15/</cite>. Be aware that using the wrong model for the board size will lead to loading errors due to mismatches in AI architectures. In PPO, when <cite>share_network=True</cite>, the actor and the critic could utilize a shared encoding module. At present, a <cite>PPOPolicy</cite> object with a shared encoder cannot load from a checkpoint without sharing.</p>
+<p>Pretrained models for a <span class="math notranslate nohighlight">\(15\times15\)</span> board are available under  <cite>pretrained_models/15_15/</cite>. Be aware that using the wrong model for the board size will lead to loading errors due to mismatches in AI architectures. In PPO, when <cite>share_network=True</cite>, the actor and the critic could utilize a shared encoding module. At present, a <cite>PPO</cite> object with a shared encoder cannot load from a checkpoint without sharing.</p>
 <div class="toctree-wrapper compound">
 <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="modules.html">gomoku_rl</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="gomoku_rl.html">gomoku_rl package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="gomoku_rl.html">gomoku_rl package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="gomoku_rl.html#subpackages">Subpackages</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="gomoku_rl.policy.html">gomoku_rl.policy package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="gomoku_rl.policy.html#submodules">Submodules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="gomoku_rl.policy.html#module-gomoku_rl.policy">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="gomoku_rl.runner.html">gomoku_rl.runner package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="gomoku_rl.runner.html#submodules">Submodules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="gomoku_rl.runner.html#module-gomoku_rl.runner">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="gomoku_rl.utils.html">gomoku_rl.utils package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="gomoku_rl.utils.html#submodules">Submodules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="gomoku_rl.utils.html#module-gomoku_rl.utils">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="gomoku_rl.html#submodules">Submodules</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="gomoku_rl.collector.html">gomoku_rl.collector module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="gomoku_rl.collector.html#gomoku_rl.collector.BlackPlayCollector"><code class="docutils literal notranslate"><span class="pre">BlackPlayCollector</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="gomoku_rl.collector.html#gomoku_rl.collector.Collector"><code class="docutils literal notranslate"><span class="pre">Collector</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="gomoku_rl.collector.html#gomoku_rl.collector.SelfPlayCollector"><code class="docutils literal notranslate"><span class="pre">SelfPlayCollector</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="gomoku_rl.collector.html#gomoku_rl.collector.VersusPlayCollector"><code class="docutils literal notranslate"><span class="pre">VersusPlayCollector</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="gomoku_rl.collector.html#gomoku_rl.collector.WhitePlayCollector"><code class="docutils literal notranslate"><span class="pre">WhitePlayCollector</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="gomoku_rl.collector.html#gomoku_rl.collector.make_transition"><code class="docutils literal notranslate"><span class="pre">make_transition()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="gomoku_rl.collector.html#gomoku_rl.collector.round"><code class="docutils literal notranslate"><span class="pre">round()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="gomoku_rl.collector.html#gomoku_rl.collector.self_play_step"><code class="docutils literal notranslate"><span class="pre">self_play_step()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="gomoku_rl.core.html">gomoku_rl.core module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="gomoku_rl.core.html#gomoku_rl.core.Gomoku"><code class="docutils literal notranslate"><span class="pre">Gomoku</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="gomoku_rl.core.html#gomoku_rl.core.compute_done"><code class="docutils literal notranslate"><span class="pre">compute_done()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="gomoku_rl.env.html">gomoku_rl.env module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="gomoku_rl.env.html#gomoku_rl.env.GomokuEnv"><code class="docutils literal notranslate"><span class="pre">GomokuEnv</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="gomoku_rl.html#module-gomoku_rl">Module contents</a></li>
 </ul>
 </li>
 </ul>
@@ -129,7 +170,7 @@ python<span class="w"> </span>scripts/demo.py
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="modules.html" class="btn btn-neutral float-right" title="gomoku_rl" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="gomoku_rl.html" class="btn btn-neutral float-right" title="gomoku_rl package" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

@@ -56,14 +56,12 @@ After training, play Gomoku with your model using the `scripts/demo.py` script:
    python scripts/demo.py
 
 
-Pretrained models for a :math:`15\times15` board are available under  `pretrained_models/15_15/`. Be aware that using the wrong model for the board size will lead to loading errors due to mismatches in AI architectures. In PPO, when `share_network=True`, the actor and the critic could utilize a shared encoding module. At present, a `PPOPolicy` object with a shared encoder cannot load from a checkpoint without sharing.
-
-
-
+Pretrained models for a :math:`15\times15` board are available under  `pretrained_models/15_15/`. Be aware that using the wrong model for the board size will lead to loading errors due to mismatches in AI architectures. In PPO, when `share_network=True`, the actor and the critic could utilize a shared encoding module. At present, a `PPO` object with a shared encoder cannot load from a checkpoint without sharing.
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 4
    :caption: Contents:
 
-   modules
+   gomoku_rl
+
 

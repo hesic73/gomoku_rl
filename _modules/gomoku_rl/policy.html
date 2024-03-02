@@ -43,7 +43,7 @@
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../../modules.html">gomoku_rl</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../gomoku_rl.html">gomoku_rl package</a></li>
 </ul>
 
         </div>
@@ -72,12 +72,11 @@
              
   <h1>Source code for gomoku_rl.policy</h1><div class="highlight"><pre>
 <span></span><span class="kn">from</span> <span class="nn">.base</span> <span class="kn">import</span> <span class="n">Policy</span>
-<span class="kn">from</span> <span class="nn">.ppo</span> <span class="kn">import</span> <span class="n">PPOPolicy</span>
-<span class="kn">from</span> <span class="nn">.dqn</span> <span class="kn">import</span> <span class="n">DQNPolicy</span>
+<span class="kn">from</span> <span class="nn">.ppo</span> <span class="kn">import</span> <span class="n">PPO</span>
+<span class="kn">from</span> <span class="nn">.dqn</span> <span class="kn">import</span> <span class="n">DQN</span>
 
 <span class="kn">from</span> <span class="nn">torchrl.data.tensor_specs</span> <span class="kn">import</span> <span class="n">DiscreteTensorSpec</span><span class="p">,</span> <span class="n">TensorSpec</span>
 <span class="kn">from</span> <span class="nn">omegaconf</span> <span class="kn">import</span> <span class="n">DictConfig</span>
-<span class="kn">from</span> <span class="nn">torch.cuda</span> <span class="kn">import</span> <span class="n">_device_t</span>
 <span class="kn">import</span> <span class="nn">torch</span>
 
 
@@ -88,14 +87,23 @@
     <span class="n">cfg</span><span class="p">:</span> <span class="n">DictConfig</span><span class="p">,</span>
     <span class="n">action_spec</span><span class="p">:</span> <span class="n">DiscreteTensorSpec</span><span class="p">,</span>
     <span class="n">observation_spec</span><span class="p">:</span> <span class="n">TensorSpec</span><span class="p">,</span>
-    <span class="n">device</span><span class="p">:</span> <span class="n">_device_t</span> <span class="o">=</span> <span class="s2">&quot;cuda&quot;</span><span class="p">,</span>
+    <span class="n">device</span><span class="o">=</span><span class="s2">&quot;cuda&quot;</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Policy</span><span class="p">:</span>
-    <span class="n">policies</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="s2">&quot;ppo&quot;</span><span class="p">:</span> <span class="n">PPOPolicy</span><span class="p">,</span>
-        <span class="s2">&quot;dqn&quot;</span><span class="p">:</span> <span class="n">DQNPolicy</span><span class="p">,</span>
-    <span class="p">}</span>
-    <span class="k">assert</span> <span class="n">name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="n">policies</span>
-    <span class="bp">cls</span> <span class="o">=</span> <span class="n">policies</span><span class="p">[</span><span class="n">name</span><span class="o">.</span><span class="n">lower</span><span class="p">()]</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Retrieves a policy object based on the specified policy name, configuration, action and observation specifications, and device.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        name (str): The name of the policy to retrieve, which should match a key in the Policy registry.</span>
+<span class="sd">        cfg (DictConfig): Configuration settings for the policy, typically containing hyperparameters and other policy-specific settings.</span>
+<span class="sd">        action_spec (DiscreteTensorSpec): The specification of the action space, defining the shape, type, and bounds of actions the policy can take.</span>
+<span class="sd">        observation_spec (TensorSpec): The specification of the observation space, defining the shape and type of observations the policy will receive from the environment.</span>
+<span class="sd">        device: The computing device (&#39;cuda&#39; or &#39;cpu&#39;) where the policy computations will be performed. Defaults to &quot;cuda&quot;.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Policy: An instance of the requested policy class, initialized with the provided configurations, action and observation specifications, and device.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="bp">cls</span> <span class="o">=</span> <span class="n">Policy</span><span class="o">.</span><span class="n">REGISTRY</span><span class="p">[</span><span class="n">name</span><span class="o">.</span><span class="n">lower</span><span class="p">()]</span>
     <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span>
         <span class="n">cfg</span><span class="o">=</span><span class="n">cfg</span><span class="p">,</span>
         <span class="n">action_spec</span><span class="o">=</span><span class="n">action_spec</span><span class="p">,</span>
@@ -113,8 +121,22 @@
     <span class="n">action_spec</span><span class="p">:</span> <span class="n">DiscreteTensorSpec</span><span class="p">,</span>
     <span class="n">observation_spec</span><span class="p">:</span> <span class="n">TensorSpec</span><span class="p">,</span>
     <span class="n">checkpoint_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-    <span class="n">device</span><span class="p">:</span> <span class="n">_device_t</span> <span class="o">=</span> <span class="s2">&quot;cuda&quot;</span><span class="p">,</span>
+    <span class="n">device</span><span class="o">=</span><span class="s2">&quot;cuda&quot;</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Policy</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Initializes and returns a pretrained policy object based on the specified policy name, configuration, action and observation specifications, checkpoint path, and device.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        name (str): The name of the policy to be loaded, corresponding to a key in the Policy registry.</span>
+<span class="sd">        cfg (DictConfig): Configuration settings for the policy, typically containing hyperparameters and other policy-specific settings.</span>
+<span class="sd">        action_spec (DiscreteTensorSpec): The specification of the action space, detailing the shape, type, and bounds of actions the policy can execute.</span>
+<span class="sd">        observation_spec (TensorSpec): The specification of the observation space, detailing the shape and type of observations the policy will receive from the environment.</span>
+<span class="sd">        checkpoint_path (str): The file path to the saved model checkpoint from which the policy&#39;s state should be loaded.</span>
+<span class="sd">        device: The computing device (&#39;cuda&#39; or &#39;cpu&#39;) on which the policy computations will be executed. Defaults to &quot;cuda&quot;.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Policy: An instance of the specified policy class, initialized with the provided configurations, action and observation specifications, and pretrained weights loaded from the given checkpoint path.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">policy</span> <span class="o">=</span> <span class="n">get_policy</span><span class="p">(</span>
         <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span>
         <span class="n">cfg</span><span class="o">=</span><span class="n">cfg</span><span class="p">,</span>
