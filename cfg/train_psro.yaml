@@ -1,5 +1,5 @@
 seed: 0
-num_envs: 1024
+num_envs: 512
 board_size: 15
 device: cuda
 out_device: cpu

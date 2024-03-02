@@ -1,3 +1,6 @@
+from typing import Generator
+
+
 from torch.optim import Optimizer, Adam, AdamW
 import torch
 import torch.nn as nn
@@ -166,10 +169,9 @@ def make_ppo_ac(
     return ActorValueOperator(common_module, policy_module, value_module)
 
 
-def make_dataset_naive(tensordict: TensorDict, batch_size: int):
-    tensordict=tensordict.reshape(-1)
-    assert tensordict.shape[0] >= batch_size
+def make_dataset_naive(tensordict: TensorDict, batch_size: int) -> Generator[TensorDict, None, None]:
     tensordict = tensordict.reshape(-1)
+    assert tensordict.shape[0] >= batch_size
     perm = torch.randperm(
         (tensordict.shape[0] // batch_size) * batch_size,
         device=tensordict.device,

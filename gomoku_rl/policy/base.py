@@ -1,5 +1,5 @@
 import abc
-from typing import Dict
+from typing import Dict, Type
 from tensordict import TensorDict
 from torchrl.data.replay_buffers import ReplayBuffer
 from torchrl.data.tensor_specs import DiscreteTensorSpec, TensorSpec
@@ -7,14 +7,25 @@ from omegaconf import DictConfig
 
 
 class Policy(abc.ABC):
+
+    REGISTRY: dict[str, Type["Policy"]] = {}
+
+    @classmethod
+    def __init_subclass__(cls, **kwargs):
+        if cls.__name__ in Policy.REGISTRY:
+            raise ValueError
+        super().__init_subclass__(**kwargs)
+        Policy.REGISTRY[cls.__name__] = cls
+        Policy.REGISTRY[cls.__name__.lower()] = cls
+
     @abc.abstractmethod
     def __init__(
         self,
         cfg: DictConfig,
         action_spec: DiscreteTensorSpec,
         observation_spec: TensorSpec,
-        device = "cuda",
-    ) -> None:
+        device="cuda",
+    ):
         """Initializes the policy.
 
         Args:

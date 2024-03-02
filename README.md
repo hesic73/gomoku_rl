@@ -1,14 +1,10 @@
 # Gomoku RL
 
-**Empirically, Independent RL is enough (and in fact much better than PSRO).** As mentioned in [[1]](#refer-anchor-1), due to Gomoku's asymmetry, it's hard to train a network to play both black and white.
+Documentation: https://hesic73.github.io/gomoku_rl/
 
 ![](/assets//images/screenshot_0.gif)
 
-## TO DO
-
-- [x] Restructure the code to decouple rollout functionality from `GomokuEnv`.
-- [ ] Enhance documentaion.
-- [ ] Further improvement
+[TOC]
 
 ## Introduction
 
@@ -19,6 +15,8 @@
 Install *gomoku_rl* with the following command:
 
 ```bash
+git clone git@github.com:hesic73/gomoku_rl.git
+cd gomoku_rl
 conda create -n gomoku python=3.11.5
 conda activate gomoku
 pip install -e .
@@ -32,7 +30,7 @@ I use python 3.11.5, torch 2.1.0 and **torchrl 0.2.1**. Lower versions of python
 
 ```bash
 # override default settings in cfg/train_InRL.yaml
-python scripts/train_InRL.py num_env=1024 device=cuda epochs=3000 wandb.mode=online
+python scripts/train_InRL.py num_env=1024 device=cuda epochs=500 wandb.mode=online
 # or simply:
 python scripts/train_InRL.py.py
 ```
@@ -49,18 +47,14 @@ python scripts/demo.py device=cpu grid_size=56 piece_radius=24 checkpoint=/model
 python scripts/demo.py
 ```
 
-Pretrained models for a $15\times15$ board are available under  `pretrained_models/15_15/`. Be aware that using the wrong model for the board size will lead to loading errors due to mismatches in AI architectures. In PPO, when `share_network=True`, the actor and the critic could utilize a shared encoding module. At present, a `PPOPolicy` object with a shared encoder cannot load from a checkpoint without sharing.
-
-## Documentation
-
-https://hesic73.github.io/gomoku_rl/
+Pretrained models for a $15\times15$ board are available under  `pretrained_models/15_15/`. Be aware that using the wrong model for the board size will lead to loading errors due to mismatches in AI architectures. In PPO, when `share_network=True`, the actor and the critic could utilize a shared encoding module. At present, a `PPO` object with a shared encoder cannot load from a checkpoint without sharing.
 
 ## GUI
 
 **Note:  for deployment, we opt for `torch.jit.ScriptModule` instead of `torch.nn.Module`.** The `*.pt` files used in `scripts/train_*.py` are state dicts of a `torch.nn.Module` and cannot be directly utilized in this context.
 
 
-In addition to `scripts/demo.py`, there is a standalone C++ GUI application. To compile the source code, make sure to have Qt5, Libtorch and cmake installed. Refer to [https://pytorch.org/cppdocs/installing.html](https://pytorch.org/cppdocs/installing.html) for instructions on how to install C++ distributions of Pytorch.
+In addition to `scripts/demo.py`, there is a standalone C++ GUI application. To compile the source code, make sure to have Qt, Libtorch and cmake installed. Refer to [https://pytorch.org/cppdocs/installing.html](https://pytorch.org/cppdocs/installing.html) for instructions on how to install C++ distributions of Pytorch.
 
 Here are the commands to build the executable:
 
@@ -83,19 +77,23 @@ cmake --build . --config Release
 **PS**: If CMake cannot find Torch, try `set(Torch_DIR /absolute/path/to/libtorch/share/cmake/torch)`.
 
 
-## Supported Algorithms
+## Algorithms
 
-- PPO
-- DQN
+Presently, the framework incorporates PPO and DQN algorithms, with a designed flexibility for incorporating additional RL methods. In the realm of multi-agent training, it supports Independent RL and PSRO.
 
+Notably, Independent RL has demonstrated superior efficacy over PSRO. As mentioned in [[1]](#refer-anchor-1), due to Gomoku's asymmetry, it's hard to train a network to play both black and white.
+
+(Maybe I need to tune hyperparameters for PSRO.)
 
 ## Details
 
 Free-style Gomoku is a two-player zero-sum extensive-form game. Two players alternatively place black and white stones on a board and the first who forms an unbroken line of five or more stones of his color wins. In the context of Multi-Agent Reinforcement Learning (MARL), two agents learn in the environment competitively. During each agent's turn, its observation is the (encoded) current board state, and its action is the selection of a position on the board to place a stone. We use action masking to prevent illegal moves. Winning rewards the agent with +1, while losing incurs a penalty of -1. 
 
-## Limitations
+## TO DO
 
-- Constrained to Free-style Gomoku support only.
+- [x] Restructure the code to decouple rollout functionality from `GomokuEnv`.
+- [ ] Enhance documentaion.
+- [ ] Further improvement
 
 ## References
 

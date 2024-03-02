@@ -36,7 +36,7 @@ def get_replay_buffer(
     return buffer
 
 
-class DQNPolicy(Policy):
+class DQN(Policy):
     def __init__(
         self,
         cfg: DictConfig,

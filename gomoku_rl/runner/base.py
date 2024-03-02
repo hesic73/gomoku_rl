@@ -22,7 +22,7 @@ class Runner(abc.ABC):
             device=cfg.device,
         )
         self.eval_env = GomokuEnv(
-            num_envs=4096,
+            num_envs=512,
             board_size=cfg.board_size,
             device=cfg.device,
         )
@@ -90,6 +90,7 @@ class Runner(abc.ABC):
                 observation_spec=self.env.observation_spec,
                 device=self.env.device,
             )
+            ckpts.sort()
             logging.info(f"Baseline:{ckpts[0]}")
             baseline.load_state_dict(torch.load(
                 ckpts[0], map_location=self.cfg.device))
@@ -155,7 +156,7 @@ class SPRunner(abc.ABC):
             device=cfg.device,
         )
         self.eval_env = GomokuEnv(
-            num_envs=4096,
+            num_envs=512,
             board_size=cfg.board_size,
             device=cfg.device,
         )
@@ -211,6 +212,7 @@ class SPRunner(abc.ABC):
                 observation_spec=self.env.observation_spec,
                 device=self.env.device,
             )
+            ckpts.sort()
             logging.info(f"Baseline:{ckpts[0]}")
             baseline.load_state_dict(torch.load(
                 ckpts[0], map_location=self.cfg.device))

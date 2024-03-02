@@ -211,7 +211,7 @@ class PSROSPRunner(SPRunner):
             for p in os.listdir(population_dir):
                 tmp = copy.deepcopy(self.policy)
                 tmp.load_state_dict(torch.load(
-                    os.path.join(population_dir, p)))
+                    os.path.join(population_dir, p), map_location=self.cfg.device))
                 tmp.eval()
                 _policy.append(tmp)
         elif self.cfg.get("checkpoint", None):

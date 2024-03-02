@@ -259,6 +259,11 @@ class SelfPlayCollector(Collector):
                 self._t,
             ) = self_play_step(self._env, self._policy, self._t_minus_1, self._t)
 
+            # truncate the last transition
+            if i == steps-2:
+                transition["next", "done"] = torch.ones(
+                    transition["next", "done"].shape, dtype=torch.bool, device=transition.device)
+
             if self._augment:
                 transition = augment_transition(transition)
 
@@ -310,10 +315,10 @@ class VersusPlayCollector(Collector):
             steps (int): The number of steps to execute in the environment for this rollout. It is adjusted to be an even number to ensure an equal number of actions for both players.
 
         Returns:
-        tuple: A tuple containing three elements:
-            - A TensorDict of transitions collected for the black player, with each transition representing a game state before the black player's action, the action taken, and the resulting state.
-            - A TensorDict of transitions collected for the white player, structured similarly to the black player's transitions. Note that for the first step, the white player does not take an action, so their collection starts from the second step.
-            - A dictionary containing additional information about the rollout.
+            tuple: A tuple containing three elements:
+                - A TensorDict of transitions collected for the black player, with each transition representing a game state before the black player's action, the action taken, and the resulting state.
+                - A TensorDict of transitions collected for the white player, structured similarly to the black player's transitions. Note that for the first step, the white player does not take an action, so their collection starts from the second step.
+                - A dictionary containing additional information about the rollout.
 
         """
 
@@ -362,6 +367,13 @@ class VersusPlayCollector(Collector):
                 self._t_minus_1,
                 self._t,
             ) = round(self._env, self._policy_black, self._policy_white, self._t_minus_1, self._t)
+
+            # truncate the last transition
+            if i == steps//2-1:
+                transition_black["next", "done"] = torch.ones(
+                    transition_black["next", "done"].shape, dtype=torch.bool, device=transition_black.device)
+                transition_white["next", "done"] = torch.ones(
+                    transition_white["next", "done"].shape, dtype=torch.bool, device=transition_white.device)
 
             if self._augment:
                 transition_black = augment_transition(transition_black)
@@ -468,6 +480,11 @@ class BlackPlayCollector(Collector):
                 self._t,
             ) = round(self._env, self._policy_black, self._policy_white, self._t_minus_1, self._t, return_black_transitions=True, return_white_transitions=False)
 
+            # truncate the last transition
+            if i == steps//2-1:
+                transition_black["next", "done"] = torch.ones(
+                    transition_black["next", "done"].shape, dtype=torch.bool, device=transition_black.device)
+
             if self._augment:
                 transition_black = augment_transition(transition_black)
 
@@ -568,6 +585,11 @@ class WhitePlayCollector(Collector):
                 self._t_minus_1,
                 self._t,
             ) = round(self._env, self._policy_black, self._policy_white, self._t_minus_1, self._t, return_black_transitions=False, return_white_transitions=True)
+
+            # truncate the last transition
+            if i == steps//2-1:
+                transition_white["next", "done"] = torch.ones(
+                    transition_white["next", "done"].shape, dtype=torch.bool, device=transition_white.device)
 
             if self._augment:
                 if i != 0 and len(transition_white) > 0:

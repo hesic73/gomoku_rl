@@ -17,7 +17,7 @@ share_network: true
 optimizer:
   name: adam
   kwargs:
-    lr: 5e-4
+    lr: 1e-4
 
 
 num_channels: 64

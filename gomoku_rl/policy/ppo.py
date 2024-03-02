@@ -20,7 +20,7 @@ from gomoku_rl.utils.module import (
 )
 
 
-class PPOPolicy(Policy):
+class PPO(Policy):
     def __init__(
         self,
         cfg: DictConfig,
